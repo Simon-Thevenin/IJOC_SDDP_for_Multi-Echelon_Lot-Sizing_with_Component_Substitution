@@ -2,6 +2,7 @@ import cplex
 from Constants import Constants
 from cplex.callbacks import LazyConstraintCallback
 import copy
+import time
 
 class SDDPCallBack(LazyConstraintCallback):
 
@@ -17,7 +18,7 @@ class SDDPCallBack(LazyConstraintCallback):
         self.SDDPOwner.Stage[0].ChangeSetupToValueOfTwoStage()
 
         if Constants.PrintSDDPTrace:
-            self.SDDPOwner.TraceFile.write("considered integer:%r"%self.Model.ProductionValue)
+            self.SDDPOwner.WriteInTraceFile("considered integer:%r"%self.Model.ProductionValue)
 
         UBequalLB = False
 
@@ -68,7 +69,13 @@ class SDDPCallBack(LazyConstraintCallback):
                 self.SDDPOwner.BestUpperBound = self.SDDPOwner.CurrentUpperBound
             UBequalLB = self.SDDPOwner.CheckStoppingRelaxationCriterion(100000) \
                         or self.SDDPOwner.CurrentLowerBound > self.SDDPOwner.BestUpperBound
-            self.SDDPOwner.CheckStoppingCriterion()
+            if Constants.PrintSDDPTrace:
+                optimalitygap = (self.SDDPOwner.CurrentUpperBound - self.SDDPOwner.CurrentLowerBound)/self.SDDPOwner.CurrentUpperBound
+                duration = time.time() - self.SDDPOwner.StartOfAlsorithm
+                self.SDDPOwner.WriteInTraceFile("Iteration: %d, Duration: %d, LB: %r, UB: %r (exp:%r), Gap: %r \n" % (
+                self.SDDPOwner.CurrentIteration, duration, self.SDDPOwner.CurrentLowerBound, self.SDDPOwner.CurrentUpperBound,
+                self.SDDPOwner.CurrentExpvalueUpperBound, optimalitygap))
+
         if Constants.Debug:
             print("Exit call back")
 

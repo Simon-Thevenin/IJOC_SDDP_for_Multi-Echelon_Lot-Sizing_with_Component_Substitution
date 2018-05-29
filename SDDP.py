@@ -194,7 +194,7 @@ class SDDP(object):
         iterationlimitreached = (self.CurrentIteration > Constants.SDDPIterationLimit)
         result = optimalitygapreached or timalimiteached or iterationlimitreached
         if Constants.PrintSDDPTrace:
-            self.TraceFile.write("Iteration: %d, Duration: %d, LB: %r, UB: %r (exp:%r), Gap: %r \n" %(self.CurrentIteration, duration, self.CurrentLowerBound, self.CurrentUpperBound,  self.CurrentExpvalueUpperBound, optimalitygap))
+            self.WriteInTraceFile("Iteration: %d, Duration: %d, LB: %r, UB: %r (exp:%r), Gap: %r \n" %(self.CurrentIteration, duration, self.CurrentLowerBound, self.CurrentUpperBound,  self.CurrentExpvalueUpperBound, optimalitygap))
         return result
 
     def CheckStoppingRelaxationCriterion(self, round):
@@ -209,6 +209,11 @@ class SDDP(object):
         solution = Solution()
         return solution
 
+    def WriteInTraceFile(self, string):
+        self.TraceFile = open("./Temp/trace_%s.txt" % self.Instance.InstanceName, "a")
+        self.TraceFile.write(string)
+        self.TraceFile.close()
+
     #This function runs the SDDP algorithm
     def Run(self):
         if Constants.PrintSDDPTrace:
@@ -217,7 +222,7 @@ class SDDP(object):
             self.TraceFile.write("Start the SDDP algorithm \n")
             self.TraceFile.write("Use Papadakos method to generate strong cuts: %r \n"%Constants.GenerateStrongCut)
             self.TraceFile.write("Generate a 1000 cuts with linear relaxation: %r \n"%Constants.GenerateStrongCut)
-
+            self.TraceFile.close()
         self.StartOfAlsorithm = time.time()
         self.GenerateScenarios(self.CurrentNrScenario, average=True)
         round = 1
@@ -229,12 +234,12 @@ class SDDP(object):
                 round += 1
                 if round < 3:
                     self.Stage[0].ChangeSetupToValueOfTwoStage()
-                    self.TraceFile.write("Change stage 1 problem to heuristic solution \n")
+                    self.WriteInTraceFile("Change stage 1 problem to heuristic solution \n")
                 else:
                     ExitLoop = Constants.SDDPRunSigleTree
                     if not ExitLoop:
                         self.Stage[0].ChangeSetupToBinary()
-                        self.TraceFile.write("Change stage 1 problem to integer \n")
+                        self.WriteInTraceFile("Change stage 1 problem to integer \n")
 
 
 
@@ -264,8 +269,8 @@ class SDDP(object):
 
         self.RecordSolveInfo()
         if Constants.PrintSDDPTrace:
-            self.TraceFile.write("End of the SDDP algorithm \n")
-        self.TraceFile.close()
+            self.self.WriteInTraceFile("End of the SDDP algorithm \n")
+
 
     # This function runs the SDDP algorithm
     def RunSingleTreeSDDP(self):
