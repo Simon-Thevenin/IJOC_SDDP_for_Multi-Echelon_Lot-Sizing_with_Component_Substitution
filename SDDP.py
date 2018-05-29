@@ -212,7 +212,7 @@ class SDDP(object):
     #This function runs the SDDP algorithm
     def Run(self):
         if Constants.PrintSDDPTrace:
-            self.TraceFile = open("./Temp/trace.txt", "w")
+            self.TraceFile = open("./Temp/trace_%s.txt"%self.Instance.InstanceName, "w")
 
             self.TraceFile.write("Start the SDDP algorithm \n")
             self.TraceFile.write("Use Papadakos method to generate strong cuts: %r \n"%Constants.GenerateStrongCut)
@@ -292,10 +292,10 @@ class SDDP(object):
         model_lazy.SDDPOwner = self
         model_lazy.Model = self.CopyFirstStage
 
-        self.CopyFirstStage.Cplex.set_log_stream("./Temp/CPLEXLog.txt")
-        self.CopyFirstStage.Cplex.set_results_stream("./Temp/CPLEXLog.txt")
-        self.CopyFirstStage.Cplex.set_warning_stream("./Temp/CPLEXLog.txt")
-        self.CopyFirstStage.Cplex.set_error_stream("./Temp/CPLEXLog.txt")
+        self.CopyFirstStage.Cplex.set_log_stream("./Temp/CPLEXLog_%s.txt"%self.Instance.InstanceName)
+        self.CopyFirstStage.Cplex.set_results_stream("./Temp/CPLEXLog_%s.txt"%self.Instance.InstanceName)
+        self.CopyFirstStage.Cplex.set_warning_stream("./Temp/CPLEXLog_%s.txt"%self.Instance.InstanceName)
+        self.CopyFirstStage.Cplex.set_error_stream("./Temp/CPLEXLog_%s.txt"%self.Instance.InstanceName)
         self.CopyFirstStage.Cplex.solve()
 
 
