@@ -250,7 +250,7 @@ class EvaluationSimulator(object):
             sddp.Stage[stage].SetNrScenario(len(scenarios))
             #sddp.Stage[stage].CurrentScenarioNr = 0
 
-        sddp.ForwardPass()
+        sddp.ForwardPass(ignorefirststage=True)
 
     # This function return the setup decision and quantity to produce for the scenario given in argument
     def GetDecisionFromSDDPForScenario(self, sddp, scenario):

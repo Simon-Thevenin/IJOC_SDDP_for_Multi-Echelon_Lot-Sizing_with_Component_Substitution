@@ -80,7 +80,7 @@ class SDDPCut(object):
                              self.Instance.TimeBucketSet]
         return coeff
 
-    def AddCut(self):
+    def AddCut(self, addtomodel=True):
         self.IsActive = True
         if Constants.Debug:
             print("Add the Cut %s" %self.Name)
@@ -93,10 +93,11 @@ class SDDPCut(object):
 
         righthandside = [self.ComputeCurrentRightHandSide()]
 
-        self.Stage.Cplex.linear_constraints.add( lin_expr=[cplex.SparsePair(vars, coeff)],
-                                           senses=["G"],
-                                           rhs=righthandside,
-                                           names =[self.Name])
+        if addtomodel:
+            self.Stage.Cplex.linear_constraints.add( lin_expr=[cplex.SparsePair(vars, coeff)],
+                                               senses=["G"],
+                                               rhs=righthandside,
+                                               names =[self.Name])
 
         self.Stage.IndexCutConstraint.append(self.Stage.LastAddedConstraintIndex)
         self.Stage.LastAddedConstraintIndex = self.Stage.LastAddedConstraintIndex + 1

@@ -6,9 +6,12 @@ from SDDPStage import SDDPStage
 from SDDPLastStage import SDDPLastStage
 from ScenarioTree import ScenarioTree
 from MIPSolver import MIPSolver
+from SDDPCallBack import SDDPCallBack
 import numpy as np
 import math
 import time
+import copy
+
 # This class contains the attributes and methods allowing to define the SDDP algorithm.
 class SDDP(object):
 
@@ -35,6 +38,7 @@ class SDDP(object):
         self.StagesSet = range(nrstage + 1)
         self.CurrentIteration = 0
         self.CurrentLowerBound = 0
+        self.BestUpperBound = Constants.Infinity
         self.CurrentUpperBound = Constants.Infinity
         self.StartOfAlsorithm = time.time()
         self.CurrentSetOfScenarios = []
@@ -52,26 +56,28 @@ class SDDP(object):
         self.UseCorePoint = False
         self.GenerateStrongCut = Constants.GenerateStrongCut
         self.TraceFile = None
+        self.HeuristicSetupValue = []
 
 
 
     #This function make the forward pass of SDDP
-    def ForwardPass(self):
+    def ForwardPass(self, ignorefirststage = False):
         if Constants.Debug:
             print("Start forward pass")
         self.SetCurrentBigM()
         for t in self.StagesSet:
-            #Run the forward pass at each stage t
-            self.Stage[t].RunForwardPassMIP()
+            if not ignorefirststage or t >= 1:
+                #Run the forward pass at each stage t
+                self.Stage[t].RunForwardPassMIP()
 
-            #try to use core point method, remove if it does not work
-            #if self.Stage[t].IsFirstStage()
-            if self.GenerateStrongCut:
-                self.Stage[t].UpdateCorePoint()
+                #try to use core point method, remove if it does not work
+                #if self.Stage[t].IsFirstStage()
+                if self.GenerateStrongCut:
+                    self.Stage[t].UpdateCorePoint()
 
 
     #This function make the backward pass of SDDP
-    def BackwardPass(self):
+    def BackwardPass(self, returnfirststagecut=False):
         if Constants.Debug:
             print("Start Backward pass")
 
@@ -83,10 +89,12 @@ class SDDP(object):
 
         for t in reversed(range(1, len(self.StagesSet) -1)):
             #Build or update the MIP of stage t
-            self.Stage[t].GernerateCut()
+            returncutinsteadofadd = (returnfirststagecut and t == 1)
+            firststagecut = self.Stage[t].GernerateCut(returncutinsteadofadd)
 
         self.UseCorePoint = False
-
+        if returnfirststagecut:
+            return firststagecut
 
     #This function generates the scenarios for the current iteration of the algorithm
     def GenerateScenarios(self, nrscenario, average = False):
@@ -189,6 +197,13 @@ class SDDP(object):
             self.TraceFile.write("Iteration: %d, Duration: %d, LB: %r, UB: %r (exp:%r), Gap: %r \n" %(self.CurrentIteration, duration, self.CurrentLowerBound, self.CurrentUpperBound,  self.CurrentExpvalueUpperBound, optimalitygap))
         return result
 
+    def CheckStoppingRelaxationCriterion(self, round):
+        optimalitygap = ( self.CurrentUpperBound - self.CurrentLowerBound) / self.CurrentUpperBound
+        optimalitygapreached = (optimalitygap < Constants.SDDPGapRelax)
+        iterationlimitreached = (self.CurrentIteration > Constants.SDDPNrIterationRelax * round)
+        result = optimalitygapreached or iterationlimitreached
+        return result
+
     #This funciton compute the solution of the scenario given in argument (used after to have run the algorithm, and the cost to go approximation are built)
     def ComputeSolutionForScenario(self, scenario):
         solution = Solution()
@@ -205,13 +220,26 @@ class SDDP(object):
 
         self.StartOfAlsorithm = time.time()
         self.GenerateScenarios(self.CurrentNrScenario, average=True)
-        while not self.CheckStoppingCriterion():
+        round = 1
+        ExitLoop = False
 
-            if Constants.SolveRelaxationFirst and self.CurrentIteration == 1000:
-                self.Stage[0].ChangeSetupToBinary()
-                self.TraceFile.write("Change stage 1 problem to integer \n")
+        while not self.CheckStoppingCriterion() and not ExitLoop:
 
-            #self.GenerateScenarios(self.CurrentNrScenario)
+            if Constants.SolveRelaxationFirst and self.CheckStoppingRelaxationCriterion(round):
+                round += 1
+                if round < 3:
+                    self.Stage[0].ChangeSetupToValueOfTwoStage()
+                    self.TraceFile.write("Change stage 1 problem to heuristic solution \n")
+                else:
+                    ExitLoop = Constants.SDDPRunSigleTree
+                    if not ExitLoop:
+                        self.Stage[0].ChangeSetupToBinary()
+                        self.TraceFile.write("Change stage 1 problem to integer \n")
+
+
+
+
+            self.GenerateScenarios(self.CurrentNrScenario)
             if Constants.Debug:
                 print("********************Scenarios*********************")
                 for s in self.CurrentSetOfScenarios:
@@ -231,10 +259,45 @@ class SDDP(object):
                 solution = self.CreateSolutionOfScenario(0)
                 solution.PrintToExcel("solution_at_iteration_%r"%self.CurrentIteration)
 
+        if Constants.SDDPRunSigleTree :
+            self.RunSingleTreeSDDP()
+
         self.RecordSolveInfo()
         if Constants.PrintSDDPTrace:
             self.TraceFile.write("End of the SDDP algorithm \n")
         self.TraceFile.close()
+
+    # This function runs the SDDP algorithm
+    def RunSingleTreeSDDP(self):
+        self.CopyFirstStage = SDDPStage(owner=self, decisionstage=0)
+        self.CopyFirstStage.SetNrScenario(len(self.CurrentSetOfScenarios))
+        for cut in self.Stage[0].SDDPCuts:
+            cut.Stage = None
+
+        self.CopyFirstStage.SDDPCuts = copy.deepcopy(self.Stage[0].SDDPCuts)
+
+        for cut in self.Stage[0].SDDPCuts:
+            cut.Stage = self.Stage[0]
+
+        self.CopyFirstStage.DefineMIP(0)
+
+        for cut in self.CopyFirstStage.SDDPCuts:
+            cut.Stage = self.CopyFirstStage
+            cut.AddCut()
+
+
+        self.CopyFirstStage.ChangeSetupToBinary()
+
+        model_lazy = self.CopyFirstStage.Cplex.register_callback(SDDPCallBack)
+        model_lazy.SDDPOwner = self
+        model_lazy.Model = self.CopyFirstStage
+
+        self.CopyFirstStage.Cplex.set_log_stream("./Temp/CPLEXLog.txt")
+        self.CopyFirstStage.Cplex.set_results_stream("./Temp/CPLEXLog.txt")
+        self.CopyFirstStage.Cplex.set_warning_stream("./Temp/CPLEXLog.txt")
+        self.CopyFirstStage.Cplex.set_error_stream("./Temp/CPLEXLog.txt")
+        self.CopyFirstStage.Cplex.solve()
+
 
     def ComputeCost(self):
         for stage in self.Stage:
@@ -355,3 +418,4 @@ class SDDP(object):
             solution.FixedQuantity = [[-1 for p in self.Instance.ProductSet] for t in self.Instance.TimeBucketSet]
 
             return solution
+

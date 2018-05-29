@@ -43,7 +43,7 @@ class Constants( object ):
     SeedArray = [2934, 875, 3545, 765, 546, 768, 242, 375, 142, 236, 788]
 
     #Running option
-    Debug = True
+    Debug = False
     PrintSolutionFileToExcel = True
     PrintDetailsExcelFiles = True
     PrintOnlyFirstStageDecision = False
@@ -62,7 +62,15 @@ class Constants( object ):
     SDDPPrintDebugLPFiles = False
     PrintSDDPTrace = True
     GenerateStrongCut = True
+    SDDPRunSigleTree = True
+
     SolveRelaxationFirst = True
+    SDDPNrIterationRelax = 1000
+    SDDPGapRelax = 0.001
+
+    SDDPUseValidInequalities = True
+
+    SDDPGenerateCutWith2Stage = True
 
     @staticmethod
     def IsDeterministic(s):

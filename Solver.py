@@ -226,22 +226,26 @@ class Solver( object ):
         if Constants.Debug:
             self.Instance.PrintInstance()
 
+        methodtemp = self.TestIdentifier.Method
+
+        self.TestIdentifier.Method = "MIP"
+
+        treestructure = [1, 200] + [1] * (self.Instance.NrTimeBucket - 1) + [0]
+        self.TestIdentifier.Model = Constants.ModelYQFix
+        chosengeneration = self.TestIdentifier.ScenarioSampling
+        self.ScenarioGeneration = "RQMC"
+        solution, mipsolver = self.MRP(treestructure, False, recordsolveinfo=True)
+        self.GivenSetup = [[solution.Production[0][t][p] for p in self.Instance.ProductSet] for t in self.Instance.TimeBucketSet]
+        self.ScenarioGeneration = chosengeneration
+        self.TestIdentifier.Model = Constants.ModelYFix
+        self.TestIdentifier.Method = methodtemp
+
         if self.TestIdentifier.Method == "MIP":
-
-            print("attantio set to 200")
-            treestructure = [1, 2] + [1] * (self.Instance.NrTimeBucket - 1) + [0]
-            self.TestIdentifier.Model = Constants.ModelYQFix
-            chosengeneration = self.TestIdentifier.ScenarioSampling
-            self.ScenarioGeneration = "RQMC"
-            solution, mipsolver = self.MRP(treestructure, False, recordsolveinfo=True)
-            self.GivenSetup = [[solution.Production[0][t][p] for p in self.Instance.ProductSet] for t in self.Instance.TimeBucketSet]
-            self.ScenarioGeneration = chosengeneration
-            self.TestIdentifier.Model = Constants.ModelYFix
-
             solution, mipsolver = self.MRP(self.TreeStructure, averagescenario=False, recordsolveinfo=True, warmstart=True)
 
         if self.TestIdentifier.Method == "SDDP":
              self.SDDPSolver = SDDP(self.Instance, self.TestIdentifier)
+             self.SDDPSolver.HeuristicSetupValue = self.GivenSetup
              self.SDDPSolver.Run()
              solution = self.SDDPSolver.CreateSolutionAtFirstStage()
              #SolveInformation = sddpsolver.SolveInfo

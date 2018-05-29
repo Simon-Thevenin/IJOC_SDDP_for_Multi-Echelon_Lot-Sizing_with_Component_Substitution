@@ -5,7 +5,7 @@ from Evaluator import Evaluator
 from TestIdentificator import TestIdentificator
 from EvaluatorIdentificator import EvaluatorIdentificator
 from Instance import Instance
-
+import os
 import argparse
 import csv
 import datetime
@@ -20,6 +20,12 @@ Action = ""
 #The solution to evaluate
 EvaluateSolution = None
 
+
+def CreateRequiredDir():
+    requireddir = ["./Test", "./Test/Statistic", "./Test/Bounds", "./Test/SolveInfo", "./Solutions", "./Evaluations", "./Temp", ]
+    for dir in requireddir:
+        if not os.path.exists(dir):
+            os.makedirs(dir)
 
 def parseArguments():
     # Create argument parser
@@ -88,12 +94,13 @@ if __name__ == '__main__':
     #instance.SaveCompleteInstanceInExelFile()
 
     try:
+        CreateRequiredDir()
         parseArguments()
         instance = Instance()
         #instance.DefineAsSuperSmallIntance()
-        #instance.ReadFromFile("G0041421", "NonStationary", "Normal")
-        instance.ReadFromFile("01", "NonStationary", "Normal")
-        instance.SaveCompleteInstanceInExelFile()
+        #instance.ReadFromFile("K0011525", "NonStationary", "Normal")
+        #instance.ReadFromFile("03", "NonStationary", "Normal")
+        #instance.SaveCompleteInstanceInExelFile()
         instance.ReadInstanceFromExelFile(TestIdentifier.InstanceName)
         #instance.DrawSupplyChain()
     except KeyError:

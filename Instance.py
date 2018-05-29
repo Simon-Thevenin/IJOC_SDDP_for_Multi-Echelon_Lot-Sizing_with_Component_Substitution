@@ -600,3 +600,25 @@ class Instance(object):
         self.ComputeMaxLeadTime()
         self.ComputeIndices()
         self.ComputeInstanceData()
+
+    def GetLeadTime(self, i, p):
+        timetoitem = [0 for q in self.ProductSet]
+        child = [i]
+        parents = [[] for q in self.ProductSet]
+        while True:
+            for q in child:
+                if len(parents[q]) > 0:
+                    timetoitem[q] = min([timetoitem[c] for c in parents[q]])
+                timetoitem[q] = timetoitem[q] + self.LeadTimes[q]
+                if q == p:
+                   return timetoitem[q]
+
+            parents = [[] for q in self.ProductSet]
+            nexchild = []
+            for current in child:
+                for q in self.ProductSet:
+                    if self.Requirements[q][current]:
+                        nexchild.append(q)
+                        parents[q].append(current)
+
+            child = nexchild
