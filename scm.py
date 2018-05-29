@@ -22,7 +22,7 @@ EvaluateSolution = None
 
 
 def CreateRequiredDir():
-    requireddir = ["./Test", "./Test/Statistic", "./Test/Bounds", "./Test/SolveInfo", "./Solutions", "./Evaluations", "./Temp", ]
+    requireddir = ["./Test","./CPLEXLog", "./Test/Statistic", "./Test/Bounds", "./Test/SolveInfo", "./Solutions", "./Evaluations", "./Temp", ]
     for dir in requireddir:
         if not os.path.exists(dir):
             os.makedirs(dir)
