@@ -32,7 +32,7 @@ def CreateMIPJob(instance):
 #$ -cwd
 #$ -q idra
 #$ -j y
-#$ -o /home/thesim/log/outputjobevaluate%.txt
+#$ -o /home/thesim/log/outputjobevaluate%s.txt
 ulimit -v 30000000
 python scm.py  Solve %s YFix 10 RQMC -n 10000 -p Fix -m MIP 
 """ % (instance, instance))
