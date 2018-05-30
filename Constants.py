@@ -65,7 +65,7 @@ class Constants( object ):
     SDDPRunSigleTree = True
 
     SolveRelaxationFirst = True
-    SDDPNrIterationRelax = 100000
+    SDDPNrIterationRelax = 10000
     SDDPGapRelax = 0.001
 
     SDDPUseValidInequalities = True

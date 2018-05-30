@@ -56,6 +56,7 @@ class SDDP(object):
         self.UseCorePoint = False
         self.GenerateStrongCut = Constants.GenerateStrongCut
         self.TraceFile = None
+        self.TraceFileName = "./Temp/trace_%s_%s.txt" % (self.Instance.InstanceName, self.TestIdentifier.MIPSetting)
         self.HeuristicSetupValue = []
 
 
@@ -210,38 +211,40 @@ class SDDP(object):
         return solution
 
     def WriteInTraceFile(self, string):
-        self.TraceFile = open("./Temp/trace_%s.txt" % self.Instance.InstanceName, "a")
+        self.TraceFile = open(self.TraceFileName, "a")
         self.TraceFile.write(string)
         self.TraceFile.close()
 
     #This function runs the SDDP algorithm
     def Run(self):
         if Constants.PrintSDDPTrace:
-            self.TraceFile = open("./Temp/trace_%s.txt"%self.Instance.InstanceName, "w")
+            self.TraceFile = open(self.TraceFileName, "w")
 
             self.TraceFile.write("Start the SDDP algorithm \n")
             self.TraceFile.write("Use Papadakos method to generate strong cuts: %r \n"%Constants.GenerateStrongCut)
-            self.TraceFile.write("Generate a 1000 cuts with linear relaxation: %r \n"%Constants.GenerateStrongCut)
+            self.TraceFile.write("Generate a 10000 cuts with linear relaxation: %r \n"%Constants.SolveRelaxationFirst)
+            self.TraceFile.write("Use valid inequalities: %r \n"%Constants.SDDPUseValidInequalities)
+            self.TraceFile.write("Run SDDP in a single tree: %r \n"%Constants.SDDPRunSigleTree)
             self.TraceFile.close()
         self.StartOfAlsorithm = time.time()
         self.GenerateScenarios(self.CurrentNrScenario, average=True)
         round = 1
-        ExitLoop = False
+        createpreliminarycuts = Constants.SolveRelaxationFirst
+        ExitLoop = not createpreliminarycuts and Constants.SDDPRunSigleTree
 
         while not self.CheckStoppingCriterion() and not ExitLoop:
 
-            if Constants.SolveRelaxationFirst and self.CheckStoppingRelaxationCriterion(round):
+            if createpreliminarycuts and self.CheckStoppingRelaxationCriterion(round):
                 round += 1
                 if round < 3:
                     self.Stage[0].ChangeSetupToValueOfTwoStage()
                     self.WriteInTraceFile("Change stage 1 problem to heuristic solution \n")
-                else:
+                elif round == 3:
                     ExitLoop = Constants.SDDPRunSigleTree
+                    createpreliminarycuts = False
                     if not ExitLoop:
                         self.Stage[0].ChangeSetupToBinary()
                         self.WriteInTraceFile("Change stage 1 problem to integer \n")
-
-
 
 
             self.GenerateScenarios(self.CurrentNrScenario)
@@ -264,16 +267,21 @@ class SDDP(object):
                 solution = self.CreateSolutionOfScenario(0)
                 solution.PrintToExcel("solution_at_iteration_%r"%self.CurrentIteration)
 
-        if Constants.SDDPRunSigleTree :
+        if Constants.SDDPRunSigleTree:
             self.RunSingleTreeSDDP()
 
         self.RecordSolveInfo()
         if Constants.PrintSDDPTrace:
-            self.self.WriteInTraceFile("End of the SDDP algorithm \n")
+            self.WriteInTraceFile("End of the SDDP algorithm \n")
 
 
     # This function runs the SDDP algorithm
     def RunSingleTreeSDDP(self):
+
+        if not Constants.SolveRelaxationFirst:
+            #run forward pass to create the MIPS
+            self.ForwardPass()
+
         self.CopyFirstStage = SDDPStage(owner=self, decisionstage=0)
         self.CopyFirstStage.SetNrScenario(len(self.CurrentSetOfScenarios))
         for cut in self.Stage[0].SDDPCuts:
@@ -296,11 +304,11 @@ class SDDP(object):
         model_lazy = self.CopyFirstStage.Cplex.register_callback(SDDPCallBack)
         model_lazy.SDDPOwner = self
         model_lazy.Model = self.CopyFirstStage
-
-        self.CopyFirstStage.Cplex.set_log_stream("./Temp/CPLEXLog_%s.txt"%self.Instance.InstanceName)
-        self.CopyFirstStage.Cplex.set_results_stream("./Temp/CPLEXLog_%s.txt"%self.Instance.InstanceName)
-        self.CopyFirstStage.Cplex.set_warning_stream("./Temp/CPLEXLog_%s.txt"%self.Instance.InstanceName)
-        self.CopyFirstStage.Cplex.set_error_stream("./Temp/CPLEXLog_%s.txt"%self.Instance.InstanceName)
+        cplexlogfilename = "./Temp/CPLEXLog_%s_%s.txt"%(self.Instance.InstanceName, self.TestIdentifier.MIPSetting)
+        self.CopyFirstStage.Cplex.set_log_stream(cplexlogfilename)
+        self.CopyFirstStage.Cplex.set_results_stream(cplexlogfilename)
+        self.CopyFirstStage.Cplex.set_warning_stream(cplexlogfilename)
+        self.CopyFirstStage.Cplex.set_error_stream(cplexlogfilename)
         self.CopyFirstStage.Cplex.solve()
 
 

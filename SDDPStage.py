@@ -530,7 +530,7 @@ class SDDPStage(object):
 
         self.CreateFlowConstraints()
 
-        if self.IsFirstStage():
+        if self.IsFirstStage() and Constants.SDDPUseValidInequalities:
             self.CreateValideInequalities()
 
 
@@ -938,7 +938,6 @@ class SDDPStage(object):
     # Try to use the corepoint method of papadakos, remove if it doesn't work
     # average current solution with last core point
     def UpdateCorePoint(self):
-
         if self.SDDPOwner.CurrentIteration > 1:
             # Try to use the corepoint method of papadakos, remove if it doesn't work
             if not self.IsLastStage():
@@ -1014,12 +1013,12 @@ class SDDPStage(object):
                     for l in LSet:
                         var = [self.GetIndexEstmateCostToGoPerItemPeriod(p, t)]
                         coeff = [1.0]
-                        rhs = float( self.Instance.ForecastedAverageDemand[t][p] \
-                                * min(self.Instance.InventoryCosts[i] for i in O) * (l+1))
+                        rhs = float(self.Instance.ForecastedAverageDemand[t][p]\
+                                    * min(self.Instance.InventoryCosts[i] for i in O) * (l+1))
                         for i in O:
                             leadtime = self.Instance.GetLeadTime(i, p)
                             if t-l-leadtime > 0 and rhs > 0:
-                                 for tau in range(t - l - leadtime, t ):
+                                 for tau in range(t - l - leadtime, t):
                                      var = var + [self.GetIndexProductionVariable(i, tau)]
                                      coeff = coeff + [rhs]
 

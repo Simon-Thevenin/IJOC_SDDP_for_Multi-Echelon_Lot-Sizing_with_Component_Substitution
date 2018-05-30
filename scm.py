@@ -96,6 +96,18 @@ if __name__ == '__main__':
     try:
         CreateRequiredDir()
         parseArguments()
+
+        if TestIdentifier.MIPSetting == "NoOneTree":
+            Constants.SDDPRunSigleTree = False
+        if TestIdentifier.MIPSetting == "NoFirstCuts":
+            Constants.SDDPNrIterationRelax = 0
+            Constants.SDDPGenerateCutWith2Stage = False
+            Constants.SolveRelaxationFirst = False
+        if TestIdentifier.MIPSetting == "NoValidInequalities":
+            Constants.SDDPUseValidInequalities = False
+        if TestIdentifier.MIPSetting == "NoStongCut":
+            Constants.GenerateStrongCut = False
+
         instance = Instance()
         #instance.DefineAsSuperSmallIntance()
         #instance.ReadFromFile("K0011525", "NonStationary", "Normal")
