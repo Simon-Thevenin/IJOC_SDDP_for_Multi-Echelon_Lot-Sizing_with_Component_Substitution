@@ -40,7 +40,7 @@ python scm.py  Solve %s YFix 10 RQMC -n 10000 -p Fix -m MIP
 
 
 if __name__ == "__main__":
-    csvfile = open("./Instances/InstancesToSolve.csv", 'rb')
+    csvfile = open("./Instances/InstanceToSolve.csv", 'rb')
     data_reader = csv.reader(csvfile, delimiter=",", skipinitialspace=True)
     instancenameslist = []
     for row in data_reader:
