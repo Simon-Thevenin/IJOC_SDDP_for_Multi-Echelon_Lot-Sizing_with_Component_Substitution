@@ -18,7 +18,7 @@ class SDDPCallBack(LazyConstraintCallback):
         self.SDDPOwner.Stage[0].ChangeSetupToValueOfTwoStage()
 
         if Constants.PrintSDDPTrace:
-            self.SDDPOwner.WriteInTraceFile("considered integer:%r \n"%self.Model.ProductionValue)
+            self.SDDPOwner.WriteInTraceFile("considered integer:%r \n"%self.Model.ProductionValue[0])
 
         UBequalLB = False
 
