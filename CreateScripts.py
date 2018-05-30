@@ -66,7 +66,7 @@ if __name__ == "__main__":
 
     if sys.argv[1] == "MIP":
        # Create the sh file for resolution
-        filemipname = "runallsddp.sh"
+        filemipname = "runallmip.sh"
         filemip = open(filemipname, 'w')
         filemip.write("""
 #!/bin/bash -l
