@@ -9,7 +9,7 @@ from Constants import Constants
 NrScenarioEvaluation = "5000"
 
 def CreateSDDPJob(instance, setting):
-    qsub_filename = "./Jobs/job_sddp_s_%s" % (instance, setting)
+    qsub_filename = "./Jobs/job_sddp_%s_%s" % (instance, setting)
     qsub_file = open(qsub_filename, 'w')
     qsub_file.write("""
 #!/bin/bash -l
@@ -24,7 +24,7 @@ python scm.py  Solve %s YFix 10 RQMC -n 10 -p Fix -m SDDP --mipsetting %s
     return qsub_filename
 
 def CreateMIPJob(instance):
-    qsub_filename = "./Jobs/job_mip_s_%s" % (instance)
+    qsub_filename = "./Jobs/job_mip_%s" % (instance)
     qsub_file = open(qsub_filename, 'w')
     qsub_file.write("""
 #!/bin/bash -l
