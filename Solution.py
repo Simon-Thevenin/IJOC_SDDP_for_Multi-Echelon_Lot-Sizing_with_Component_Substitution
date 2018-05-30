@@ -369,8 +369,6 @@ class Solution(object):
     def ListFromDataFrame(self, prodquantitydf, inventorydf, productiondf, bbackorderdf, consumptiondf, fixedqvaluedf):
         scenarioset = range(len(self.Scenarioset))
         timebucketset = self.GetConsideredTimeBucket()
-        print(timebucketset)
-        print(scenarioset)
         self.ProductionQuantity = [[[prodquantitydf.loc[str(self.Instance.ProductName[p]),(t,s)]
                                      for p in self.Instance.ProductSet] for t in timebucketset] for s in scenarioset]
         self.InventoryLevel = [[[inventorydf.loc[self.Instance.ProductName[p], (t,s)]

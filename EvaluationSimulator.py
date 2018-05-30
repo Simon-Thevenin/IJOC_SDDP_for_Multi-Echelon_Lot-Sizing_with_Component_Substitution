@@ -31,7 +31,7 @@ class EvaluationSimulator(object):
         self.SDDPs = sddps
         self.TestIdentificator = testidentificator
         self.EvalatorIdentificator = evaluatoridentificator
-        self.NrSolutions = max( len( self.Solutions ), len(  self.SDDPs ) )
+        self.NrSolutions = max(len(self.Solutions), len(self.SDDPs))
         self.Policy = evaluatoridentificator.PolicyGeneration
         self.StartSeedResolve = Constants.SeedArray[0]
 
@@ -43,7 +43,7 @@ class EvaluationSimulator(object):
         self.MIPResolveTime = [None for t in instance.TimeBucketSet]
         self.IsDefineMIPResolveTime = [False for t in instance.TimeBucketSet]
         self.ReferenceTreeStructure = treestructure
-        self.EvaluateAverage = Constants.IsDeterministic( self.TestIdentificator.Model)
+        self.EvaluateAverage = Constants.IsDeterministic(self.TestIdentificator.Model)
         self.UseSafetyStock = Constants.UseSafetyStock(self.TestIdentificator.Model)
         self.Model = model
         self.UseSafetyStockGrave = (self.TestIdentificator.Model == Constants.AverageSSGrave)
@@ -325,7 +325,7 @@ class EvaluationSimulator(object):
     def ComputeStatistic(self, Evaluated, Probabilities, KPIStat, nrerror):
 
         mean = float(sum(np.dot(Evaluated[k], Probabilities[k]) for k in range(len(Evaluated))) / float(len(Evaluated)))
-        K =  len(Evaluated)
+        K = len(Evaluated)
         M = self.EvalatorIdentificator.NrEvaluation
         variancepondere = (1.0 / K) * \
                            sum(Probabilities[k][seed] * math.pow(Evaluated[k][seed]- mean, 2)
@@ -433,29 +433,29 @@ class EvaluationSimulator(object):
                 if self.Model == Constants.ModelYQFix and self.ScenarioGenerationResolvePolicy == Constants.All :
                     nrstochasticperiod = self.Instance.NrTimeBucket - time
                     treestructure = [1] \
-                                + [ int( math.pow(8,nrstochasticperiod) )
-                                   if (  t == time and (t < (self.Instance.NrTimeBucket - self.Instance.NrTimeBucketWithoutUncertaintyAfter)  ) )
+                                + [int(math.pow(8,nrstochasticperiod) )
+                                   if (t == time and (t < (self.Instance.NrTimeBucket - self.Instance.NrTimeBucketWithoutUncertaintyAfter)  ) )
                                    else 1
                                    for t in range(self.Instance.NrTimeBucket)] \
                                 + [0]
 
                 #self.StartSeedResolve = self.StartSeedResolve + 1
                 scenariotree = ScenarioTree(self.Instance, treestructure, self.StartSeedResolve,
-                                            averagescenariotree = self.EvaluateAverage,
+                                            averagescenariotree=self.EvaluateAverage,
                                             givenfirstperiod=demanduptotimet,
                                             scenariogenerationmethod=self.ScenarioGenerationResolvePolicy,
-                                            model= self.Model)
+                                            model=self.Model)
 
                 mipsolver = MIPSolver(self.Instance, self.Model, scenariotree,
                                       self.EVPI,
-                                      implicitnonanticipativity=( not self.EVPI),
+                                      implicitnonanticipativity=(not self.EVPI),
                                       evaluatesolution=True,
                                       givenquantities=quantitytofix,
                                       givensetups=givensetup,
-                                      fixsolutionuntil=(time -1 ), #time lower or equal
-                                      demandknownuntil =  time,
-                                      usesafetystock= self.UseSafetyStock,
-                                      usesafetystockgrave  = self.UseSafetyStockGrave)
+                                      fixsolutionuntil=(time -1), #time lower or equal
+                                      demandknownuntil=time,
+                                      usesafetystock=self.UseSafetyStock,
+                                      usesafetystockgrave=self.UseSafetyStockGrave)
                 #time stricty lower
 
 
@@ -502,7 +502,7 @@ class EvaluationSimulator(object):
             #self.MIPResolveTime[time].Cplex.parameters.lpmethod = 2
             self.MIPResolveTime[time].Cplex.parameters.lpmethod.set(self.MIPResolveTime[time].Cplex.parameters.lpmethod.values.barrier)
 
-            solution = self.MIPResolveTime[time].Solve( createsolution = False)
+            solution = self.MIPResolveTime[time].Solve(createsolution=False)
 
             if Constants.Debug:
                 print("End solving")

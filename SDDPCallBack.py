@@ -64,7 +64,6 @@ class SDDPCallBack(LazyConstraintCallback):
             self.SDDPOwner.ComputeCost()
             self.SDDPOwner.UpdateLowerBound()
             self.SDDPOwner.UpdateUpperBound()
-
             if self.SDDPOwner.CurrentUpperBound < self.SDDPOwner.BestUpperBound:
                 self.SDDPOwner.BestUpperBound = self.SDDPOwner.CurrentUpperBound
             UBequalLB = self.SDDPOwner.CheckStoppingRelaxationCriterion(100000) \

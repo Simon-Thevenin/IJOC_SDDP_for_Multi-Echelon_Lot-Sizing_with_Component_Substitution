@@ -34,7 +34,7 @@ def CreateMIPJob(instance):
 #$ -j y
 #$ -o /home/thesim/log/outputjobevaluate%s.txt
 ulimit -v 30000000
-python scm.py  Solve %s YFix 10 RQMC -n 5000 -p Fix -m MIP 
+python scm.py  Solve %s YFix 10000 RQMC -n 5000 -p Fix -m MIP 
 """ % (instance, instance))
     return qsub_filename
 

@@ -78,7 +78,6 @@ def Solve(instance):
     solution = solver.Solve()
 
     LastFoundSolution = solution
-
     evaluator = Evaluator(instance, TestIdentifier, EvaluatorIdentifier, solver)
     evaluator.RunEvaluation()
     evaluator.GatherEvaluation()
@@ -100,7 +99,6 @@ if __name__ == '__main__':
         if TestIdentifier.MIPSetting == "NoOneTree":
             Constants.SDDPRunSigleTree = False
         if TestIdentifier.MIPSetting == "NoFirstCuts":
-            Constants.SDDPNrIterationRelax = 0
             Constants.SDDPGenerateCutWith2Stage = False
             Constants.SolveRelaxationFirst = False
         if TestIdentifier.MIPSetting == "NoValidInequalities":

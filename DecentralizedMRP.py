@@ -21,7 +21,7 @@ class DecentralizedMRP(object):
         self.UseSSGraveInRules = safetystocksrave
 
         #This array indicates whether a produt and time period have already been planned
-        self.Planned = [ [ False for p in self.Instance.ProductSet] for t in self.Instance.TimeBucketSet ]
+        self.Planned = [[False for p in self.Instance.ProductSet] for t in self.Instance.TimeBucketSet]
         #Compute preliminary values
         if self.UseSSGraveInRules:
             self.SafetyStock = self.ComputeSafetyStockGrave()
@@ -32,14 +32,14 @@ class DecentralizedMRP(object):
             for p in self.Instance.ProductSet:
                 for t in self.Instance.TimeBucketSet:
                     if self.Instance.MaximumQuanityatT[t][p] <= self.SafetyStock[t][p] \
-                                or ( self.Instance.NrTimeBucket - t <= timetoenditem[p] and self.Instance.ActualEndOfHorizon):
+                                or (self.Instance.NrTimeBucket - t <= timetoenditem[p] and self.Instance.ActualEndOfHorizon):
                         self.SafetyStock[t][p]=0
         else:
             self.SafetyStock = self.ComputeSafetyStock()
 
 
     def ComputeDependentDemandBasedOnProjectedInventory(self, product):
-        result = [ 0 for t in self.Instance.TimeBucketSet ]
+        result = [0 for t in self.Instance.TimeBucketSet]
 
         previousdemand = 0
         for t in self.Instance.TimeBucketSet:

@@ -341,6 +341,11 @@ class Solver( object ):
                 if nrtimebucketstochastic == 15:
                     stochasticparttreestructure = [50, 8, 4, 4, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
 
+            if self.TestIdentifier.NrScenario == "10000":
+                if nrtimebucketstochastic == 3:
+                    stochasticparttreestructure = [100, 10, 10]
+                if nrtimebucketstochastic == 4:
+                    stochasticparttreestructure = [10, 10, 10, 10]
 
             #if not self.TestIdentifier.PolicyGeneration == Constants.RollingHorizon:
             k = 0

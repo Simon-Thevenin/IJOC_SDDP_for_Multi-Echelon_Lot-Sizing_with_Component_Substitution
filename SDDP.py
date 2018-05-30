@@ -280,7 +280,10 @@ class SDDP(object):
 
         if not Constants.SolveRelaxationFirst:
             #run forward pass to create the MIPS
+
+            Constants.SolveRelaxationFirst = True
             self.ForwardPass()
+            Constants.SolveRelaxationFirst = False
 
         self.CopyFirstStage = SDDPStage(owner=self, decisionstage=0)
         self.CopyFirstStage.SetNrScenario(len(self.CurrentSetOfScenarios))
