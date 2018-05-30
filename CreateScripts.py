@@ -29,7 +29,7 @@ def CreateMIPJob(instance):
     qsub_file.write("""
 #!/bin/bash -l
 #
-#$ -cwd
+#$ -cwd 
 #$ -q idra
 #$ -j y
 #$ -o /home/thesim/log/outputjobevaluate%s.txt
