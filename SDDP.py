@@ -256,7 +256,7 @@ class SDDP(object):
             convergencecriterion = float(self.CurrentUpperBound) / float(self.CurrentLowerBound)
 
         delta = 1000
-        if self.VarianceForwardPass > 0:
+        if self.VarianceForwardPass > 0 and self.CurrentLowerBound> 0:
             delta = 3.92 * math.sqrt(self.VarianceForwardPass / self.CurrentNrScenario) \
                     /  float(self.CurrentLowerBound)
 
