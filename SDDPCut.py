@@ -5,13 +5,14 @@ from Constants import Constants
 
 class SDDPCut(object):
 
-    def __init__(self, owner=None):
+    def __init__(self, owner=None, trial=-1):
         self.Stage = owner
         owner.SDDPCuts.append(self)
         self.Iteration = self.Stage.SDDPOwner.CurrentIteration
+        self.Trial = trial
         self.Id = self.Iteration
-        self.Name = "Cut_%d"%self.Iteration
-        self.Instance =  self.Stage.Instance
+        self.Name = "Cut_%d_%d" % (self.Iteration, self.Trial)
+        self.Instance = self.Stage.Instance
 
         self.CoefficientQuantityVariable = [[0 for p in self.Instance.ProductSet] for t in self.Instance.TimeBucketSet ]
         self.CoefficientProductionVariable = [[0 for p in self.Instance.ProductSet] for t in self.Instance.TimeBucketSet ]
@@ -33,6 +34,10 @@ class SDDPCut(object):
         self.IsActive = False
         self.RHSConstantValue = -1
         self.RHSValueComputed = False
+
+        #The index of the cut in the model
+        self.Index = -1
+        self.LastIterationWithDual = self.Iteration
         #self.LastAddedConstraintIndex = 0
 
         #This function add the cut to the MIP
@@ -94,15 +99,36 @@ class SDDPCut(object):
         righthandside = [self.ComputeCurrentRightHandSide()]
 
         if addtomodel:
-            self.Stage.Cplex.linear_constraints.add( lin_expr=[cplex.SparsePair(vars, coeff)],
-                                               senses=["G"],
-                                               rhs=righthandside,
-                                               names =[self.Name])
+            self.Stage.Cplex.linear_constraints.add(lin_expr=[cplex.SparsePair(vars, coeff)],
+                                                    senses=["G"],
+                                                    rhs=righthandside,
+                                                    names =[self.Name])
 
         self.Stage.IndexCutConstraint.append(self.Stage.LastAddedConstraintIndex)
+        self.Index = self.Stage.LastAddedConstraintIndex
         self.Stage.LastAddedConstraintIndex = self.Stage.LastAddedConstraintIndex + 1
 
         self.Stage.ConcernedCutinConstraint.append(self)
+
+    def RemoveCut(self):
+        self.IsActive = False
+        print("Remove the Cut %s" % self.Name)
+        if Constants.Debug:
+            print("Remove the Cut %s" % self.Name)
+        self.Stage.Cplex.linear_constraints.delete(self.Index)
+        self.Stage.LastAddedConstraintIndex -= 1
+        self.Stage.IndexCutConstraint.pop()
+        # renumber other cuts
+        reindex = False
+        for c in self.Stage.ConcernedCutinConstraint:
+            if reindex:
+                c.Index -= 1
+            if c == self:
+                reindex = True
+
+        self.Stage.ConcernedCutinConstraint.remove(self)
+        self.Index = -1
+
 
 
 
@@ -129,27 +155,27 @@ class SDDPCut(object):
         for p in self.Instance.ProductSet:
                 for t in range(0,self.Stage.GetTimePeriodAssociatedToQuantityVariable(p)):
                    if self.CoefficientQuantityVariable[t][p] > 0:
-                        righthandside = righthandside - self.Stage.SDDPOwner.GetQuantityFixedEarlier(p,t, self.Stage.CurrentScenarioNr) \
+                        righthandside = righthandside - self.Stage.SDDPOwner.GetQuantityFixedEarlier(p,t, self.Stage.CurrentTrialNr) \
                                                           * self.CoefficientQuantityVariable[t][p]
 
         if not self.Stage.IsFirstStage():
             for p in self.Instance.ProductSet:
                     for t in self.Instance.TimeBucketSet:
                         if self.CoefficientProductionVariable[t][p] > 0:
-                            righthandside = righthandside - self.Stage.SDDPOwner.GetSetupFixedEarlier(p, t, self.Stage.CurrentScenarioNr)\
+                            righthandside = righthandside - self.Stage.SDDPOwner.GetSetupFixedEarlier(p, t, self.Stage.CurrentTrialNr)\
                                                         * self.CoefficientProductionVariable[t][p]
 
 
         for p in self.Instance.ProductSet:
                 for t in range(0, self.Stage.GetTimePeriodAssociatedToInventoryVariable(p)):
-                    righthandside = righthandside - self.Stage.SDDPOwner.GetInventoryFixedEarlier(p, t, self.Stage.CurrentScenarioNr) \
+                    righthandside = righthandside - self.Stage.SDDPOwner.GetInventoryFixedEarlier(p, t, self.Stage.CurrentTrialNr) \
                                                     * self.CoefficientStockVariable[t][p]
 
         for p in self.Instance.ProductWithExternalDemand:
-                for t in range(0,self.Stage.GetTimePeriodAssociatedToBackorderVariable(p)):
+                for t in range(0, self.Stage.GetTimePeriodAssociatedToBackorderVariable(p)):
 
                     indexp = self.Instance.ProductWithExternalDemandIndex[p]
-                    righthandside = righthandside - self.Stage.SDDPOwner.GetBackorderFixedEarlier(p, t, self.Stage.CurrentScenarioNr) \
+                    righthandside = righthandside - self.Stage.SDDPOwner.GetBackorderFixedEarlier(p, t, self.Stage.CurrentTrialNr) \
                                                     * self.CoefficientBackorderyVariable[t][indexp]
 
 
@@ -163,28 +189,28 @@ class SDDPCut(object):
             p = tuple[0]
             t = tuple[1]
             righthandside = righthandside - self.Stage.SDDPOwner.GetSetupFixedEarlier(p, t,
-                                                                                      self.Stage.CurrentScenarioNr) \
+                                                                                      self.Stage.CurrentTrialNr) \
                                             * self.CoefficientProductionVariable[t][p]
 
         for tuple in self.NonZeroFixedEarlierQuantityVar:
             p = tuple[0]
             t = tuple[1]
             righthandside = righthandside - self.Stage.SDDPOwner.GetQuantityFixedEarlier(p, t,
-                                                                                         self.Stage.CurrentScenarioNr) \
+                                                                                         self.Stage.CurrentTrialNr) \
                                             * self.CoefficientQuantityVariable[t][p]
         for tuple in self.NonZeroFixedEarlierBackOrderVar:
             p = tuple[0]
             t = tuple[1]
             indexp = self.Instance.ProductWithExternalDemandIndex[p]
             righthandside = righthandside - self.Stage.SDDPOwner.GetBackorderFixedEarlier(p, t,
-                                                                                          self.Stage.CurrentScenarioNr) \
+                                                                                          self.Stage.CurrentTrialNr) \
                                             * self.CoefficientBackorderyVariable[t][indexp]
 
         for tuple in self.NonZeroFixedEarlierStockVar:
             p = tuple[0]
             t = tuple[1]
             righthandside = righthandside - self.Stage.SDDPOwner.GetInventoryFixedEarlier(p, t,
-                                                                                          self.Stage.CurrentScenarioNr) \
+                                                                                          self.Stage.CurrentTrialNr) \
                                             * self.CoefficientStockVariable[t][p]
         return righthandside
 
@@ -234,12 +260,25 @@ class SDDPCut(object):
     def UpdateRHS (self):
         self.RHSConstantValue = self.DemandRHS + self.CapacityRHS + self.PreviousCutRHS + self.InitialInventoryRHS
 
-    def GetCostToGoLBInCUrrentSolution(self, sol):
+
+    def GetCostToGoLBInCUrrentSolution(self, w):
         variablofstage = self.GetCutVariablesAtStage()
-        #REmove cost to go
+        # REmove cost to go
         variablofstage = variablofstage[1:]
-        valueofvariable = sol.get_values(variablofstage)
-        #coefficient of the variable a
+        # coefficient of the variable a
+        valueofvariable = [self.Stage.QuantityValues[w][p] for p in self.Instance.ProductSet] \
+                          + [self.Stage.InventoryValue[w][p] for p in self.Stage.GetProductWithStockVariable()]
+
+        if not self.Stage.IsFirstStage():
+            valueofvariable = valueofvariable + [
+                self.Stage.BackorderValue[w][self.Instance.ProductWithExternalDemandIndex[p]]
+                for p in self.Instance.ProductWithExternalDemand]
+
+        if self.Stage.DecisionStage == 0:
+            valueofvariable = valueofvariable + [self.Stage.ProductionValue[w][t][p]
+                                                 for p in self.Instance.ProductSet
+                                                 for t in self.Instance.TimeBucketSet]
+
         coefficientvariableatstage = self.GetCutVariablesCoefficientAtStage()
         coefficientvariableatstage = coefficientvariableatstage[1:]
         valueofvarsinconsraint = sum(i[0] * i[1] for i in zip(valueofvariable, coefficientvariableatstage))
@@ -248,7 +287,6 @@ class SDDPCut(object):
 
         costtogo = RHS - valueofvarsinconsraint
         return costtogo
-
 
     def GetCostToGoLBInCorePoint(self, w):
         variablofstage = self.GetCutVariablesAtStage()

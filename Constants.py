@@ -45,8 +45,8 @@ class Constants( object ):
     #Running option
     Debug = False
     PrintSolutionFileToExcel = True
-    PrintDetailsExcelFiles = True
-    PrintOnlyFirstStageDecision = False
+    PrintDetailsExcelFiles = False
+    PrintOnlyFirstStageDecision = True
     RunEvaluationInSeparatedJob = False
     PrintScenarios = False
     PrintSolutionFileInTMP = False
@@ -54,23 +54,33 @@ class Constants( object ):
 
     #Code parameter
     Infinity = 9999999999999
-    AlgorithmTimeLimit = 36000
+    AlgorithmTimeLimit = 3600
 
     #SDDPparameters
-    AlgorithmOptimalityTolerence = 0.0001
+    AlgorithmOptimalityTolerence = 0.05
     SDDPIterationLimit = 10000
     SDDPPrintDebugLPFiles = False
     PrintSDDPTrace = True
     GenerateStrongCut = True
-    SDDPRunSigleTree = True
+    SDDPRunSigleTree = False
+
+    SDDPNrScenarioForwardPass = 10
+    SDDPNrScenarioBackwardPass = 10
+    SDDPNrScenarioTest = 100
 
     SolveRelaxationFirst = True
-    SDDPNrIterationRelax = 10000
+    SDDPNrIterationRelax = 50
     SDDPGapRelax = 0.001
 
-    SDDPUseValidInequalities = True
+    SDDPUseValidInequalities = False
 
-    SDDPGenerateCutWith2Stage = True
+    SDDPGenerateCutWith2Stage = False
+
+    SDDPCleanCuts = False
+
+    SDDPUseEVPI = False
+    SDDPNrEVPIScenario = 1
+    SDDPDebugSolveAverage = False
 
     @staticmethod
     def IsDeterministic(s):

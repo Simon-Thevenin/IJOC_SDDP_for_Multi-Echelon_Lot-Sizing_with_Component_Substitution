@@ -49,7 +49,7 @@ if __name__ == "__main__":
     instancetosolvename = ""
 
     if sys.argv[1] == "SDDP":
-        settings = ["Default", "NoOneTree", "NoFirstCuts", "NoValidInequalities", "NoStongCut"]
+        settings = ["Default", "NoFirstCuts", "NoEVPI", "NoStongCut"]
         # Create the sh file for resolution
         filesddpname = "runallsddp.sh"
         filesddp = open(filesddpname, 'w')

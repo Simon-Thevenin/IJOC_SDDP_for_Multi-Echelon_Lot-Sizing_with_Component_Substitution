@@ -11,7 +11,7 @@ import math
 
 class ScenarioTree(object):
     #Constructor
-    def __init__( self, instance = None, branchperlevel = [], seed = -1, mipsolver = None, evaluationscenario = False, averagescenariotree = False,  givenfirstperiod = [], scenariogenerationmethod = "MC", generateasYQfix = False, model = "YFix", CopyscenariofromYFIX=False ):
+    def __init__(self, instance=None, branchperlevel=[], seed=-1, mipsolver=None, evaluationscenario = False, averagescenariotree = False,  givenfirstperiod = [], scenariogenerationmethod="MC", generateasYQfix = False, model = "YFix", CopyscenariofromYFIX=False ):
         self.CopyscenariofromYFIX= CopyscenariofromYFIX
         self.Seed = seed
         if Constants.Debug:
@@ -36,7 +36,7 @@ class ScenarioTree(object):
         self.DemandToFollow = []
 
         #Generate the demand of YFix, then replicate them in the generation of the scenario tree
-        if self.GenerateasYQfix :
+        if self.GenerateasYQfix:
             treestructure = [1,4] + [1] * (instance.NrTimeBucket-1) + [0]
             YQFixTree = ScenarioTree(instance, treestructure, seed, scenariogenerationmethod=self.ScenarioGenerationMethod)
             YQFixSceanrios = YQFixTree.GetAllScenarios(computeindex=False)
@@ -58,7 +58,7 @@ class ScenarioTree(object):
         if self.ScenarioGenerationMethod == Constants.All and model == Constants.ModelYQFix:
             self.GenerateDemandToFollowAll(firststochastic, nrtimebucketswithuncertainty)
 
-        if Constants.IsQMCMethos(self.ScenarioGenerationMethod ) and self.GenerateRQMCForYQFix:
+        if Constants.IsQMCMethos(self.ScenarioGenerationMethod) and self.GenerateRQMCForYQFix:
             self.GenerateDemandToFollowRQMC(firststochastic, firstuknown, timebucketswithuncertainty,nrtimebucketswithuncertainty)
         ScenarioTreeNode.NrNode = 0
         #Create the tree:

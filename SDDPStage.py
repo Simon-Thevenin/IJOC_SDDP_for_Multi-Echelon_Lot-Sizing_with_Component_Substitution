@@ -3,6 +3,7 @@ import cplex
 import math
 from Constants import Constants
 from SDDPCut import SDDPCut
+from ScenarioTree import ScenarioTree
 import itertools
 
 # This class contains the attributes and methodss allowing to define one stage of the SDDP algorithm.
@@ -25,6 +26,10 @@ class SDDPStage(object):
         self.CoefficientConstraint = []
         #The following table constains the value at which the variables are fixed
         self.VariableFixedTo = []
+        self.TimePeriodToGo = range(self.DecisionStage, self.Instance.NrTimeBucket)
+
+        self.EVPIScenarioSet = None
+        self.EVPIScenarioRange = range(Constants.SDDPNrEVPIScenario)
         #The number of variable of each type in the stage will be set later
         self.NrProductionVariable = 0
         self.NrQuantityVariable = 0
@@ -32,6 +37,11 @@ class SDDPStage(object):
         self.NrStockVariable = 0
         self.NrBackOrderVariable = 0
         self.NrEstmateCostToGoPerItemPeriod = 0
+        self.NrPIQuantity = 0
+        self.NrPIInventory = 0
+        self.NrPIBacklog = 0
+        self.NrPIConsumption = 0
+        self.NrEstmateCostToGoEVPI = 0
         self.ComputeNrVariables()
         #The start of the index of each variable
         self.StartProduction = 0
@@ -40,11 +50,18 @@ class SDDPStage(object):
         self.StartStock = self.StartConsumption + self.NrConsumptionVariable
         self.StartBackOrder = self.StartStock + self.NrStockVariable
         self.StartCostToGo = self.StartBackOrder + self.NrBackOrderVariable
-        self.StartEstmateCostToGoPerItemPeriod =  self.StartCostToGo + 1
+        self.StartEstmateCostToGoPerItemPeriod = self.StartCostToGo + 1
+        self.StartPIQuantity = self.StartEstmateCostToGoPerItemPeriod + self.NrEstmateCostToGoPerItemPeriod
+        self.StartPIInventory = self.StartPIQuantity + self.NrPIQuantity
+        self.StartPIBacklog = self.StartPIInventory + self.NrPIInventory
+        self.StartPIConsumption =self.StartPIBacklog + self.NrPIBacklog
+        self.StartPICostToGoEVPI = self.StartPIConsumption + self.NrPIConsumption
+
+        #self.StartZ = self.StartEstmateCostToGoPerItemPeriod + self.NrEstmateCostToGoPerItemPeriod
         # Demand and materials requirement: set the value of the invetory level and backorder quantity according to
         #  the quantities produced and the demand
         self.M = cplex.infinity
-        self.CurrentScenarioNr = -1
+        self.CurrentTrialNr = -1
         #The quantity to order (filled after having solve the MIPs for all scenario)
         self.QuantityValues = []
         #The value of the production variables (filled after having solve the MIPs for all scenario)
@@ -70,7 +87,7 @@ class SDDPStage(object):
         self.StageCostPerScenarioWithCostoGo = []
         self.PartialCostPerScenario = []
         self.PassCost = -1
-        self.NrScenario = -1
+        self.NrTrialScenario = -1
 
         self.LastAddedConstraintIndex = 0
         self.IndexFlowConstraint = []
@@ -88,30 +105,35 @@ class SDDPStage(object):
 
     #Compute the cost of the stage at the current iteration
     def ComputePassCost(self):
-        self.PassCost = sum(self.PartialCostPerScenario[w] for w in self.ScenarioNrSet) / self.NrScenario
-        self.PassCostWithAproxCosttoGo = sum(self.StageCostPerScenarioWithCostoGo[w] for w in self.ScenarioNrSet) / self.NrScenario
+        self.PassCost = sum(self.PartialCostPerScenario[w] for w in self.TrialScenarioNrSet) \
+                        / self.NrTrialScenario
+        self.PassCostWithAproxCosttoGo = sum(self.StageCostPerScenarioWithCostoGo[w]
+                                             for w in self.TrialScenarioNrSet) / self.NrTrialScenario
 
     #This function modify the number of scenario in the stage
-    def SetNrScenario(self, nrscenario ):
-        self.NrScenario = nrscenario
-        self.ScenarioNrSet = range(nrscenario)
+    def SetNrTrialScenario(self, nrscenario):
+        self.NrTrialScenario = nrscenario
+        self.CurrentTrialNr = 0
+        self.TrialScenarioNrSet = range(nrscenario)
         #The quantity to order (filled after having solve the MIPs for all scenario)
-        self.QuantityValues = [[] for w in self.ScenarioNrSet]
+        self.QuantityValues = [[] for w in self.TrialScenarioNrSet]
         # The quantity to order (filled after having solve the MIPs for all scenario)
-        self.ConsumptionValues = [[] for w in self.ScenarioNrSet]
+        self.ConsumptionValues = [[] for w in self.TrialScenarioNrSet]
         #The value of the production variables (filled after having solve the MIPs for all scenario)
-        self.ProductionValue = [[[] for t in self.Instance.TimeBucketSet] for w in self.ScenarioNrSet]
+        self.ProductionValue = [[[] for t in self.Instance.TimeBucketSet] for w in self.TrialScenarioNrSet]
         # The value of the inventory variables (filled after having solve the MIPs for all scenario)
-        self.InventoryValue = [[] for w in self.ScenarioNrSet]
+        self.InventoryValue = [[] for w in self.TrialScenarioNrSet]
         #The value of the backorder variable (filled after having solve the MIPs for all scenario)
-        self.BackorderValue = [[] for w in self.ScenarioNrSet]
+        self.BackorderValue = [[] for w in self.TrialScenarioNrSet]
         # The cost of each scenario
-        self.StageCostPerScenarioWithoutCostoGo = [-1 for w in self.ScenarioNrSet]
-        self.StageCostPerScenarioWithCostoGo = [-1 for w in self.ScenarioNrSet]
+        self.StageCostPerScenarioWithoutCostoGo = [-1 for w in self.TrialScenarioNrSet]
+        self.StageCostPerScenarioWithCostoGo = [-1 for w in self.TrialScenarioNrSet]
 
-        self.PartialCostPerScenario = [ 0 for w in self.ScenarioNrSet]
+        self.PartialCostPerScenario = [0 for w in self.TrialScenarioNrSet]
 
-    #Return true if the current stage is the last
+        self.SAAStageCostPerScenarioWithoutCostoGopertrial = [0 for w in self.TrialScenarioNrSet]
+
+        #Return true if the current stage is the last
     def IsLastStage(self):
         return False
 
@@ -128,6 +150,14 @@ class SDDPStage(object):
         self.NrStockVariable = self.Instance.NrProduct
         self.NrProductionVariable = 0
         self.NrEstmateCostToGoPerItemPeriod = 0
+        nrtimeperiodtogo = self.Instance.NrTimeBucket - self.DecisionStage
+        if Constants.SDDPUseEVPI:
+            self.NrPIQuantity = Constants.SDDPNrEVPIScenario * (nrtimeperiodtogo-1) * self.Instance.NrProduct
+            self.NrPIInventory = Constants.SDDPNrEVPIScenario * nrtimeperiodtogo * self.Instance.NrProduct
+            self.NrPIBacklog = Constants.SDDPNrEVPIScenario * nrtimeperiodtogo * len(self.Instance.ProductWithExternalDemand)
+            self.NrPIConsumption = Constants.SDDPNrEVPIScenario * nrtimeperiodtogo * len(self.Instance.ConsumptionSet)
+            self.NrEstmateCostToGoEVPI = 1
+       # self.NrZ = 0
         # number of variable at stage 1
         if self.IsFirstStage():
             self.NrProductionVariable = self.Instance.NrTimeBucket * self.Instance.NrProduct
@@ -135,6 +165,7 @@ class SDDPStage(object):
             self.NrStockVariable = len(self.Instance.ProductWithoutExternalDemand)
             if Constants.SDDPUseValidInequalities:
                 self.NrEstmateCostToGoPerItemPeriod = self.Instance.NrTimeBucket * len(self.Instance.ProductWithExternalDemand)
+               # self.NrZ = self.Instance.NrTimeBucket * self.Instance.NrTimeBucket * self.Instance.NrProduct
 
         # number of variable at stage T
         if self.IsLastStage():
@@ -147,6 +178,40 @@ class SDDPStage(object):
             return self.StartProduction + p*self.Instance.NrTimeBucket + t
         else:
             raise ValueError('Production variables are only defined at stage 0')
+
+        # return the index of the production variable associated with the product p at time t
+
+    def GetIndexPIQuantityVariable(self, p, t, w):
+        if self.GetTimePeriodAssociatedToQuantityVariable(p) == t:
+            return self.GetIndexQuantityVariable(p)
+        else:
+            return self.StartPIQuantity + p * (self.Instance.NrTimeBucket-1) * Constants.SDDPNrEVPIScenario \
+               + w * (self.Instance.NrTimeBucket-1) \
+               + (t-1)
+
+    def GetIndexPIInventoryVariable(self, p, t, w):
+        return self.StartPIInventory + p * self.Instance.NrTimeBucket * Constants.SDDPNrEVPIScenario \
+                   + w * self.Instance.NrTimeBucket \
+                   + t
+
+    def GetIndexPIBacklogVariable(self, p, t, w):
+        return self.StartPIBacklog +\
+                   self.Instance.ProductWithExternalDemandIndex[p] * self.Instance.NrTimeBucket * Constants.SDDPNrEVPIScenario \
+                   + w * self.Instance.NrTimeBucket \
+                   + t
+
+    def GetIndexPIConsumptionVariable(self, c, t, w):
+        return self.StartPIConsumption + \
+               self.Instance.ConsumptionSet.index(c) * self.Instance.NrTimeBucket * Constants.SDDPNrEVPIScenario \
+               + w * self.Instance.NrTimeBucket \
+               + t
+
+    #return the index of the production variable associated with the product p at time t
+    #def GetIndexZVariable(self, p, t, t2):
+    #    if self.IsFirstStage():
+    #        return self.StartZ + p*self.Instance.NrTimeBucket * self.Instance.NrTimeBucket+ t * self.Instance.NrTimeBucket +t2
+    #    else:
+    #        raise ValueError('Production variables are only defined at stage 0')
 
     def GetIndexEstmateCostToGoPerItemPeriod(self, p, t):
         if self.IsFirstStage() and Constants.SDDPUseValidInequalities:
@@ -171,6 +236,18 @@ class SDDPStage(object):
             return self.StartStock + self.Instance.ProductWithoutExternalDemandIndex[p]
         else:
             return self.StartStock + p
+
+    def GetNamePIStockVariable(self, p, t, w):
+            return "PII_%d_%d_%d" % (p, t, w)
+
+    def GetNamePIConsumptionVariable(self, c, t, w):
+            return "PIW_%da%dt%ds%d" % (c[0], c[1], t, w)
+
+    def GetNamePIQuantityVariable(self, p, t, w):
+            return "PIQ_%d_%d_%d" % (p, t, w)
+
+    def GetNamePIBacklogVariable(self, p, t, w):
+        return "PIB_%d_%d_%d" % (p, t, w)
 
     #Return the index of the variable associated with the stock of product p decided at the current stage
     def GetIndexBackorderVariable(self, p):
@@ -200,7 +277,7 @@ class SDDPStage(object):
     # Return the name of the variable associated with the consumption c at the current stage
     def GetNameConsumptionVariable(self, c):
         time = self.GetTimePeriodAssociatedToQuantityVariable(c[1])
-        return "W_%d->%d_%d"%(c[0], c[1], time)
+        return "W_%da%d_%d"%(c[0], c[1], time)
 
     # Return the name of the variable associated with the stock of product p decided at the current stage
     def GetNameStockVariable(self, p):
@@ -233,34 +310,39 @@ class SDDPStage(object):
         return result
 
     #This function return the right hand side of flow constraint for product p
-    def GetRHSFlowConst(self, p):
+    def GetRHSFlowConst(self, p, scenario, forwardpass):
         righthandside = 0
         if self.Instance.HasExternalDemand[p] and not self.IsFirstStage():
             #Demand at period t for item i
-            righthandside = righthandside \
-                               + self.SDDPOwner.CurrentSetOfScenarios[self.CurrentScenarioNr].Demands[
+            if forwardpass:
+                righthandside = righthandside \
+                               + self.SDDPOwner.CurrentSetOfTrialScenarios[scenario].Demands[
                                    self.GetTimePeriodAssociatedToInventoryVariable(p)][p]
+            else:
+                righthandside = righthandside \
+                                + self.SDDPOwner.SetOfSAAScenario[scenario].Demands[
+                                    self.GetTimePeriodAssociatedToInventoryVariable(p)][p]
 
             if self.GetTimePeriodAssociatedToBackorderVariable(p) -1 >= 0:
                 #Backorder at period t-1
                 righthandside = righthandside \
                                    + self.SDDPOwner.GetBackorderFixedEarlier(p,
-                                                                             self.GetTimePeriodAssociatedToBackorderVariable(p) -1,
-                                                                             self.CurrentScenarioNr)
+                                                                             self.GetTimePeriodAssociatedToBackorderVariable(p) - 1,
+                                                                             self.CurrentTrialNr)
 
         productionstartedtime = self.GetTimePeriodAssociatedToInventoryVariable(p) - self.Instance.LeadTimes[p]
         if productionstartedtime >= 0:
             #Production at period t-L_i
             righthandside = righthandside \
                                - self.SDDPOwner.GetQuantityFixedEarlier(p, productionstartedtime,
-                                                                        self.CurrentScenarioNr)
+                                                                        self.CurrentTrialNr)
 
         if self.GetTimePeriodAssociatedToInventoryVariable(p) - 1 >= -1 and not (self.IsFirstStage() and self.Instance.HasExternalDemand[p] ):
             #inventory at period t- 1
             righthandside = righthandside \
                                - self.SDDPOwner.GetInventoryFixedEarlier(p,
                                                                          self.GetTimePeriodAssociatedToInventoryVariable(
-                                                                             p) - 1, self.CurrentScenarioNr)
+                                                                             p) - 1, self.CurrentTrialNr)
         return righthandside
 
     #This funciton creates all the flow constraint
@@ -272,7 +354,7 @@ class SDDPStage(object):
                 backordervar = []
                 consumptionvar = []
                 consumptionvarcoeff = []
-                righthandside = [self.GetRHSFlowConst(p)]
+                righthandside = [self.GetRHSFlowConst(p, self.CurrentTrialNr, True)]
                 if self.Instance.HasExternalDemand[p] and not self.IsFirstStage():
                      backordervar = [self.GetIndexBackorderVariable(p)]
 
@@ -301,7 +383,66 @@ class SDDPStage(object):
                        self.LastAddedConstraintIndex = self.LastAddedConstraintIndex + 1
                        self.ConcernedProductFlowConstraint.append(p)
 
+        # This function creates all the flow constraint
 
+    def CreatePIFlowConstraints(self):
+
+        for w in self.EVPIScenarioRange:
+            for t in self.TimePeriodToGo:
+                for p in self.Instance.ProductSet:
+
+                    backordervar = []
+                    consumptionvar = []
+                    consumptionvarcoeff = []
+                    righthandside = [self.EVPIScenarioSet[w].Demands[t][p]]
+
+                    qtyvar = []
+                    qtycoeff = []
+                    if t-self.Instance.LeadTimes[p] >= 0:
+                        qtyvar = [self.GetIndexPIQuantityVariable(p, t-self.Instance.LeadTimes[p],w)]
+                        qtycoeff = [1.0]
+
+                    if self.Instance.HasExternalDemand[p]:
+                        backordervar = [self.GetIndexPIBacklogVariable(p, t, w)]
+
+                    else:
+                         consumptionvar = [self.GetIndexPIConsumptionVariable(c, t, w)
+                                          for c in self.Instance.ConsumptionSet if p == c[0]]
+                         consumptionvarcoeff = [-1 for c in self.Instance.ConsumptionSet if p == c[0]]
+
+                    inventoryvar = [self.GetIndexPIInventoryVariable(p, t, w)]
+
+                    previnventoryvar = []
+                    previnventorycoeff = []
+                    prevbackordervar = []
+                    prevbackordercoeff = []
+                    # consider previous inventory and backlogs
+                    if t==0:
+                        righthandside[0] -= self.Instance.StartingInventories[p]
+                    else:
+                        previnventoryvar = [self.GetIndexPIInventoryVariable(p, t-1, w)]
+                        previnventorycoeff = [1]
+                        if self.Instance.HasExternalDemand[p]:
+                            prevbackordervar = [self.GetIndexPIBacklogVariable(p, t-1, w)]
+                            prevbackordercoeff = [-1]
+
+                    vars = inventoryvar + backordervar + consumptionvar +\
+                           previnventoryvar + prevbackordervar + qtyvar
+                    coeff = [-1] * len(inventoryvar) \
+                            + [1] * len(backordervar) \
+                            + consumptionvarcoeff \
+                            + previnventorycoeff \
+                            + prevbackordercoeff \
+                            + qtycoeff
+
+
+                    if len(vars) > 0:
+                        self.Cplex.linear_constraints.add(lin_expr=[cplex.SparsePair(vars, coeff)],
+                                                          senses=["E"],
+                                                          rhs=righthandside,
+                                                          names=["Flow%d" % (p)])
+
+                        self.LastAddedConstraintIndex = self.LastAddedConstraintIndex + 1
 
     # Return the set of products which are associated with stock decisions at the current stage
     def GetProductWithStockVariable(self):
@@ -328,7 +469,7 @@ class SDDPStage(object):
             righthandside = 0.0
         else:
             yvalue = self.SDDPOwner.GetSetupFixedEarlier(p, self.GetTimePeriodAssociatedToQuantityVariable(p),
-                                                             self.CurrentScenarioNr)
+                                                         self.CurrentTrialNr)
             righthandside = self.GetBigMValue(p) * yvalue
 
         return righthandside
@@ -359,6 +500,19 @@ class SDDPStage(object):
             self.ConcernedProductProductionQuantityConstraint.append(p)
             self.ConcernedTimeProductionQuantityConstraint.append(self.GetTimePeriodAssociatedToQuantityVariable(p))
 
+    def CreatePIProductionConstraints(self):
+        for w in self.EVPIScenarioRange:
+            for t in self.TimePeriodToGo:
+                for p in self.Instance.ProductSet:
+                    righthandside = [0.0]
+                    vars = [self.GetIndexPIQuantityVariable(p,t, w), self.GetIndexProductionVariable(p, t ) ]
+                    coeff = [-1.0, self.GetBigMValue(p)]
+
+                    self.Cplex.linear_constraints.add(lin_expr=[cplex.SparsePair(vars, coeff)],
+                                                      senses=["G"],
+                                                      rhs=righthandside)
+                    self.LastAddedConstraintIndex = self.LastAddedConstraintIndex + 1
+
     def CreateConsumptionConstraints(self):
         # Capacity constraint
         for p in self.Instance.ProductSet:
@@ -383,6 +537,30 @@ class SDDPStage(object):
                     self.IndexConsumptionConstraint.append(self.LastAddedConstraintIndex)
                     self.LastAddedConstraintIndex = self.LastAddedConstraintIndex + 1
 
+    def CreatePIConsumptionConstraints(self):
+        # Capacity constraint
+        for w in self.EVPIScenarioRange:
+            for t in self.Instance.TimeBucketSet:
+                for p in self.Instance.ProductSet:
+                    for k in self.Instance.ProductSet:
+                        if self.Instance.Requirements[p][k] and self.Instance.IsMaterProduct(k):
+                            quantityvar = [self.GetIndexPIQuantityVariable(p, t, w)]
+                            quantityvarcoeff = [-1.0 * self.Instance.Requirements[p][k]]
+                            consumptionvars = []
+                            consumptionvarcoeff = []
+                            for q in self.Instance.ProductSet:
+                                if self.Instance.Alternates[k][q] or k == q:
+                                    consumptionvars = consumptionvars + [self.GetIndexPIConsumptionVariable(self.Instance.GetConsumptiontuple(q, p), t, w)]
+                                    consumptionvarcoeff = consumptionvarcoeff + [1.0]
+                            righthandside = [0.0]
+
+                            vars = quantityvar + consumptionvars
+                            coeff = quantityvarcoeff + consumptionvarcoeff
+                            self.Cplex.linear_constraints.add(lin_expr=[cplex.SparsePair(vars, coeff)],
+                                                              senses=["E"],
+                                                              rhs=righthandside,
+                                                              names=["quantityPIConsumption%d->%d" % (p, k)])
+                            self.LastAddedConstraintIndex = self.LastAddedConstraintIndex + 1
 
 
     def CreateCapacityConstraints(self):
@@ -402,6 +580,104 @@ class SDDPStage(object):
 
                self.ConcernedResourceCapacityConstraint.append(k)
 
+    def CreatePICapacityConstraints(self):
+        # Capacity constraint
+        if self.Instance.NrResource > 0 and not self.IsLastStage():
+            for t in self.TimePeriodToGo:
+                for w in self.EVPIScenarioRange:
+                    for k in range(self.Instance.NrResource):
+                        vars = [self.GetIndexPIQuantityVariable(p, t, w) for p in self.Instance.ProductSet]
+                        coeff = [float(self.Instance.ProcessingTime[p][k]) for p in self.Instance.ProductSet]
+                        righthandside = [float(self.Instance.Capacity[k])]
+
+                        self.Cplex.linear_constraints.add(lin_expr=[cplex.SparsePair(vars, coeff)],
+                                                          senses=["L"],
+                                                          rhs=righthandside)
+
+                        self.LastAddedConstraintIndex = self.LastAddedConstraintIndex + 1
+
+    def CreatePIEstiamteEVPIConstraints(self):
+
+        var = [self.GetIndexPIQuantityVariable(p, t, w)
+                     for p in self.Instance.ProductSet
+                     for t in range(1, self.Instance.NrTimeBucket)
+                     for w in self.EVPIScenarioRange]
+
+        coeff = [w.Probability
+                         * math.pow(self.Instance.Gamma, t)
+                         * self.Instance.VariableCost[p]
+                         for p in self.Instance.ProductSet
+                         for t in range(1, self.Instance.NrTimeBucket)
+                         for w in self.EVPIScenarioSet]
+
+        var = var + [self.GetIndexPIConsumptionVariable(c, t, w)
+                     for c in self.Instance.ConsumptionSet
+                     for t in range(1, self.Instance.NrTimeBucket)
+                     for w in self.EVPIScenarioRange]
+
+        coeff = coeff + [w.Probability
+                         * math.pow(self.Instance.Gamma, t)
+                         * self.Instance.AternateCosts[c[1]][c[0]]
+                         for c in self.Instance.ConsumptionSet
+                         for t in range(1, self.Instance.NrTimeBucket)
+                         for w in self.EVPIScenarioSet]
+
+
+        var = var + [self.GetIndexPIInventoryVariable(p, t, w)
+                     for p in self.Instance.ProductSet
+                     for t in self.Instance.TimeBucketSet
+                     for w in self.EVPIScenarioRange]
+
+        coeff = coeff + [w.Probability
+                         * math.pow(self.Instance.Gamma, t)
+                         * self.Instance.InventoryCosts[p]
+                         if t > self.GetTimePeriodAssociatedToInventoryVariable(p)
+                         else 0.0
+                         for p in self.Instance.ProductSet
+                         for t in self.Instance.TimeBucketSet
+                         for w in self.EVPIScenarioSet]
+
+        var = var + [self.GetIndexPIBacklogVariable(p, t, w)
+                     for p in self.Instance.ProductWithExternalDemand
+                     for t in self.Instance.TimeBucketSet
+                     for w in self.EVPIScenarioRange]
+
+        coeff = coeff + [self.GetBacklogCost(p,t,w)
+                         if t > self.GetTimePeriodAssociatedToBackorderVariable(p)
+                         else 0.0
+                         for p in self.Instance.ProductWithExternalDemand
+                         for t in self.Instance.TimeBucketSet
+                         for w in self.EVPIScenarioSet]
+
+        var = var + [self.StartPICostToGoEVPI]
+
+        coeff = coeff + [-1.0]
+
+        self.Cplex.linear_constraints.add(lin_expr=[cplex.SparsePair(var, coeff)],
+                                          senses=["E"],
+                                          rhs=[0.0])
+        self.LastAddedConstraintIndex = self.LastAddedConstraintIndex + 1
+
+        var = [self.StartPICostToGoEVPI, self.StartCostToGo]
+        coeff = [-1.0, 1.0]
+
+        self.Cplex.linear_constraints.add(lin_expr=[cplex.SparsePair(var, coeff)],
+                                          senses=["G"],
+                                          rhs=[0.0])
+        self.LastAddedConstraintIndex = self.LastAddedConstraintIndex + 1
+
+    def GetBacklogCost(self, p, t, w):
+        if t == self.Instance.NrTimeBucket-1:
+            result = w.Probability \
+                     * math.pow(self.Instance.Gamma, t) \
+                     * self.Instance.LostSaleCost[p]
+        else:
+            result = w.Probability \
+                    * math.pow(self.Instance.Gamma, t) \
+                    * self.Instance.BackorderCosts[p]
+
+        return result
+
     #Define the variables
     def DefineVariables(self):
         #The setups are decided at the first stage
@@ -420,6 +696,7 @@ class SDDPStage(object):
                                               for p in self.Instance.ProductSet
                                               for t in self.Instance.TimeBucketSet],
                                          types=['B'] * self.NrProductionVariable)
+
 
         #Variable for the production quanitity
         self.Cplex.variables.add(obj=[math.pow(self.Instance.Gamma, self.DecisionStage - 1)
@@ -463,6 +740,24 @@ class SDDPStage(object):
                                      lb=[0.0] * self.NrEstmateCostToGoPerItemPeriod,
                                      ub=[self.M] * self.NrEstmateCostToGoPerItemPeriod)
 
+        if self.IsFirstStage() and Constants.SDDPUseEVPI:
+             self.Cplex.variables.add(obj=[0.0] * self.NrPIQuantity,
+                                      lb=[0.0] * self.NrPIQuantity,
+                                      ub=[self.M] * self.NrPIQuantity)
+             self.Cplex.variables.add(obj=[0.0] * self.NrPIInventory,
+                                     lb=[0.0] * self.NrPIInventory,
+                                     ub=[self.M] * self.NrPIInventory)
+             self.Cplex.variables.add(obj=[0.0] * self.NrPIBacklog,
+                                     lb=[0.0] * self.NrPIBacklog,
+                                     ub=[self.M] * self.NrPIBacklog)
+             #self.M] * self.NrPIBacklog)
+             self.Cplex.variables.add(obj=[0.0] * self.NrPIConsumption,
+                                     lb=[0.0] * self.NrPIConsumption,
+                                     ub=[self.M] * self.NrPIConsumption)
+             self.Cplex.variables.add(obj=[0.0] * self.NrEstmateCostToGoEVPI,
+                                     lb=[0.0] * self.NrEstmateCostToGoEVPI,
+                                     ub=[self.M] * self.NrEstmateCostToGoEVPI)
+
 
         #In debug mode, the variables have names
         if Constants.Debug:
@@ -480,7 +775,6 @@ class SDDPStage(object):
             inventoryvars = []
             productionvars = []
             backordervars = []
-            costtogovars = []
             if self.IsFirstStage():
                 for p in self.Instance.ProductSet:
                     for t in self.Instance.TimeBucketSet:
@@ -507,21 +801,56 @@ class SDDPStage(object):
                                                            self.GetNameEstmateCostToGoPerItemPeriod(p,t)))
 
             costtogovars = [(self.StartCostToGo, "E%d"%(self.DecisionStage + 1))]
+
+            piquantityvar = []
+            pibacklogvar = []
+            pistockvar = []
+            piconsumptionvar = []
+            picosttogovar = []
+            if self.IsFirstStage() and Constants.SDDPUseEVPI:
+                for w in self.EVPIScenarioRange:
+                    for t in self.Instance.TimeBucketSet:
+                        for p in self.Instance.ProductSet:
+                            if t<> self.GetTimePeriodAssociatedToQuantityVariable(p):
+                                piquantityvar.append((self.GetIndexPIQuantityVariable(p,t,w),
+                                                      self.GetNamePIQuantityVariable(p,t,w)))
+                            pistockvar.append((self.GetIndexPIInventoryVariable(p,t,w),
+                                                      self.GetNamePIStockVariable(p,t,w)))
+                            if self.Instance.HasExternalDemand[p]:
+                                pibacklogvar.append((self.GetIndexPIBacklogVariable(p, t, w),
+                                                    self.GetNamePIBacklogVariable(p, t, w)))
+                        for c in self.Instance.ConsumptionSet:
+                            piconsumptionvar.append((self.GetIndexPIConsumptionVariable(c, t, w),
+                                                    self.GetNamePIConsumptionVariable(c,t,w)))
+                picosttogovar = [(self.StartPICostToGoEVPI, "evpi_cost_to_go")]
+
             quantityvars = list(set(quantityvars))
             consumptionvars = list(set(consumptionvars))
             productionvars = list(set(productionvars))
             inventoryvars = list(set(inventoryvars))
             backordervars = list(set(backordervars))
+            costtogovars = list(set(costtogovars))
             costtogoperperioditemvars = list(set(costtogoperperioditemvars))
-            varnames = quantityvars + consumptionvars + inventoryvars + productionvars + backordervars + costtogovars + costtogoperperioditemvars
+            piquantityvar = list(set(piquantityvar))
+            pibacklogvar = list(set(pibacklogvar))
+            pistockvar = list(set(pistockvar))
+            piconsumptionvar = list(set(piconsumptionvar))
+            picosttogovar = list(set(picosttogovar))
+
+            varnames = quantityvars + consumptionvars + inventoryvars +\
+                       productionvars + backordervars + costtogovars + \
+                       costtogoperperioditemvars +\
+                       piquantityvar + pibacklogvar + pistockvar + piconsumptionvar + \
+                       picosttogovar
             self.Cplex.variables.set_names(varnames)
+
 
     #Create the MIP
     def DefineMIP(self, scenarionr):
         if Constants.Debug:
             print("Define the MIP of stage %d" % self.DecisionStage)
         self.DefineVariables()
-        self.CurrentScenarioNr = scenarionr
+        self.CurrentTrialNr = scenarionr
 
         if not self.IsLastStage():
             self.CreateProductionConstraints()
@@ -533,19 +862,33 @@ class SDDPStage(object):
         if self.IsFirstStage() and Constants.SDDPUseValidInequalities:
             self.CreateValideInequalities()
 
+        if self.IsFirstStage() and Constants.SDDPUseEVPI:
+            self.EVPIScenarioSet = self.SDDPOwner.GenerateScenarios(Constants.SDDPNrEVPIScenario, average=True)
+
+            # set the demand to the average of the sample
+            scenario = self.EVPIScenarioSet[0]
+            for t in self.Instance.TimeBucketSet:
+                for p in self.Instance.ProductWithExternalDemand:
+                    scenario.Demands[t][p] = sum(w.Demands[t][p] for w in self.SDDPOwner.SetOfSAAScenario) \
+                                             / self.SDDPOwner.NrScenarioSAA
+
+            self.CreatePIFlowConstraints()
+            #self.CreatePICapacityConstraints()
+            self.CreatePIConsumptionConstraints()
+            self.CreatePIProductionConstraints()
+            self.CreatePIEstiamteEVPIConstraints()
 
         self.MIPDefined = True
 
     #The function below update the constraint of the MIP to correspond to the new scenario
-    def UpdateMIPForScenario(self, scenarionr):
-        self.CurrentScenarioNr = scenarionr
+    def UpdateMIPForScenarioAndTrialSolution(self, scenarionr, trial, forward):
+        self.CurrentTrialNr = trial
         constraintuples = []
-
 
         for i in range(len(self.IndexFlowConstraint)):
             constr = self.IndexFlowConstraint[i]
             p = self.ConcernedProductFlowConstraint[i]
-            rhs = self.GetRHSFlowConst(p)
+            rhs = self.GetRHSFlowConst(p, scenarionr, forward)
             #else:
             #    t = self.ConcernedTimeFlowConstraint[i]
             #    rhs = self.GetRHSFlowConst(p, t)
@@ -597,8 +940,8 @@ class SDDPStage(object):
     #This run the MIP of the current stage (one for each scenario)
     def RunForwardPassMIP(self):
 
-        generatecut = self.IsLastStage() and not self.SDDPOwner.EvaluationMode \
-                      and (self.SDDPOwner.UseCorePoint or not Constants.GenerateStrongCut)
+        generatecut = False #self.IsLastStage() and not self.SDDPOwner.EvaluationMode \
+                      #and (self.SDDPOwner.UseCorePoint or not Constants.GenerateStrongCut)
 
 
 
@@ -617,14 +960,14 @@ class SDDPStage(object):
         if self.IsFirstStage():
             consideredscenario = [0]#range( len( self.SDDPOwner.CurrentSetOfScenarios ) )
         else:
-            consideredscenario = range(len(self.SDDPOwner.CurrentSetOfScenarios))
+            consideredscenario = range(len(self.SDDPOwner.CurrentSetOfTrialScenarios))
 
         for w in consideredscenario:
             if not self.MIPDefined:
                 self.DefineMIP(w)
             else:
-                self.UpdateMIPForScenario(w)
-            if Constants.SDDPPrintDebugLPFiles:
+                self.UpdateMIPForScenarioAndTrialSolution(w, w, True)
+            if Constants.SDDPPrintDebugLPFiles : #or self.IsFirstStage():
                 print("Update or build the MIP of stage %d for scenario %d" %(self.DecisionStage, w))
                 self.Cplex.write("./Temp/stage_%d_iter_%d_scenar_%d.lp" % (self.DecisionStage, self.SDDPOwner.CurrentIteration, w))
             else:
@@ -642,13 +985,25 @@ class SDDPStage(object):
                  print("Solution status:%r"%self.Cplex.solution.get_status())
 
             if self.IsFirstStage():
-                self.CurrentScenarioNr = 0
+                self.CurrentTrialNr = 0
                 self.SaveSolutionForScenario()
                 self.CopyDecisionOfScenario0ToAllScenario()
             else:
                 self.SaveSolutionForScenario()
 
-            averagecostofthesubproblem += self.Cplex.solution.get_objective_value() * self.SDDPOwner.CurrentSetOfScenarios[w].Probability
+            averagecostofthesubproblem += self.Cplex.solution.get_objective_value() \
+                                          * self.SDDPOwner.CurrentSetOfTrialScenarios[w].Probability
+
+            #update the last iteration where dual were used
+            if Constants.SDDPCleanCuts and not self.IsLastStage() and len(self.IndexCutConstraint)>0:
+                sol = self.Cplex.solution
+                duals = sol.get_linear_slacks(self.IndexCutConstraint)
+                #print("cut slack %s"%duals)
+                for i in range(len(duals)):
+                    if duals[i] <> 0:
+                        c = self.ConcernedCutinConstraint[i]
+                        c.LastIterationWithDual = self.SDDPOwner.CurrentIteration
+
 
             if generatecut:
                 sol = self.Cplex.solution
@@ -669,29 +1024,29 @@ class SDDPStage(object):
         #    cut.DivideAllCoeff(len(self.SDDPOwner.CurrentSetOfScenarios))
 
     def CopyDecisionOfScenario0ToAllScenario(self):
-        for w2 in range(1, len(self.SDDPOwner.CurrentSetOfScenarios)):
-            self.CurrentScenarioNr = w2
-            self.StageCostPerScenarioWithCostoGo[self.CurrentScenarioNr] = self.StageCostPerScenarioWithCostoGo[0]
-            self.PartialCostPerScenario[self.CurrentScenarioNr] = self.PartialCostPerScenario[0]
-            self.QuantityValues[self.CurrentScenarioNr] = self.QuantityValues[0]
-            self.ProductionValue[self.CurrentScenarioNr] = self.ProductionValue[0]
-            self.InventoryValue[self.CurrentScenarioNr] = self.InventoryValue[0]
-            self.BackorderValue[self.CurrentScenarioNr] = self.BackorderValue[0]
+        for w2 in range(1, len(self.SDDPOwner.CurrentSetOfTrialScenarios)):
+            self.CurrentTrialNr = w2
+            self.StageCostPerScenarioWithCostoGo[self.CurrentTrialNr] = self.StageCostPerScenarioWithCostoGo[0]
+            self.PartialCostPerScenario[self.CurrentTrialNr] = self.PartialCostPerScenario[0]
+            self.QuantityValues[self.CurrentTrialNr] = self.QuantityValues[0]
+            self.ProductionValue[self.CurrentTrialNr] = self.ProductionValue[0]
+            self.InventoryValue[self.CurrentTrialNr] = self.InventoryValue[0]
+            self.BackorderValue[self.CurrentTrialNr] = self.BackorderValue[0]
 
     def GetVariableValue(self, sol):
         indexarray = [self.GetIndexQuantityVariable(p) for p in self.Instance.ProductSet]
-        self.QuantityValues[self.CurrentScenarioNr] = sol.get_values(indexarray)
+        self.QuantityValues[self.CurrentTrialNr] = sol.get_values(indexarray)
 
         indexarray = [self.GetIndexConsumptionVariable(c) for c in self.Instance.ConsumptionSet]
-        self.ConsumptionValues[self.CurrentScenarioNr] = sol.get_values(indexarray)
+        self.ConsumptionValues[self.CurrentTrialNr] = sol.get_values(indexarray)
 
         if self.IsFirstStage():
             indexarray = [self.GetIndexProductionVariable(p, t) for t in self.Instance.TimeBucketSet
                           for p in self.Instance.ProductSet]
             values = sol.get_values(indexarray)
-            self.ProductionValue[self.CurrentScenarioNr] = [[max(values[t * self.Instance.NrProduct + p], 0.0)
-                                                             for p in self.Instance.ProductSet]
-                                                            for t in self.Instance.TimeBucketSet]
+            self.ProductionValue[self.CurrentTrialNr] = [[max(values[t * self.Instance.NrProduct + p], 0.0)
+                                                          for p in self.Instance.ProductSet]
+                                                         for t in self.Instance.TimeBucketSet]
                 #[round( values[t * self.Instance.NrProduct + p], 0) for p in self.Instance.ProductSet] for t in
                 #self.Instance.TimeBucketSet]
 
@@ -699,17 +1054,17 @@ class SDDPStage(object):
         indexarray = [self.GetIndexStockVariable(p) for p in prductwithstock]
         inventory = sol.get_values(indexarray)
         if self.IsFirstStage():
-            self.InventoryValue[self.CurrentScenarioNr] = ['nan' for p in self.Instance.ProductSet]
+            self.InventoryValue[self.CurrentTrialNr] = ['nan' for p in self.Instance.ProductSet]
             index = 0
             for p in prductwithstock:
-                self.InventoryValue[self.CurrentScenarioNr][p] = inventory[index]
+                self.InventoryValue[self.CurrentTrialNr][p] = inventory[index]
                 index = index + 1
         else:
-           self.InventoryValue[self.CurrentScenarioNr] = inventory
+           self.InventoryValue[self.CurrentTrialNr] = inventory
 
         if not self.IsFirstStage():
             indexarray = [self.GetIndexBackorderVariable(p) for p in self.GetProductWithBackOrderVariable()]
-            self.BackorderValue[self.CurrentScenarioNr] = sol.get_values(indexarray)
+            self.BackorderValue[self.CurrentTrialNr] = sol.get_values(indexarray)
 
 
     # This function run the MIP of the current stage
@@ -722,23 +1077,23 @@ class SDDPStage(object):
             self.SaveSolutionFromSol(sol)
         else:
             self.Cplex.write("InfeasibleLP_stage_%d_iter_%d_scenar_%d.lp" % (
-            self.DecisionStage, self.SDDPOwner.CurrentIteration, self.CurrentScenarioNr))
+            self.DecisionStage, self.SDDPOwner.CurrentIteration, self.CurrentTrialNr))
             raise NameError("Infeasible sub-problem!!!!")
 
     def SaveSolutionFromSol(self, sol):
             obj = sol.get_objective_value()
 
-            self.StageCostPerScenarioWithCostoGo[self.CurrentScenarioNr] = obj
-            self.StageCostPerScenarioWithoutCostoGo[self.CurrentScenarioNr] = self.StageCostPerScenarioWithCostoGo[self.CurrentScenarioNr]
+            self.StageCostPerScenarioWithCostoGo[self.CurrentTrialNr] = obj
+            self.StageCostPerScenarioWithoutCostoGo[self.CurrentTrialNr] = self.StageCostPerScenarioWithCostoGo[self.CurrentTrialNr]
 
             if not self.IsLastStage():
-                self.StageCostPerScenarioWithoutCostoGo[self.CurrentScenarioNr] = self.StageCostPerScenarioWithCostoGo[self.CurrentScenarioNr] - sol.get_values([self.StartCostToGo])[0]
+                self.StageCostPerScenarioWithoutCostoGo[self.CurrentTrialNr] = self.StageCostPerScenarioWithCostoGo[self.CurrentTrialNr] - sol.get_values([self.StartCostToGo])[0]
 
             if self.IsFirstStage():
-                self.PartialCostPerScenario[self.CurrentScenarioNr] = self.StageCostPerScenarioWithoutCostoGo[self.CurrentScenarioNr]
+                self.PartialCostPerScenario[self.CurrentTrialNr] = self.StageCostPerScenarioWithoutCostoGo[self.CurrentTrialNr]
             else:
-                self.PartialCostPerScenario[self.CurrentScenarioNr] = self.StageCostPerScenarioWithoutCostoGo[self.CurrentScenarioNr] \
-                                                                        + self.PreviousSDDPStage.PartialCostPerScenario[self.CurrentScenarioNr]
+                self.PartialCostPerScenario[self.CurrentTrialNr] = self.StageCostPerScenarioWithoutCostoGo[self.CurrentTrialNr] \
+                                                                   + self.PreviousSDDPStage.PartialCostPerScenario[self.CurrentTrialNr]
             self.GetVariableValue(sol)
 
             if Constants.Debug:
@@ -756,90 +1111,99 @@ class SDDPStage(object):
                 print("*************************************************************")
 
 
-    def ImproveCutFromSolution(self, cut, solution):
-        self.IncreaseCutWithFlowDual(cut, solution)
+    def ImproveCutFromSolution(self, cut, solution, scenario):
+        self.IncreaseCutWithFlowDual(cut, solution, scenario)
 
 
         if not self.IsLastStage():
-            self.IncreaseCutWithProductionDual(cut, solution)
-            self.IncreaseCutWithCapacityDual(cut, solution)
-            self.IncreaseCutWithCutDuals(cut, solution)
+            self.IncreaseCutWithProductionDual(cut, solution, scenario)
+            self.IncreaseCutWithCapacityDual(cut, solution, scenario)
+            self.IncreaseCutWithCutDuals(cut, solution, scenario)
 
     #Generate the bender cut
-    def GernerateCut(self, returncut=False):
+    def GernerateCut(self, trial, returncut=False):
         if Constants.Debug:
             print("Generate a cut to add at stage %d" % self.PreviousSDDPStage.DecisionStage)
 
-        # Create a cute for the previous stage problem
-        cut = SDDPCut(self.PreviousSDDPStage)
-        averagecostofthesubproblem = 0
-        if not self.IsLastStage() and not self.IsFirstStage():
+
+        if  not self.IsFirstStage():
             # Re-run the MIP to take into account the just added cut
             # Solve the problem for each scenario
             self.UpdateMIPForStage()
 
-            for w in range(len(self.SDDPOwner.CurrentSetOfScenarios)):
-                self.UpdateMIPForScenario(w)
-                if Constants.SDDPPrintDebugLPFiles:
-                    print("Resolve for backward pass the MIP of stage %d for scenario %d" % (self.DecisionStage, w))
-                    self.Cplex.write(
-                        "./Temp/backward_stage_%d_iter_%d_scenar_%d.lp" % (self.DecisionStage, self.SDDPOwner.CurrentIteration, w))
+            cutsets = []
+            avgcostssubprob = []
+            for trial in self.SDDPOwner.ConsideredTrialForBackward:#:
+                self.SAAStageCostPerScenarioWithoutCostoGopertrial[trial] = 0
+                self.CurrentTrialNr = trial
+                # Create a cute for the previous stage problem
+                cut = SDDPCut(self.PreviousSDDPStage, trial)
+                averagecostofthesubproblem = 0
+                for scenario in self.SDDPOwner.SAAScenarioNrSet:
+                    self.UpdateMIPForScenarioAndTrialSolution(scenario, trial, False)
+                    if Constants.SDDPPrintDebugLPFiles:
+                        print("Resolve for backward pass the MIP of stage %d for scenario %d" % (self.DecisionStage, scenario))
+                        self.Cplex.write("./Temp/backward_stage_%d_iter_%d_scenar_%d.lp"
+                                         % (self.DecisionStage, self.SDDPOwner.CurrentIteration, scenario))
 
-                self.Cplex.parameters.threads.set(1)
-                self.Cplex.solve()
+                    self.Cplex.parameters.threads.set(1)
+                    self.Cplex.solve()
 
 
-                sol = self.Cplex.solution
+                    sol = self.Cplex.solution
 
 
 
+                    if Constants.Debug:
+                        print("cost of subproblem: %r"%sol.get_objective_value())
+                    averagecostofthesubproblem += sol.get_objective_value() \
+                                                  * self.SDDPOwner.SetOfSAAScenario[scenario].Probability
+
+                    if not self.IsLastStage():
+                        self.SAAStageCostPerScenarioWithoutCostoGopertrial[trial] = sol.get_objective_value() - sol.get_values([self.StartCostToGo])[0] \
+                                                                                    * self.SDDPOwner.SetOfSAAScenario[scenario].Probability
+
+                    if Constants.SDDPPrintDebugLPFiles:
+                        sol.write("./Temp/bacward_mrpsolution_stage_%d_iter_%d_scenar_%d.sol" % (self.DecisionStage, self.SDDPOwner.CurrentIteration, scenario))
+
+                    self.ImproveCutFromSolution(cut, sol, scenario)
+                    if Constants.Debug:
+                        print("cur RHS after scenario %s"%(cut.DemandRHS + cut.CapacityRHS + cut.PreviousCutRHS + cut.InitialInventoryRHS))
+
+                    #Average by the number of scenario
+                cut.UpdateRHS()
                 if Constants.Debug:
-                    print("cost of subproblem: %r"%sol.get_objective_value())
-                averagecostofthesubproblem += sol.get_objective_value() * self.SDDPOwner.CurrentSetOfScenarios[w].Probability
-
-
+                    self.checknewcut(cut, averagecostofthesubproblem,  self.PreviousSDDPStage.Cplex.solution, trial)
+                cut.AddCut()
                 if Constants.SDDPPrintDebugLPFiles:
-                    sol.write("./Temp/bacward_mrpsolution_stage_%d_iter_%d_scenar_%d.sol" % (self.DecisionStage, self.SDDPOwner.CurrentIteration, w))
+                    self.PreviousSDDPStage.Cplex.write("./Temp/PreviousstageWithCut_stage_%d_iter_%d_scenar_%d.lp" % (self.DecisionStage, self.SDDPOwner.CurrentIteration, scenario))
+                cutsets.append(cut)
+                avgcostssubprob.append(averagecostofthesubproblem)
 
-                self.ImproveCutFromSolution(cut, sol)
-                if Constants.Debug:
-                    print("cur RHS after scenario %s"%(cut.DemandRHS + cut.CapacityRHS + cut.PreviousCutRHS + cut.InitialInventoryRHS))
-
-                #Average by the number of scenario
-            cut.UpdateRHS()
-            if Constants.Debug:
-                self.checknewcut(cut, averagecostofthesubproblem, self.PreviousSDDPStage.Cplex.solution)
-            cut.AddCut()
-            if Constants.SDDPPrintDebugLPFiles:
-                self.PreviousSDDPStage.Cplex.write("./Temp/PreviousstageWithCut_stage_%d_iter_%d_scenar_%d.lp" % (self.DecisionStage, self.SDDPOwner.CurrentIteration, w))
-
-            if returncut:
-                return cut, averagecostofthesubproblem
+            return cutsets, avgcostssubprob
             #print("cut added")
 
-    def checknewcut(self, cut, averagecostofthesubproblem, sol, withcorpoint=True):
+    def checknewcut(self, cut, averagecostofthesubproblem, sol, trial, withcorpoint=True):
 
-        currentosttogo = sum(self.SDDPOwner.Stage[t].StageCostPerScenarioWithoutCostoGo[w]
-                             * self.SDDPOwner.CurrentSetOfScenarios[w].Probability
-                             for w in range(self.SDDPOwner.CurrentNrScenario)
+        currentosttogo = sum(self.SDDPOwner.Stage[t].SAAStageCostPerScenarioWithoutCostoGopertrial[trial]
                              for t in range(self.DecisionStage, len(self.SDDPOwner.StagesSet)))
 
         avgcorpoint = 0
         avg = 0
-        for w in range(len(self.SDDPOwner.CurrentSetOfScenarios)):
+        for w in self.SDDPOwner.SAAScenarioNrSet:
             #self.PreviousSDDPStage.UpdateMIPForScenario(w)
             #self.PreviousSDDPStage.Cplex.solve()
             #print("cost from previous stage: %d" %cut.GetCostToGoLBInCUrrentSolution(self.PreviousSDDPStage.Cplex.solution))
             #cut.Print()
-            avg += cut.GetCostToGoLBInCUrrentSolution(sol) * self.SDDPOwner.CurrentSetOfScenarios[w].Probability
+            avg += cut.GetCostToGoLBInCUrrentSolution(trial) * self.SDDPOwner.SetOfSAAScenario[w].Probability
             if Constants.GenerateStrongCut and withcorpoint:
-                avgcorpoint += cut.GetCostToGoLBInCorePoint(w) * self.SDDPOwner.CurrentSetOfScenarios[w].Probability
+                avgcorpoint += cut.GetCostToGoLBInCorePoint(trial) * self.SDDPOwner.SetOfSAAScenario[w].Probability
 
             #self.PreviousSDDPStage.Cplex.write(
             #    "./Temp/test_previous_stage_%d_iter_%d_scenar_%d.lp" % (
             #    self.DecisionStage, self.PreviousSDDPStage.DecisionStage, w))
 
-        print("Cut added, cost to go with current sol: %r cost to go corepoint: %r  (actual with current sol: %r, avg of subproblems : %r)" % (
+        print("Cut added, cost to go with trial sol: %r cost to go corepoint: %r  (actual of backward pass sol: %r, avg of subproblems : %r)" % (
               avg, avgcorpoint, currentosttogo, averagecostofthesubproblem))
 
 
@@ -847,7 +1211,7 @@ class SDDPStage(object):
         result = self.SDDPOwner.CurrentBigM[p]
         return result
 
-    def IncreaseCutWithFlowDual(self, cut, sol):
+    def IncreaseCutWithFlowDual(self, cut, sol, scenario):
         if Constants.Debug:
             print("Increase cut with flow dual")
         duals = sol.get_dual_values(self.IndexFlowConstraint)
@@ -855,7 +1219,7 @@ class SDDPStage(object):
         #print("DUALS flow::::%s" % duals)
 
         for i in range(len(duals)):
-            duals[i]= duals[i] * self.SDDPOwner.CurrentSetOfScenarios[self.CurrentScenarioNr].Probability
+            duals[i]= duals[i] * self.SDDPOwner.SetOfSAAScenario[scenario].Probability
             if duals[i] <> 0:
                 p = self.ConcernedProductFlowConstraint[i]
                 if not self.IsLastStage():
@@ -879,32 +1243,32 @@ class SDDPStage(object):
                 if self.Instance.HasExternalDemand[p]:
                     cut.IncreaseCoefficientBackorder(p, self.GetTimePeriodAssociatedToBackorderVariable(p) -1, -duals[i])
                     cut.IncreaseDemandRHS(duals[i]
-                                           * self.SDDPOwner.CurrentSetOfScenarios[self.CurrentScenarioNr].Demands[self.GetTimePeriodAssociatedToInventoryVariable(p)][p])
+                                          * self.SDDPOwner.SetOfSAAScenario[scenario].Demands[self.GetTimePeriodAssociatedToInventoryVariable(p)][p])
 
-    def IncreaseCutWithProductionDual(self, cut, sol):
+    def IncreaseCutWithProductionDual(self, cut, sol, scenario):
         if Constants.Debug:
                 print("Increase cut with production dual")
         duals = sol.get_dual_values(self.IndexProductionQuantityConstraint)
         #print("Duals Production:::%s"%duals)
         for i in range(len(duals)):
             if duals[i] <> 0:
-                duals[i] = duals[i] * self.SDDPOwner.CurrentSetOfScenarios[self.CurrentScenarioNr].Probability
+                duals[i] = duals[i] * self.SDDPOwner.SetOfSAAScenario[scenario].Probability
                 p = self.ConcernedProductProductionQuantityConstraint[self.IndexProductionQuantityConstraint[i]]
                 t = self.ConcernedTimeProductionQuantityConstraint[self.IndexProductionQuantityConstraint[i]]
                 cut.IncreaseCoefficientProduction(p, t, -1*self.GetBigMValue(p) * duals[i])
 
 
-    def IncreaseCutWithCapacityDual(self, cut, sol):
+    def IncreaseCutWithCapacityDual(self, cut, sol, scenario):
          if Constants.Debug:
             print("Increase cut with capacity dual")
          duals = sol.get_dual_values(self.IndexCapacityConstraint)
          for i in range(len(duals)):
              if duals[i] <> 0:
-                 duals[i] = duals[i] * self.SDDPOwner.CurrentSetOfScenarios[self.CurrentScenarioNr].Probability
+                 duals[i] = duals[i] * self.SDDPOwner.SetOfSAAScenario[scenario].Probability
                  k = self.ConcernedResourceCapacityConstraint[i]
                  cut.IncreaseCapacityRHS(self.Instance.Capacity[k] * duals[i])
 
-    def IncreaseCutWithCutDuals(self, cut, sol):
+    def IncreaseCutWithCutDuals(self, cut, sol, scenario):
 
         #if self.SDDPOwner.CurrentIteration > 0 :
             if Constants.Debug:
@@ -913,8 +1277,9 @@ class SDDPStage(object):
             #print("cut duals %s"%duals)
             for i in range(len(duals)):
                 if duals[i] <> 0:
-                    duals[i] = duals[i] * self.SDDPOwner.CurrentSetOfScenarios[self.CurrentScenarioNr].Probability
+                    duals[i] = duals[i] * self.SDDPOwner.SetOfSAAScenario[scenario].Probability
                     c = self.ConcernedCutinConstraint[i]
+
                     #In the new cut the contribution of C to the RHS is the RHS of C plus the value of of te variable of the current stage.
                     #variableatstage = c.GetCutVariablesAtStage()
                     #valueofvariable = sol.get_values(variableatstage)
@@ -942,52 +1307,55 @@ class SDDPStage(object):
             # Try to use the corepoint method of papadakos, remove if it doesn't work
             if not self.IsLastStage():
                 self.CorePointQuantityValues = [[0.5 * self.QuantityValues[w][p] + 0.5 * self.CorePointQuantityValues[w][p]
-                                                 for p in self.Instance.ProductSet] for w in self.ScenarioNrSet]
+                                                 for p in self.Instance.ProductSet] for w in self.TrialScenarioNrSet]
             if self.IsFirstStage():
                 self.CorePointProductionValue = [[[max(0.5 * self.ProductionValue[w][t][p] + 0.5 * self.CorePointProductionValue[w][t][p], 0.0)
-                                                 for p in self.Instance.ProductSet] for t in self.Instance.TimeBucketSet] for w in self.ScenarioNrSet]
+                                                 for p in self.Instance.ProductSet] for t in self.Instance.TimeBucketSet] for w in self.TrialScenarioNrSet]
             # The value of the inventory variables (filled after having solve the MIPs for all scenario)
             productwithstockvariable = self.GetProductWithStockVariable()
             self.CorePointInventoryValue = [[0.5 * self.InventoryValue[w][p] + 0.5 * self.CorePointInventoryValue[w][p]
                                              if p in productwithstockvariable
                                              else 0
-                                             for p in self.Instance.ProductSet] for w in self.ScenarioNrSet]
+                                             for p in self.Instance.ProductSet] for w in self.TrialScenarioNrSet]
             # The value of the backorder variable (filled after having solve the MIPs for all scenario)
             productwithbackorder = self.GetProductWithBackOrderVariable()
 
-            self.CorePointBackorderValue = [[0.5 * self.BackorderValue[w][p] + 0.5 * self.CorePointBackorderValue[w][p]
+            self.CorePointBackorderValue = [[0.5 * self.BackorderValue[w][self.Instance.ProductWithExternalDemandIndex[p]] + 0.5 * self.CorePointBackorderValue[w][self.Instance.ProductWithExternalDemandIndex[p]]
                                                 if p in productwithbackorder
                                                 else 0
                                              for p in self.Instance.ProductSet]
-                                            for w in self.ScenarioNrSet]
+                                            for w in self.TrialScenarioNrSet]
         else:
             # Try to use the corepoint method of papadakos, remove if it doesn't work
             if not self.IsLastStage():
                 self.CorePointQuantityValues = [[self.QuantityValues[w][p]
-                                                 for p in self.Instance.ProductSet] for w in self.ScenarioNrSet]
+                                                 for p in self.Instance.ProductSet]
+                                                for w in self.TrialScenarioNrSet]
             if self.IsFirstStage():
                 self.CorePointProductionValue = [[[self.ProductionValue[w][t][p]
                                                    for p in self.Instance.ProductSet]
                                                   for t in self.Instance.TimeBucketSet]
-                                                 for w in self.ScenarioNrSet]
+                                                 for w in self.TrialScenarioNrSet]
             productwithstockvariable = self.GetProductWithStockVariable()
             # The value of the inventory variables (filled after having solve the MIPs for all scenario)
             self.CorePointInventoryValue = [[self.InventoryValue[w][p]
                                              if p in productwithstockvariable
                                              else 0
                                              for p in self.Instance.ProductSet]
-                                            for w in self.ScenarioNrSet]
+                                            for w in self.TrialScenarioNrSet]
             # The value of the backorder variable (filled after having solve the MIPs for all scenario)
             productwithbackorder = self.GetProductWithBackOrderVariable()
-            self.CorePointBackorderValue = [[ self.BackorderValue[w][p]
+            self.CorePointBackorderValue = [[ self.BackorderValue[w][self.Instance.ProductWithExternalDemandIndex[p]]
                                               if p in productwithbackorder
                                               else 0
                                              for p in self.Instance.ProductSet]
-                                            for w in self.ScenarioNrSet]
+                                            for w in self.TrialScenarioNrSet]
 
     def ChangeSetupToBinary(self):
 
-        indexarray = [self.GetIndexProductionVariable(p, t) for t in self.Instance.TimeBucketSet for p in self.Instance.ProductSet]
+        indexarray = [self.GetIndexProductionVariable(p, t)
+                      for t in self.Instance.TimeBucketSet
+                      for p in self.Instance.ProductSet]
         self.Cplex.variables.set_types(zip(indexarray, ["B"]*len(indexarray)))
         self.Cplex.variables.set_lower_bounds(zip(indexarray, [0.0]*len(indexarray)))
         self.Cplex.variables.set_upper_bounds(zip(indexarray, [1.0]*len(indexarray)))
@@ -1018,7 +1386,7 @@ class SDDPStage(object):
                         for i in O:
                             leadtime = self.Instance.GetLeadTime(i, p)
                             if t-l-leadtime > 0 and rhs > 0:
-                                 for tau in range(t - l - leadtime, t):
+                                 for tau in range(t - l - leadtime, t+1):
                                      var = var + [self.GetIndexProductionVariable(i, tau)]
                                      coeff = coeff + [rhs]
 
@@ -1027,6 +1395,7 @@ class SDDPStage(object):
                                                               senses=["G"],
                                                               rhs=[rhs],
                                                               names=["inequality p%r, t%r, O%r L%r" % (p, t, O, l)])
+                            self.LastAddedConstraintIndex = self.LastAddedConstraintIndex + 1
 
         var = [self.StartCostToGo]
         coeff = [1.0]
@@ -1039,6 +1408,49 @@ class SDDPStage(object):
                                       senses=["G"],
                                       rhs=[0.0],
                                       names=["inequality O:%r l:%r" % (O, l)])
+
+        self.LastAddedConstraintIndex = self.LastAddedConstraintIndex + 1
+
+        # if self.IsFirstStage():
+        #     for i in self.Instance.ProductSet:
+        #         for t in range(0, 0):#range(self.Instance.NrTimeBucket-4, self.Instance.NrTimeBucket):
+        #             var = [self.GetIndexProductionVariable(i, t)]
+        #             coeff = [1.0]
+        # #            var = var + [self.GetIndexZVariable(i, t, t)]
+        # #            coeff = coeff + [-1.0]
+        #             self.Cplex.linear_constraints.add(lin_expr=[cplex.SparsePair(var, coeff)],
+        #                                               senses=["E"],
+        #                                               rhs=[self.SDDPOwner.HeuristicSetupValue[t][i]])
+        #             self.LastAddedConstraintIndex = self.LastAddedConstraintIndex + 1
+
+                    #var = [self.GetIndexZVariable(i, t3, t) for t3 in self.Instance.TimeBucketSet]
+                    #coeff = [1.0 for t3 in self.Instance.TimeBucketSet]
+                    #self.Cplex.linear_constraints.add(lin_expr=[cplex.SparsePair(var, coeff)],
+                    #                                  senses=["E"],
+                    #                                  rhs=[1.0])
+                    #self.LastAddedConstraintIndex = self.LastAddedConstraintIndex + 1
+
+                    #for t2 in self.Instance.TimeBucketSet:
+                    #    var =  [self.GetIndexProductionVariable(i, t) ]
+                    #    coeff = [-1.0]
+                    #    var = var + [self.GetIndexZVariable(i, t, t2)]
+                    #    coeff = coeff + [1.0]
+                    #    self.Cplex.linear_constraints.add(lin_expr=[cplex.SparsePair(var, coeff)],
+                    #                                      senses=["L"],
+                    #                                      rhs=[0.0])
+                    #    self.LastAddedConstraintIndex = self.LastAddedConstraintIndex + 1
+
+                    #     self.LastAddedConstraintIndex = self.LastAddedConstraintIndex + 1
+       # for i in self.Instance.ProductSet:
+       #     var = [self.GetIndexProductionVariable(i, t) for t in self.Instance.TimeBucketSet]
+       #     coeff = [1.0 for t in self.Instance.TimeBucketSet]
+       #     rhs = sum(self.SDDPOwner.HeuristicSetupValue[t][i] for t in self.Instance.TimeBucketSet)
+       #     self.Cplex.linear_constraints.add(lin_expr=[cplex.SparsePair(var, coeff)],
+       #                                  senses=["G"],
+       #                                   rhs=[rhs],
+       #                                   names=["constrain setup"])
+
+       #     self.LastAddedConstraintIndex = self.LastAddedConstraintIndex + 1
 
     #This function is used to generate alternative used to generate cuts
     def GenerateAlterantiveComponent(self, CurrentAlteranitveSet, AlternativeToExpend):
@@ -1057,3 +1469,8 @@ class SDDPStage(object):
             return CurrentAlteranitveSet
         else:
             return self.GenerateAlterantiveComponent(CurrentAlteranitveSet, nextalternates)
+
+    def CleanCuts(self):
+        for cut in self.ConcernedCutinConstraint:
+            if cut.LastIterationWithDual < self.SDDPOwner.CurrentIteration - 100:
+                cut.RemoveCut()

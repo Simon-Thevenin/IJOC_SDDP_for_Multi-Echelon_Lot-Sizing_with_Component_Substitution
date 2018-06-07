@@ -96,13 +96,11 @@ if __name__ == '__main__':
         CreateRequiredDir()
         parseArguments()
 
-        if TestIdentifier.MIPSetting == "NoOneTree":
-            Constants.SDDPRunSigleTree = False
         if TestIdentifier.MIPSetting == "NoFirstCuts":
             Constants.SDDPGenerateCutWith2Stage = False
             Constants.SolveRelaxationFirst = False
-        if TestIdentifier.MIPSetting == "NoValidInequalities":
-            Constants.SDDPUseValidInequalities = False
+        if TestIdentifier.MIPSetting == "NoEVPI":
+            Constants.SDDPUseEVPI = False
         if TestIdentifier.MIPSetting == "NoStongCut":
             Constants.GenerateStrongCut = False
 

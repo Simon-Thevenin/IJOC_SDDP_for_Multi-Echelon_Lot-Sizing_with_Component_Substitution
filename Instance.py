@@ -208,11 +208,11 @@ class Instance(object):
                                            [5, 0, 0]]
 
         self.StartingInventories = [10.0, 5.0, 5.0]
-        self.InventoryCosts = [10.0, 5.0, 5.0]
+        self.InventoryCosts = [5.0, 2.0, 2.0]
         self.VariableCost = [5.0, 0.0, 0.0]
         self.SetupCosts = [5.0, 5.0, 5.0]
-        self.BackorderCosts = [100.0, 0.0, 0.0]  # for now assume no external demand for components
-        self.LostSaleCost = [1000.0, 0.0, 0.0]
+        self.BackorderCosts = [10.0, 0.0, 0.0]  # for now assume no external demand for components
+        self.LostSaleCost = [100.0, 0.0, 0.0]
         self.ComputeInstanceData()
 
     def IsMaterProduct(self, prod):
@@ -285,6 +285,7 @@ class Instance(object):
         self.MaimumLeadTime = max(self.LeadTimes[p] for p in self.ProductSet)
         self.Delivery = [[0.0 for q in self.ProductSet] for t in self.TimeBucketSet]
         self.ComputePossibleComponent()
+
 
     #Compute the possible component for each product (inluding alternative)
     def ComputePossibleComponent(self):
@@ -617,7 +618,10 @@ class Instance(object):
             nexchild = []
             for current in child:
                 for q in self.ProductSet:
-                    if self.Requirements[q][current]:
+                    if self.Requirements[q][current] \
+                            or sum(1 for p in self.ProductSet
+                                     if self.Alternates[p][current] == 1
+                                        and self.Requirements[q][p]) > 0:
                         nexchild.append(q)
                         parents[q].append(current)
 

@@ -289,8 +289,7 @@ class Solution(object):
                                                   * gammas[t] \
                                                   * self.Scenarioset[w].Probability
                         else:
-                            lostsalecost += self.BackOrder[w][t][
-                                                     self.Instance.ProductWithExternalDemandIndex[p]] \
+                            lostsalecost += self.BackOrder[w][t][self.Instance.ProductWithExternalDemandIndex[p]] \
                                                  * self.Instance.LostSaleCost[p] \
                                                  * gammas[t] \
                                                  * self.Scenarioset[w].Probability

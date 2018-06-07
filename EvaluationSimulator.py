@@ -243,14 +243,17 @@ class EvaluationSimulator(object):
         # Make a forward pass on the
         # Get the set of scenarios
 
-        sddp.CurrentSetOfScenarios = scenarios
+        sddp.CurrentSetOfTrialScenarios = scenarios
         sddp.ScenarioNrSet = len(scenarios)
+        sddp.GenerateStrongCut = False
         # Modify the number of scenario at each stage
         for stage in sddp.StagesSet:
-            sddp.Stage[stage].SetNrScenario(len(scenarios))
-            #sddp.Stage[stage].CurrentScenarioNr = 0
+            sddp.Stage[stage].SetNrTrialScenario(len(scenarios))
+            sddp.Stage[stage].CurrentTrialNr = 0
+        sddp.Stage[0].CopyDecisionOfScenario0ToAllScenario()
+        sddp.ForwardPass(ignorefirststage=False)
 
-        sddp.ForwardPass(ignorefirststage=True)
+        sddp.Stage[0].CopyDecisionOfScenario0ToAllScenario()
 
     # This function return the setup decision and quantity to produce for the scenario given in argument
     def GetDecisionFromSDDPForScenario(self, sddp, scenario):

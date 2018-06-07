@@ -76,6 +76,7 @@ class ScenarioTreeNode(object):
                 #case 1: the tree should copy the scenarios generated with QMC/RQMC for the two stage model
                 if (Constants.IsQMCMethos(self.Owner.ScenarioGenerationMethod)
                         and self.Owner.GenerateRQMCForYQFix
+                        and not averagescenariotree
                         and t > self.Owner.FollowGivenUntil
                         and not self.Time >= (self.Instance.NrTimeBucket - self.Instance.NrTimeBucketWithoutUncertaintyAfter)
                         and not self.Time < (self.Instance.NrTimeBucketWithoutUncertaintyBefore)):
@@ -205,7 +206,7 @@ class ScenarioTreeNode(object):
 
     #This method generate a set of nrpoint according to the method and given distribution.
     @staticmethod
-    def GeneratePoints( method, nrpoints, dimensionpoint, distribution, average, std = [] ):
+    def GeneratePoints(method, nrpoints, dimensionpoint, distribution, average, std=[]):
         points = []
         # In monte Carlo, each point as the same proability
         proability = [ 1.0 / max( nrpoints, 1) for pt in range( max( nrpoints, 1) ) ]
@@ -238,7 +239,7 @@ class ScenarioTreeNode(object):
                         else:
                             points[p][i] = stats.poisson.ppf((randompoint - 0.5) / 0.5, (average[p]) / 0.5) +1
             else:
-                points = [ np.floor( np.random.normal(average[p], std[p], nrpoints).clip(min=0.0)).tolist()
+                points = [np.floor(np.random.normal(average[p], std[p], nrpoints).clip(min=0.0)).tolist()
                                      if std[p] > 0 else [float(average[p])] * nrpoints
                                      for p in range(dimensionpoint)]
 
@@ -248,31 +249,31 @@ class ScenarioTreeNode(object):
             nextdemands = [[]]
             nrnonzero = 0
             #The method continue to generate points until to have n distinct points
-            while len( nextdemands[0] ) < nrpoints and newnrpoints <= 1000:
+            while len(nextdemands[0]) < nrpoints and newnrpoints <= 1000:
                 if Constants.Debug and len(nextdemands[0])>0:
                     print "try with %r points because only %r  points were generated, required: %r" %(newnrpoints, len( nextdemands[0]), nrpoints )
                 points = [[0.0 for pt in range(newnrpoints)] for p in range(dimensionpoint)]
-                nrnonzero = sum( 1  for p in range( dimensionpoint ) if average[p] > 0 )
-                idnonzero = [  p  for p in range( dimensionpoint ) if average[p] > 0 ]
-                avg = [ average[prod] for prod in idnonzero ]
-                stddev = [std[prod] for prod in idnonzero ]
-                pointsin01 = RQMCGenerator.RQMC01(newnrpoints, nrnonzero, withweight=False, QMC = (method == Constants.QMC))
+                nrnonzero = sum(1 for p in range(dimensionpoint) if average[p] > 0)
+                idnonzero = [p for p in range(dimensionpoint) if average[p] > 0]
+                avg = [average[prod] for prod in idnonzero]
+                stddev = [std[prod] for prod in idnonzero]
+                pointsin01 = RQMCGenerator.RQMC01(newnrpoints, nrnonzero, withweight=False, QMC=(method == Constants.QMC))
 
-                rqmcpoints = ScenarioTreeNode.TransformInverse( pointsin01, newnrpoints, nrnonzero, distribution, avg, stddev )
+                rqmcpoints = ScenarioTreeNode.TransformInverse(pointsin01, newnrpoints, nrnonzero, distribution, avg, stddev)
 
-                for p in range( nrnonzero ):  # instance.ProductWithExternalDemand:
+                for p in range(nrnonzero):  # instance.ProductWithExternalDemand:
                         for i in range(newnrpoints):
-                            points[idnonzero[p]][i]= float ( np.round( rqmcpoints[ p ][i], 0 ) )
+                            points[idnonzero[p]][i] = float(np.round(rqmcpoints[p][i], 0))
 
-                nextdemands, proability = ScenarioTreeNode.Aggregate(rqmcpoints,  [ 1.0 / max( newnrpoints, 1) for pt in range( max( newnrpoints, 1) ) ])
+                nextdemands, proability = ScenarioTreeNode.Aggregate(rqmcpoints, [1.0 / max(newnrpoints, 1) for pt in range(max(newnrpoints, 1))])
 
                 if len(nextdemands[0]) < nrpoints:
                     newnrpoints = newnrpoints + 1
                 rqmcpoints = nextdemands
 
-            nrpoints = min( len(nextdemands[0]), nrpoints)
+            nrpoints = min(len(nextdemands[0]), nrpoints)
             points = [[0.0 for pt in range(nrpoints)] for p in range(dimensionpoint)]
-            for p in range( nrnonzero ):  # instance.ProductWithExternalDemand:
+            for p in range(nrnonzero):  # instance.ProductWithExternalDemand:
                         for i in range(nrpoints):
                             points[idnonzero[p]] [i]= float ( np.round( rqmcpoints[ p ][i], 0 ) )
 

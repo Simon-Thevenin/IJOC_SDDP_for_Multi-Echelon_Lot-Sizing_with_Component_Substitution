@@ -160,7 +160,7 @@ class SDDPLastStage( SDDPStage ):
 
     #This function returns the right hand side of the production consraint associated with product p
     def GetProductionConstrainRHS(self, p, t):
-        yvalue = self.SDDPOwner.GetSetupFixedEarlier(p, t, self.CurrentScenarioNr)
+        yvalue = self.SDDPOwner.GetSetupFixedEarlier(p, t, self.CurrentTrialNr)
         righthandside = self.GetBigMValue(p) * yvalue
         return righthandside
 
@@ -216,16 +216,16 @@ class SDDPLastStage( SDDPStage ):
         indexarray = [self.GetIndexBackorderVariable(p, t) for p in self.Instance.ProductSet for t in self.GetLastStageTimeRangeStock(p)]
         backorder = sol.get_values(indexarray)
 
-        self.InventoryValue[self.CurrentScenarioNr] = ['nan' for p in self.Instance.ProductSet]
-        self.BackorderValue[self.CurrentScenarioNr] = ['nan' for p in self.Instance.ProductSet]
+        self.InventoryValue[self.CurrentTrialNr] = ['nan' for p in self.Instance.ProductSet]
+        self.BackorderValue[self.CurrentTrialNr] = ['nan' for p in self.Instance.ProductWithExternalDemand]
         for p in self.Instance.ProductSet:
             for t in self.GetLastStageTimeRangeStock(p):
                 indexi = sum(self.GetNrStageStock(q) for q in range(p)) + self.rescaletimestock(t,p)
-                self.InventoryValue[self.CurrentScenarioNr][p] = inventory[indexi]
+                self.InventoryValue[self.CurrentTrialNr][p] = inventory[indexi]
 
                 if self.Instance.HasExternalDemand[p]:
                     indexb = sum(self.GetNrStageStock(q) for q in range(p) if self.Instance.HasExternalDemand[p]) + self.rescaletimestock(t, p)
-                    self.BackorderValue[self.CurrentScenarioNr][p] = backorder[indexb]
+                    self.BackorderValue[self.CurrentTrialNr][self.Instance.ProductWithExternalDemandIndex[p]] = backorder[indexb]
 
     #def IncreaseCutWithFlowDual(self, cut, solution):
     #    print "Increase the cut with flow constraint of the last stage"
@@ -262,7 +262,7 @@ class SDDPLastStage( SDDPStage ):
             if self.Instance.HasExternalDemand[p]:
                 # To speed up the creation of the model, only the variable and coffectiant which were not in the previous constraints are added (See the model definition)
                 for t in self.GetLastStageTimeRangeStock(p):
-                    righthandside = [self.GetRHSFlowConst(p)]
+                    righthandside = [self.GetRHSFlowConst(p, self.CurrentTrialNr, True)]
                     backordervar = []
                     backordercoeff =[]
                     #quantityvar = []
@@ -305,12 +305,12 @@ class SDDPLastStage( SDDPStage ):
                     self.ConcernedTimeFlowConstraint.append(t)
                     self.ConcernedProductFlowConstraint.append(p)
 
-    def IncreaseCutWithFlowDual(self, cut, sol):
+    def IncreaseCutWithFlowDual(self, cut, sol, scenario):
         if Constants.Debug:
             print("Increase cut with flow dual")
         duals = sol.get_dual_values(self.IndexFlowConstraint)
         for i in range(len(duals)):
-            duals[i] = duals[i] * self.SDDPOwner.CurrentSetOfScenarios[self.CurrentScenarioNr].Probability
+            duals[i] = duals[i] *self.SDDPOwner.SetOfSAAScenario[scenario].Probability
 
             p = self.ConcernedProductFlowConstraint[i]
             periodproduction = self.ConcernedTimeFlowConstraint[i] - self.Instance.LeadTimes[p]
@@ -328,5 +328,5 @@ class SDDPLastStage( SDDPStage ):
 
             if self.Instance.HasExternalDemand[p]:
                 cut.IncreaseCoefficientBackorder(p, periodpreviousstock,  -duals[i])
-                cut.IncreaseDemandRHS(duals[i] * self.SDDPOwner.CurrentSetOfScenarios[self.CurrentScenarioNr].Demands[self.ConcernedTimeFlowConstraint[i]][p])
+                cut.IncreaseDemandRHS(duals[i] * self.SDDPOwner.SetOfSAAScenario[scenario].Demands[self.ConcernedTimeFlowConstraint[i]][p])
 
