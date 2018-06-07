@@ -78,7 +78,7 @@ class Constants( object ):
 
     SDDPCleanCuts = False
 
-    SDDPUseEVPI = False
+    SDDPUseEVPI = True
     SDDPNrEVPIScenario = 1
     SDDPDebugSolveAverage = False
 
