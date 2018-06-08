@@ -390,7 +390,6 @@ class SDDPStage(object):
         for w in self.EVPIScenarioRange:
             for t in self.TimePeriodToGo:
                 for p in self.Instance.ProductSet:
-
                     backordervar = []
                     consumptionvar = []
                     consumptionvarcoeff = []
@@ -856,6 +855,9 @@ class SDDPStage(object):
             self.CreateProductionConstraints()
             self.CreateConsumptionConstraints()
             self.CreateCapacityConstraints()
+
+            for c in self.SDDPCuts:
+                c.AddCut()
 
         self.CreateFlowConstraints()
 

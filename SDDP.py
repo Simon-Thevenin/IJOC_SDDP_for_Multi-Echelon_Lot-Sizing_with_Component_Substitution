@@ -7,6 +7,7 @@ from SDDPLastStage import SDDPLastStage
 from ScenarioTree import ScenarioTree
 from MIPSolver import MIPSolver
 from SDDPCallBack import SDDPCallBack
+import pickle
 from SDDPUserCutCallBack import SDDPUserCutCallBack
 
 import numpy as np
@@ -324,7 +325,6 @@ class SDDP(object):
 
         while (not self.CheckStoppingCriterion() or createpreliminarycuts) and not ExitLoop:
 
-
             if createpreliminarycuts and self.CheckStoppingRelaxationCriterion(round):
                 round += 1
                 #if round < 3:
@@ -376,7 +376,6 @@ class SDDP(object):
 
         if not Constants.SolveRelaxationFirst:
             #run forward pass to create the MIPS
-
             Constants.SolveRelaxationFirst = True
             self.ForwardPass()
             Constants.SolveRelaxationFirst = False
@@ -417,7 +416,7 @@ class SDDP(object):
             print("Start To solve the main tree")
         self.CopyFirstStage.Cplex.solve()
 
-        self.WriteInTraceFile("End Solve in one tree cost: %r "%self.CopyFirstStage.Cplex.solution.get_objective_value())
+        self.WriteInTraceFile("End Solve in one tree cost: %r " % self.CopyFirstStage.Cplex.solution.get_objective_value())
 
     def ComputeCost(self):
         for stage in self.Stage:
@@ -539,3 +538,22 @@ class SDDP(object):
 
             return solution
 
+    def SaveSolver(self):
+        cuts = [[] for _ in self.StagesSet]
+        for t in self.StagesSet:
+            for cut in self.Stage[t].SDDPCuts:
+                cut.Stage = None
+                cuts[t].append(cut)
+        print("the cuts: %r"%cuts)
+        with open("./Solutions/SDDP_%.pkl"%self.TestIdentifier.GetAsStringList(), 'wb') as output:
+            pickle.dump(cuts, output)
+
+    def LoadCuts(self):
+
+        with open("./Solutions/SDDP.pkl"%self.TestIdentifier.GetAsStringList(), 'rb') as input:
+            cuts = pickle.load(input)
+
+        for t in self.StagesSet:
+            for cut in cuts[t]:
+                cut.Stage = self.Stage[t]
+                self.Stage[t].SDDPCuts.append(cut)

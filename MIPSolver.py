@@ -25,6 +25,7 @@ class MIPSolver(object):
                  implicitnonanticipativity = False,
                  givenquantities = [],
                  givensetups=[],
+                 givenconsumption=[],
                  fixsolutionuntil = -1,
                  evaluatesolution = False,
                  yfixheuristic = False,
@@ -79,6 +80,7 @@ class MIPSolver(object):
         self.GivenQuantity = givenquantities
 
         self.GivenSetup = givensetups
+        self.GivenConsumption = givenconsumption
         self.FixSolutionUntil = fixsolutionuntil
         self.WamStart = warmstart
 
@@ -492,6 +494,34 @@ class MIPSolver(object):
 
                         self.QuantityConstraintNR[w][p][t] = "Quantitya%da%da%d"%(p,t,w)
 
+        # To evaluate the solution obtained with the expected demand, the solution quanitity are constraint to be equal to some values
+        # This function creates the Capacity constraint
+
+    def CreateCopyGivenConumptionConstraints(self):
+        AlreadyAdded = [False for v in range(self.NrConsumptionVariables)]
+        self.ConsumptionConstraintNR = [[["" for t in self.Instance.TimeBucketSet]
+                                         for c in self.Instance.ConsumptionSet]
+                                        for w in self.ScenarioSet]
+
+        # Capacity constraint
+        for c in self.Instance.ConsumptionSet:
+            idc = self.Instance.ConsumptionSet.index(c)
+            for t in self.Instance.TimeBucketSet:
+                for w in self.ScenarioSet:
+                    indexvariable = self.GetIndexConsumptionVariable(c[1], c[0], t, w)
+                    if not AlreadyAdded[indexvariable - self.StartConsumptionVariable] and (t <= self.FixSolutionUntil):
+                        vars = [indexvariable]
+                        AlreadyAdded[indexvariable - self.StartConsumptionVariable] = True
+                        coeff = [1.0]
+
+                        righthandside = [float(self.GivenConsumption[t][idc])]
+                        # self.PrintConstraint(vars, coeff, righthandside)
+                        self.Cplex.linear_constraints.add(lin_expr=[cplex.SparsePair(vars, coeff)],
+                                                          senses=["E"],
+                                                          rhs=righthandside,
+                                                          names=["FixConsumptiona%da%da%da%d" % (c[0], c[1], t, w)])
+
+                        self.ConsumptionConstraintNR[w][idc][t] = "FixConsumptiona%da%da%da%d" % (c[0], c[1], t, w)
 
     def CreateCopyGivenSetupConstraints(self):
 
@@ -1167,24 +1197,23 @@ class MIPSolver(object):
             safetystock = decentralized.ComputeSafetyStockGrave()
 
        # print "safetystock %s"%safetystock
-        AlreadyAdded = [ False for v in range(self.GetNrInventoryVariable()) ]
+        AlreadyAdded = [False for v in range(self.GetNrInventoryVariable())]
         for w in self.ScenarioSet:
             for p in self.Instance.ProductSet:
                  for t in self.Instance.TimeBucketSet:
                      IndexInventory1 = self.GetIndexInventoryVariable(p, t, w)
                      positionvar = self.GetStartInventoryVariable() - IndexInventory1
                      if (not AlreadyAdded[positionvar]) \
-                             and self.Instance.MaximumQuanityatT[t][p] >  safetystock[t][p] \
-                             and ( self.Instance.NrTimeBucket - t  > timetoenditem[p]  or not self.Instance.ActualEndOfHorizon) :
+                             and self.Instance.MaximumQuanityatT[t][p] > safetystock[t][p] \
+                             and (self.Instance.NrTimeBucket - t > timetoenditem[p] or not self.Instance.ActualEndOfHorizon) :
 
                               AlreadyAdded[positionvar] = True
-                              vars = [IndexInventory1, self.GetIndexSafetystockPenalty(p,t) ]
+                              vars = [IndexInventory1, self.GetIndexSafetystockPenalty(p, t)]
                               coeff = [1.0,1.0]
 
-                              self.Cplex.linear_constraints.add( lin_expr=[cplex.SparsePair(vars, coeff)],
+                              self.Cplex.linear_constraints.add(lin_expr=[cplex.SparsePair(vars, coeff)],
                                                                  senses=["G"],
-                                                                 rhs=[ safetystock[t][p] ] )
-
+                                                                 rhs=[safetystock[t][p]])
 
 
     # Define the constraint of the model
@@ -1216,13 +1245,12 @@ class MIPSolver(object):
         if self.UseSafetyStockGrave:
             self.AddConstraintSafetyStock()
 
-
         if self.EvaluateSolution:
             if self.Model == Constants.ModelYQFix or self.Model == Constants.ModelYFix:
                 if Constants.Debug:
                     print("Creat given setup and given quantity...")
-                self.CreateCopyGivenQuantityConstraints( )
-
+                self.CreateCopyGivenQuantityConstraints()
+                self.CreateCopyGivenConumptionConstraints()
 
 
     #This function build the CPLEX model
@@ -1664,12 +1692,12 @@ class MIPSolver(object):
         self.Cplex.linear_constraints.set_rhs(constrainttuples)
         if self.EVPI:
             #Recompute the value of M
-            totaldemandatt = [ 0 for p in self.Instance.ProductSet]
-            self.ModifyBigMForScenario( totaldemandatt)
+            totaldemandatt = [0 for p in self.Instance.ProductSet]
+            self.ModifyBigMForScenario(totaldemandatt)
 
 
-    def ModifyBigMForScenario(self, totaldemandatt ):
-        constrainttuples =[]
+    def ModifyBigMForScenario(self, totaldemandatt):
+        constrainttuples = []
         n = self.GetNrQuantityVariable()
         AlreadyAdded = [[False] * n for w in range(self.GetNrProductionVariable())]
 
@@ -1710,18 +1738,17 @@ class MIPSolver(object):
                         self.Scenarios[0].Demands[t][p] = demanduptotime[t][p]
                         righthandside = righthandside + self.Scenarios[0].Demands[t][p]
                         constrnr = self.FlowConstraintNR[0][p][t]
-                        constrainttuples.append( ( constrnr, righthandside) )
+                        constrainttuples.append((constrnr, righthandside))
                     if t == time -1:
                         self.Scenarios[0].Demands[t][p] = demanduptotime[t][p]
                         righthandside = 0
                         constrnr = self.FlowConstraintNR[0][p][t]
                         constrainttuples.append((constrnr, righthandside))
-                        self.Cplex.linear_constraints.set_rhs( constrainttuples )
+                        self.Cplex.linear_constraints.set_rhs(constrainttuples)
 
-        totaldemandattime = [ sum(demanduptotime[t][p] for t in range( time ))for p in self.Instance.ProductWithExternalDemand]
+        totaldemandattime = [sum(demanduptotime[t][p] for t in range(time))for p in self.Instance.ProductWithExternalDemand]
 
-
-        knowndemandtuples = [ ( self.GetIndexKnownDemand(p),  sum(demanduptotime[t][p] for t in range( time )) )  for p in self.Instance.ProductWithExternalDemand]
+        knowndemandtuples = [(self.GetIndexKnownDemand(p), sum(demanduptotime[t][p] for t in range(time))) for p in self.Instance.ProductWithExternalDemand]
         self.Cplex.variables.set_lower_bounds(knowndemandtuples)
         self.Cplex.variables.set_upper_bounds(knowndemandtuples)
 
@@ -1736,14 +1763,12 @@ class MIPSolver(object):
         # self.Cplex.linear_constraints.set_coefficients(constrainttuples)
 
 
-        # This function modify the MIP tosolve the scenario tree given in argument.
-        # It is assumed that both the initial scenario tree and the new one have a single scenario
 
     #This function modify the MIP to fix the quantities given in argument
-    def ModifyMipForFixQuantity(self, givenquanities, fixuntil = -1 ):
+    def ModifyMipForFixQuantity(self, givenquanities, fixuntil=-1):
             timeset = self.Instance.TimeBucketSet
             if fixuntil > -1:
-                timeset = range( fixuntil )
+                timeset = range(fixuntil)
             # Redefine the flow conservation constraint
             constrainttuples = []
 
@@ -1754,38 +1779,55 @@ class MIPSolver(object):
                             constrnr = "L"+self.QuantityConstraintNR[0][p][t]
                             constrainttuples.append((constrnr, righthandside))
 
+            self.Cplex.linear_constraints.set_rhs(constrainttuples)
 
-            self.Cplex.linear_constraints.set_rhs( constrainttuples )
+    def ModifyMipForFixConsumption(self, givenconsumption, fixuntil=-1):
+            timeset = self.Instance.TimeBucketSet
+            if fixuntil > -1:
+                timeset = range(fixuntil)
+            # Redefine the flow conservation constraint
+            constrainttuples = []
 
-    def ModifyMIPForSetup(self, givensetup ):
+            # Capacity constraint
+            for idc in range(len(self.Instance.ConsumptionSet)):
+                for t in timeset:
+                            righthandside = float(givenconsumption[t][idc])#
+                            constrnr = self.ConsumptionConstraintNR[0][idc][t]
+                            constrainttuples.append((constrnr, righthandside))
+
+            self.Cplex.linear_constraints.set_rhs(constrainttuples)
+
+
+    def ModifyMIPForSetup(self, givensetup):
         # setup constraint
         constrainttuples = []
         for p in self.Instance.ProductSet:
             for t in self.Instance.TimeBucketSet:
-                tuples = [ ( self.GetIndexProductionVariable(p, t, w), givensetup[t][p]) for w in self.ScenarioSet   ]
+                tuples = [(self.GetIndexProductionVariable(p, t, w), givensetup[t][p]) for w in self.ScenarioSet]
                 self.Cplex.variables.set_lower_bounds(tuples)
                 self.Cplex.variables.set_upper_bounds(tuples)
-                tuples = [(self.GetIndexQuantityVariable(p, t, w),  max((givensetup[t][p]) * self.M, 0.0)) for w in self.ScenarioSet]
+                tuples = [(self.GetIndexQuantityVariable(p, t, w), max((givensetup[t][p]) * self.M, 0.0)) for w in self.ScenarioSet]
                 self.Cplex.variables.set_upper_bounds(tuples)
                 righthandside = givensetup[t][p]  #
-                constrnr =  self.SetupConstraint[0][p][t]
+                constrnr = self.SetupConstraint[0][p][t]
                 constrainttuples.append((constrnr, righthandside))
         self.Cplex.linear_constraints.set_rhs(constrainttuples)
 
 
-
-
     def UpdateStartingInventory(self, startinginventories):
 
-        startinginventotytuples = [ ( self.GetIndexInitialInventoryInRollingHorizon(p, t), startinginventories[t][p] )
+        startinginventotytuples = [(self.GetIndexInitialInventoryInRollingHorizon(p, t), startinginventories[t][p])
                                     for p in self.Instance.ProductSet
-                                    for t in range ( self.Instance.MaimumLeadTime )]
+                                    for t in range(self.Instance.MaimumLeadTime)]
         self.Cplex.variables.set_lower_bounds(startinginventotytuples)
         self.Cplex.variables.set_upper_bounds(startinginventotytuples)
 
 
     def UpdateSetup(self, givensetup):
 
-        setuptuples = [ ( self.GetIndexProductionVariable(p, t, w), givensetup[t][p] )  for p in self.Instance.ProductSet for t in self.Instance.TimeBucketSet for w in self.ScenarioSet]
+        setuptuples = [(self.GetIndexProductionVariable(p, t, w), givensetup[t][p])
+                       for p in self.Instance.ProductSet
+                       for t in self.Instance.TimeBucketSet
+                       for w in self.ScenarioSet]
         self.Cplex.variables.set_lower_bounds(setuptuples)
         self.Cplex.variables.set_upper_bounds(setuptuples)

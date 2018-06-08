@@ -66,7 +66,7 @@ class Constants( object ):
 
     SDDPNrScenarioForwardPass = 10
     SDDPNrScenarioBackwardPass = 10
-    SDDPNrScenarioTest = 100
+    SDDPNrScenarioTest = 500
 
     SolveRelaxationFirst = True
     SDDPNrIterationRelax = 50

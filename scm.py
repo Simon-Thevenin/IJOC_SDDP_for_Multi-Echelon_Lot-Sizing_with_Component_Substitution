@@ -7,6 +7,7 @@ from EvaluatorIdentificator import EvaluatorIdentificator
 from Instance import Instance
 import os
 import argparse
+from SDDP import SDDP
 import csv
 import datetime
 
@@ -77,13 +78,26 @@ def Solve(instance):
 
     solution = solver.Solve()
 
+    solver.SDDPSolver.SaveSolver()
+
+    solver.SDDPSolver = SDDP(instance, TestIdentifier)
+    solver.SDDPSolver.LoadCuts()
     LastFoundSolution = solution
     evaluator = Evaluator(instance, TestIdentifier, EvaluatorIdentifier, solver)
     evaluator.RunEvaluation()
     evaluator.GatherEvaluation()
 
 def Evaluate():
-    evaluator = Evaluator(TestIdentifier, EvaluatorIdentifier)
+    solver = Solver(instance, TestIdentifier, mipsetting="", evaluatesol=EvaluateSolution)
+    solver.SDDPSolver = SDDP(instance, TestIdentifier)
+    solver.SDDPSolver.LoadCuts()
+    Constants.SDDPGenerateCutWith2Stage = False
+    Constants.SDDPRunSigleTree = False
+    Constants.SolveRelaxationFirst = False
+
+    evaluator = Evaluator(instance, TestIdentifier, EvaluatorIdentifier, solver)
+    evaluator.RunEvaluation()
+    evaluator.GatherEvaluation()
 
 
 if __name__ == '__main__':
@@ -118,7 +132,5 @@ if __name__ == '__main__':
         Solve(instance)
 
     if Action == Constants.Evaluate:
-        if TestIdentifier.ScenarioSeed == -1:
-            Evaluate()
-        else:
-            EvaluateSingleSol()
+        Evaluate()
+
