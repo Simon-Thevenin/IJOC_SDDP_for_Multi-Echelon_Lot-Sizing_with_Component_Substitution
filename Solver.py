@@ -23,6 +23,12 @@ class Solver( object ):
         self.EvaluateSolution = evaluatesol
         self.TreeStructure = self.GetTreeStructure()
         self.SDDPSolver = None
+        if self.TestIdentifier.Method == Constants.SDDP:
+            self.SDDPSolver = SDDP(instance, self.TestIdentifier)
+            self.SDDPSolver.LoadCuts()
+            Constants.SDDPGenerateCutWith2Stage = False
+            Constants.SDDPRunSigleTree = False
+            Constants.SolveRelaxationFirst = False
 
     #return true if the considered model is a two-stage formulation or reduction
     def UseYQFix(self):

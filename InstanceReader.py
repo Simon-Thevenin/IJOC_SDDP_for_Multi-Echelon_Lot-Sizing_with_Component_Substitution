@@ -27,9 +27,9 @@ class InstanceReader(object):
             forcasterror = 25
             e = "n"
             rateknown = 50
-            leadtimestructure = 1
+            leadtimestructure = 0
             lostsalecostmultiplier = 20
-            capacityfactor = 0
+            capacityfactor = 2
 
             self.Instance.InstanceName = "%s_%s_b%s_fe%s_e%s_rk%s_ll%s_l%s_H%s_c%s" % (
                                                     instancename, distribution, backlogcostmultiplier, forcasterror,

@@ -86,16 +86,41 @@ def Solve(instance):
 
 def Evaluate():
     solver = Solver(instance, TestIdentifier, mipsetting="", evaluatesol=EvaluateSolution)
-    solver.SDDPSolver = SDDP(instance, TestIdentifier)
-    solver.SDDPSolver.LoadCuts()
-    Constants.SDDPGenerateCutWith2Stage = False
-    Constants.SDDPRunSigleTree = False
-    Constants.SolveRelaxationFirst = False
+
 
     evaluator = Evaluator(instance, TestIdentifier, EvaluatorIdentifier, solver)
     evaluator.RunEvaluation()
     evaluator.GatherEvaluation()
 
+
+def GenerateInstances():
+    instancecreated = []
+    instance = Instance()
+    # instance.DefineAsSuperSmallIntance()
+    # instance.ReadFromFile("K0011525", "NonStationary", "Normal")
+    instance.ReadFromFile("01", "NonStationary", "Normal")
+    instance.SaveCompleteInstanceInExelFile()
+    instancecreated = instancecreated + [instance.InstanceName]
+
+    instance.ReadFromFile("02", "NonStationary", "Normal")
+    instance.SaveCompleteInstanceInExelFile()
+    instancecreated = instancecreated + [instance.InstanceName]
+
+    instance.ReadFromFile("03", "NonStationary", "Normal")
+    instance.SaveCompleteInstanceInExelFile()
+    instancecreated = instancecreated + [instance.InstanceName]
+
+    instance.ReadFromFile("K0011525", "NonStationary", "Normal")
+    instance.SaveCompleteInstanceInExelFile()
+    instancecreated = instancecreated + [instance.InstanceName]
+
+    instance.ReadFromFile("G0041421", "NonStationary", "Normal")
+    instance.SaveCompleteInstanceInExelFile()
+    instancecreated = instancecreated + [instance.InstanceName]
+
+    csvfile = open("./Instances/InstancesToSolve.csv", 'wb')
+    data_rwriter = csv.writer(csvfile, delimiter=",", skipinitialspace=True)
+    data_rwriter.writerow(instancecreated)
 
 if __name__ == '__main__':
 
@@ -116,10 +141,9 @@ if __name__ == '__main__':
             Constants.GenerateStrongCut = False
 
         instance = Instance()
-        #instance.DefineAsSuperSmallIntance()
-        #instance.ReadFromFile("K0011525", "NonStationary", "Normal")
-        #instance.ReadFromFile("03", "NonStationary", "Normal")
-        #instance.SaveCompleteInstanceInExelFile()
+        # instance.DefineAsSuperSmallIntance()
+        # instance.ReadFromFile("K0011525", "NonStationary", "Normal")
+        # GenerateInstances()
         instance.ReadInstanceFromExelFile(TestIdentifier.InstanceName)
         #instance.DrawSupplyChain()
     except KeyError:

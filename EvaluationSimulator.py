@@ -425,20 +425,20 @@ class EvaluationSimulator(object):
 
 
 
-    def ResolveMIP(self, quantitytofix,  givensetup, givenconsumption, demanduptotimet, time):
+    def ResolveMIP(self, quantitytofix,  givensetup, consumptiontofix, demanduptotimet, time):
             if not self.IsDefineMIPResolveTime[time]:
                 treestructure = [1] \
                                 + [self.ReferenceTreeStructure[t - ( time - self.Instance.NrTimeBucketWithoutUncertaintyBefore)+ 1]
-                                   if (  t >= time and (t < (self.Instance.NrTimeBucket - self.Instance.NrTimeBucketWithoutUncertaintyAfter)))
+                                   if (t >= time and (t < (self.Instance.NrTimeBucket - self.Instance.NrTimeBucketWithoutUncertaintyAfter)))
                                    else 1 for
                                     t in range(self.Instance.NrTimeBucket)] \
                                 + [0]
                 if self.Model == Constants.ModelYQFix:
                     treestructure = [1] \
                                     + [self.ReferenceTreeStructure[1]
-                                       if (t == time )
-                                       else 1 for
-                                       t in range(self.Instance.NrTimeBucket)] \
+                                       if (t == time)
+                                       else 1
+                                       for t in range(self.Instance.NrTimeBucket)] \
                                     + [0]
 
                 if self.Model == Constants.ModelYQFix and self.ScenarioGenerationResolvePolicy == Constants.All :
@@ -463,7 +463,7 @@ class EvaluationSimulator(object):
                                       evaluatesolution=True,
                                       givenquantities=quantitytofix,
                                       givensetups=givensetup,
-                                      givenconsumption= givenconsumption,
+                                      givenconsumption=consumptiontofix,
                                       fixsolutionuntil=(time -1), #time lower or equal
                                       demandknownuntil=time,
                                       usesafetystock=self.UseSafetyStock,
@@ -494,6 +494,7 @@ class EvaluationSimulator(object):
 
                 self.MIPResolveTime[time].ModifyMipForScenario(demanduptotimet, time)
                 self.MIPResolveTime[time].ModifyMipForFixQuantity(quantitytofix, fixuntil=time)
+                self.MIPResolveTime[time].ModifyMipForFixConsumption(consumptiontofix, fixuntil=time)
 
             #self.MIPResolveTime[time].Cplex.parameters.advance = 0
             #self.MIPResolveTime[time].Cplex.parameters.lpmethod = 1  # Dual primal cplex.CPX_ALG_DUAL

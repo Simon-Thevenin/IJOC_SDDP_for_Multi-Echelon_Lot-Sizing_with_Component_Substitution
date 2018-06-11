@@ -94,18 +94,18 @@ class InstanceReaderGrave(InstanceReader):
         else:
             self.Instance.ForecastError = [forecasterror for p in self.Instance.ProductSet]
             self.Instance.RateOfKnownDemand = [math.pow(rateknown, t + 1) for t in self.Instance.TimeBucketSet]
-            self.Instance.ForecastedAverageDemand = [[np.floor( np.random.normal(self.Instance.YearlyAverageDemand[p],
+            self.Instance.ForecastedAverageDemand = [[np.floor(np.random.normal(self.Instance.YearlyAverageDemand[p],
                                                                                  self.Instance.YearlyStandardDevDemands[p], 1).clip(min=0.0)).tolist()[0]
                                                       if self.Instance.YearlyStandardDevDemands[p] > 0
-                                                      else float( self.Instance.YearlyAverageDemand[p])
+                                                      else float(self.Instance.YearlyAverageDemand[p])
                                                       for p in self.Instance.ProductSet] for t in self.Instance.TimeBucketSet]
 
-            self.Instance.ForcastedStandardDeviation = [ [ (1 - self.Instance.RateOfKnownDemand[t])
+            self.Instance.ForcastedStandardDeviation = [[(1 - self.Instance.RateOfKnownDemand[t])
                                                            * self.Instance.ForecastError[p]
                                                            * self.Instance.ForecastedAverageDemand[t][p]
                                                            if t < (self.Instance.NrTimeBucket - self.Instance.NrTimeBucketWithoutUncertaintyAfter)
                                                            else 0.0
-                                                            for p in self.Instance.ProductSet ]
+                                                            for p in self.Instance.ProductSet]
                                                          for t in self.Instance.TimeBucketSet]
 
         #This function generate the starting inventory
