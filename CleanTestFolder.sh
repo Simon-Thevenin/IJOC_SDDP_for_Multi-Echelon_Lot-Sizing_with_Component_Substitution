@@ -9,4 +9,5 @@ rm ./Solutions/*
 rm ./Temp/*
 rm ./Evaluations/*
 rm ./Jobs/*
+rm ./CPLEXLog/*
 rm ../../log/*
