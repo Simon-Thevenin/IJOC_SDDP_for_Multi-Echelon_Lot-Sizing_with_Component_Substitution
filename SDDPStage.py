@@ -1031,6 +1031,7 @@ class SDDPStage(object):
             self.StageCostPerScenarioWithCostoGo[self.CurrentTrialNr] = self.StageCostPerScenarioWithCostoGo[0]
             self.PartialCostPerScenario[self.CurrentTrialNr] = self.PartialCostPerScenario[0]
             self.QuantityValues[self.CurrentTrialNr] = self.QuantityValues[0]
+            self.ConsumptionValues[self.CurrentTrialNr] = self.ConsumptionValues[0]
             self.ProductionValue[self.CurrentTrialNr] = self.ProductionValue[0]
             self.InventoryValue[self.CurrentTrialNr] = self.InventoryValue[0]
             self.BackorderValue[self.CurrentTrialNr] = self.BackorderValue[0]

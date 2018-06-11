@@ -53,24 +53,23 @@ class Tool:
 
     #This function transform the sheet given in arguments into a dataframe
     @staticmethod
-    def ReadMultiIndexDataFrame( filename, sheetname):
+    def ReadMultiIndexDataFrame(filename, sheetname):
 
         df = pd.read_excel(filename,
                       header=[0, 1],
                       index_col=[0],
                       sheetname=sheetname)
                       
-        return df;
+        return df
 
     #This function transform the sheet given in arguments into a dataframe
     @staticmethod
-    def Transform3d( array, dimension1, dimension2, dimension3):
-        result = [ [ [ array[p * (dimension2 * dimension3) + t * dimension3 + w]
-                          for p in range(dimension1) ]
-                            for t in range(dimension2) ]
-                              for w in range(dimension3) ]
-
-        return result;
+    def Transform3d(array, dimension1, dimension2, dimension3):
+        result = [[[array[p * (dimension2 * dimension3) + t * dimension3 + w]
+                          for p in range(dimension1)]
+                            for t in range(dimension2)]
+                              for w in range(dimension3)]
+        return result
 
     # Compute the average (dependent) demand
     @staticmethod
@@ -82,7 +81,7 @@ class Tool:
         for l in levelset:
             prodinlevel = [p for p in instance.ProductSet if instance.Level[p] == l]
             for p in prodinlevel:
-                echelonstock[p] = sum( echelonstock[q] * instance.Requirements[q][p] for q in instance.ProductSet) \
+                echelonstock[p] = sum(echelonstock[q] * instance.Requirements[q][p] for q in instance.ProductSet) \
                                    + echelonstock[p]
 
         return echelonstock[prod]

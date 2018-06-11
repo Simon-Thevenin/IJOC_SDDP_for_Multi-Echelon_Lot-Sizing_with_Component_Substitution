@@ -144,7 +144,7 @@ class Solution(object):
         writer.save()
 
     #This function return a set of dataframes describing the content of the excel file
-    def ReadExcelFiles(self, description, index = "", indexbackorder = ""):
+    def ReadExcelFiles(self, description, index="", indexbackorder=""):
         # The supplychain is defined in the sheet named "01_LL" and the data are in the sheet "01_SD"
         prodquantitydf = Tool.ReadMultiIndexDataFrame(self.GetSolutionFileName(description), "ProductionQuantity")
         productiondf = Tool.ReadMultiIndexDataFrame(self.GetSolutionFileName(description), "Production")
@@ -162,7 +162,7 @@ class Solution(object):
         prodquantitydf.index = index
         productiondf.index = index
         inventorydf.index = index
-        bbackorderdf.index = [ index[p] for p in indexbackorder]
+        bbackorderdf.index = [index[p] for p in indexbackorder]
         return prodquantitydf, productiondf, inventorydf, bbackorderdf, consumptiondf,  fixedqvaluesdf, instanceinfo, scenariotreeinfo
 
     #This function return a set of dataframes describing the content of the binary file
@@ -188,10 +188,12 @@ class Solution(object):
             wb2 = opxl.load_workbook(self.GetSolutionFileName(description))
             instanceinfo = Tool.ReadDataFrame(wb2, "Generic")
             self.Instance = Instance()
-            self.Instance.ReadInstanceFromExelFile(instanceinfo.at['Name', 0] )
-            prodquantitydf, productiondf, inventorydf, bbackorderdf, consumptiondf,  fixedqvaluesdf, instanceinfo, scenariotreeinfo = self.ReadExcelFiles(description, index=self.Instance.ProductName, indexbackorder=self.Instance.ProductWithExternalDemand)
+            self.Instance.ReadInstanceFromExelFile(instanceinfo.at['Name', 0])
+            prodquantitydf, productiondf, inventorydf, bbackorderdf, consumptiondf,  fixedqvaluesdf, instanceinfo, \
+            scenariotreeinfo = self.ReadExcelFiles(description, index=self.Instance.ProductName, indexbackorder=self.Instance.ProductWithExternalDemand)
         else:
-            prodquantitydf, productiondf, inventorydf, bbackorderdf, consumptiondf,  fixedqvaluesdf, instanceinfo, scenariotreeinfo = self.ReadPickleFiles(description)
+            prodquantitydf, productiondf, inventorydf, bbackorderdf, consumptiondf,  fixedqvaluesdf, instanceinfo, \
+            scenariotreeinfo = self.ReadPickleFiles(description)
 
 
 

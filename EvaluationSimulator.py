@@ -274,12 +274,11 @@ class EvaluationSimulator(object):
                 givenquantty = givenquantty + \
                                  [[sddp.Stage[t].QuantityValues[scenario][p]
                                    for p in self.Instance.ProductSet]]
-
         for t in sddp.StagesSet:
             if not sddp.Stage[t].IsLastStage():
                 givenconsumption = givenconsumption + \
                                     [[sddp.Stage[t].ConsumptionValues[scenario][c]
-                                      for c in range(len(self.Instance.ConsumptionSet) )]]
+                                      for c in range(len(self.Instance.ConsumptionSet))]]
 
         return givensetup, givenquantty, givenconsumption
 
