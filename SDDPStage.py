@@ -375,10 +375,11 @@ class SDDPStage(object):
                 if len(vars) > 0:
                        self.Cplex.linear_constraints.add(lin_expr=[cplex.SparsePair(vars, coeff)],
                                                            senses=["E"],
-                                                           rhs=righthandside,
-                                                           names=["Flow%d" %(p)])
+                                                           rhs=righthandside)
                        self.FlowConstraintNR[p] = "Flow%d" % (p)
-
+                       if Constants.Debug:
+                           self.Cplex.linear_constraints.set_names(self.LastAddedConstraintIndex,
+                                                                   self.FlowConstraintNR[p])
                        self.IndexFlowConstraint.append(self.LastAddedConstraintIndex)
                        self.LastAddedConstraintIndex = self.LastAddedConstraintIndex + 1
                        self.ConcernedProductFlowConstraint.append(p)
@@ -438,9 +439,10 @@ class SDDPStage(object):
                     if len(vars) > 0:
                         self.Cplex.linear_constraints.add(lin_expr=[cplex.SparsePair(vars, coeff)],
                                                           senses=["E"],
-                                                          rhs=righthandside,
-                                                          names=["Flow%d" % (p)])
-
+                                                          rhs=righthandside)
+                        if Constants.Debug:
+                            self.Cplex.linear_constraints.set_names(self.LastAddedConstraintIndex,
+                                                                    "Flow%d" % (p))
                         self.LastAddedConstraintIndex = self.LastAddedConstraintIndex + 1
 
     # Return the set of products which are associated with stock decisions at the current stage
@@ -531,8 +533,10 @@ class SDDPStage(object):
                     coeff = quantityvarcoeff + consumptionvarcoeff
                     self.Cplex.linear_constraints.add(lin_expr=[cplex.SparsePair(vars, coeff)],
                                                       senses=["E"],
-                                                      rhs=righthandside,
-                                                      names=["quantityConsumption%d->%d" % (p, k)])
+                                                      rhs=righthandside)
+                    if Constants.Debug:
+                        self.Cplex.linear_constraints.set_names(self.LastAddedConstraintIndex,
+                                                             "quantityConsumption%d->%d" % (p, k))
                     self.IndexConsumptionConstraint.append(self.LastAddedConstraintIndex)
                     self.LastAddedConstraintIndex = self.LastAddedConstraintIndex + 1
 
@@ -557,8 +561,10 @@ class SDDPStage(object):
                             coeff = quantityvarcoeff + consumptionvarcoeff
                             self.Cplex.linear_constraints.add(lin_expr=[cplex.SparsePair(vars, coeff)],
                                                               senses=["E"],
-                                                              rhs=righthandside,
-                                                              names=["quantityPIConsumption%d->%d" % (p, k)])
+                                                              rhs=righthandside)
+                            if Constants.Debug:
+                                self.Cplex.linear_constraints.set_names(self.LastAddedConstraintIndex,
+                                                                 "quantityPIConsumption%d->%d" % (p, k))
                             self.LastAddedConstraintIndex = self.LastAddedConstraintIndex + 1
 
 
@@ -1222,7 +1228,7 @@ class SDDPStage(object):
         #print("DUALS flow::::%s" % duals)
 
         for i in range(len(duals)):
-            duals[i]= duals[i] * self.SDDPOwner.SetOfSAAScenario[scenario].Probability
+            duals[i] = duals[i] * self.SDDPOwner.SetOfSAAScenario[scenario].Probability
             if duals[i] <> 0:
                 p = self.ConcernedProductFlowConstraint[i]
                 if not self.IsLastStage():
@@ -1241,7 +1247,7 @@ class SDDPStage(object):
                 if periodpreviousstock >= 0:
                     cut.IncreaseCoefficientInventory(p, self.GetTimePeriodAssociatedToInventoryVariable(p) -1, duals[i])
                 else:
-                    cut.IncreaseInitInventryRHS(-1*duals[i] * self.Instance.StartingInventories[p])
+                    cut.IncreaseInitInventryRHS(-1 * duals[i] * self.Instance.StartingInventories[p])
 
                 if self.Instance.HasExternalDemand[p]:
                     cut.IncreaseCoefficientBackorder(p, self.GetTimePeriodAssociatedToBackorderVariable(p) -1, -duals[i])
@@ -1396,8 +1402,11 @@ class SDDPStage(object):
                         if len(var) > 1:
                             self.Cplex.linear_constraints.add(lin_expr=[cplex.SparsePair(var, coeff)],
                                                               senses=["G"],
-                                                              rhs=[rhs],
-                                                              names=["inequality p%r, t%r, O%r L%r" % (p, t, O, l)])
+                                                              rhs=[rhs])
+                            if Constants.Debug:
+                                self.Stage.Cplex.linear_constraints.set_names(self.LastAddedConstraintIndex,
+                                                                              "inequality p%r, t%r, O%r L%r" % (p, t, O, l))
+
                             self.LastAddedConstraintIndex = self.LastAddedConstraintIndex + 1
 
         var = [self.StartCostToGo]
@@ -1409,9 +1418,10 @@ class SDDPStage(object):
 
         self.Cplex.linear_constraints.add(lin_expr=[cplex.SparsePair(var, coeff)],
                                       senses=["G"],
-                                      rhs=[0.0],
-                                      names=["inequality O:%r l:%r" % (O, l)])
-
+                                      rhs=[0.0])
+        if Constants.Debug:
+            self.Stage.Cplex.linear_constraints.set_names(self.LastAddedConstraintIndex,
+                                                          "inequality O:%r l:%r" % (O, l))
         self.LastAddedConstraintIndex = self.LastAddedConstraintIndex + 1
 
         # if self.IsFirstStage():
@@ -1475,5 +1485,5 @@ class SDDPStage(object):
 
     def CleanCuts(self):
         for cut in self.ConcernedCutinConstraint:
-            if cut.LastIterationWithDual < self.SDDPOwner.CurrentIteration - 100:
+            if cut.LastIterationWithDual < self.SDDPOwner.CurrentIteration - 50:
                 cut.RemoveCut()

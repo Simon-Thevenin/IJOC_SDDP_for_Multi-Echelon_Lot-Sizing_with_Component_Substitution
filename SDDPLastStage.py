@@ -193,8 +193,10 @@ class SDDPLastStage( SDDPStage ):
                     righthandside = [self.Instance.Capacity[k]]
                     self.Cplex.linear_constraints.add(lin_expr=[cplex.SparsePair(vars, coeff)],
                                                       senses=["L"],
-                                                      rhs=righthandside,
-                                                      names=["Capt%dk%d"%(t,k)])
+                                                      rhs=righthandside)
+                    if Constants.Debug:
+                        self.Stage.Cplex.linear_constraints.set_names(self.LastAddedConstraintIndex,
+                                                                      "Capt%dk%d" % (t, k))
 
                     self.IndexCapacityConstraint.append(self.LastAddedConstraintIndex)
                     self.LastAddedConstraintIndex = self.LastAddedConstraintIndex + 1
@@ -297,9 +299,12 @@ class SDDPLastStage( SDDPStage ):
                     if len(vars) > 0:
                             self.Cplex.linear_constraints.add(lin_expr=[cplex.SparsePair(vars, coeff)],
                                                               senses=["E"],
-                                                              rhs=righthandside,
-                                                              names=["Flowp%dp%d"%(p,t)])
+                                                              rhs=righthandside)
                     self.FlowConstraintNR[p][t] = "Flowp%dy%d"%(p,t)
+                    if Constants.Debug:
+                        self.Stage.Cplex.linear_constraints.set_names(self.LastAddedConstraintIndex,
+                                                                      self.FlowConstraintNR[p][t])
+
                     self.IndexFlowConstraint.append(self.LastAddedConstraintIndex)
                     self.LastAddedConstraintIndex = self.LastAddedConstraintIndex + 1
                     self.ConcernedTimeFlowConstraint.append(t)

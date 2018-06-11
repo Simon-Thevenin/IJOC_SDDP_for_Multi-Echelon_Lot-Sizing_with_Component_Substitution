@@ -64,12 +64,12 @@ class Constants( object ):
     GenerateStrongCut = True
     SDDPRunSigleTree = False
 
-    SDDPNrScenarioForwardPass = 10
-    SDDPNrScenarioBackwardPass = 10
+    SDDPNrScenarioForwardPass = 1
+    SDDPNrScenarioBackwardPass = 1
     SDDPNrScenarioTest = 500
 
     SolveRelaxationFirst = True
-    SDDPNrIterationRelax = 50
+    SDDPNrIterationRelax = 500
     SDDPGapRelax = 0.001
 
     SDDPUseValidInequalities = False

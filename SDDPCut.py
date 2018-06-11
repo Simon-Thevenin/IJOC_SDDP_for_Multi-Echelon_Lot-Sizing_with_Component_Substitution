@@ -101,11 +101,15 @@ class SDDPCut(object):
         if addtomodel:
             self.Stage.Cplex.linear_constraints.add(lin_expr=[cplex.SparsePair(vars, coeff)],
                                                     senses=["G"],
-                                                    rhs=righthandside,
-                                                    names =[self.Name])
+                                                    rhs=righthandside)#,
+                                                    #names =[self.Name])
 
         self.Stage.IndexCutConstraint.append(self.Stage.LastAddedConstraintIndex)
         self.Index = self.Stage.LastAddedConstraintIndex
+
+        if Constants.Debug:
+            self.Stage.Cplex.linear_constraints.set_names(self.Index, self.Name)
+
         self.Stage.LastAddedConstraintIndex = self.Stage.LastAddedConstraintIndex + 1
 
         self.Stage.ConcernedCutinConstraint.append(self)
@@ -138,7 +142,7 @@ class SDDPCut(object):
 
         righthandside = self.ComputeCurrentRightHandSide()
 
-        constrnr = self.Name
+        constrnr = self.Index
         constrainttuples=(constrnr, righthandside)
         return constrainttuples
 
