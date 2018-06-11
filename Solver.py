@@ -228,8 +228,7 @@ class Solver( object ):
 
         methodtemp = self.TestIdentifier.Method
         if self.TestIdentifier.Method == "MIP":
-            print("attention set to 200")
-            treestructure = [1, 2] + [1] * (self.Instance.NrTimeBucket - 1) + [0]
+            treestructure = [1, 200] + [1] * (self.Instance.NrTimeBucket - 1) + [0]
             self.TestIdentifier.Model = Constants.ModelYQFix
             chosengeneration = self.TestIdentifier.ScenarioSampling
             self.ScenarioGeneration = "RQMC"
