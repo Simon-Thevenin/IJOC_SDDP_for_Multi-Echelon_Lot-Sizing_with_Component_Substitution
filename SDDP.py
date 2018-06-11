@@ -544,13 +544,12 @@ class SDDP(object):
             for cut in self.Stage[t].SDDPCuts:
                 cut.Stage = None
                 cuts[t].append(cut)
-        print("the cuts: %r"%cuts)
-        with open("./Solutions/SDDP_%.pkl"%self.TestIdentifier.GetAsStringList(), 'wb') as output:
+        with open("./Solutions/SDDP_%r.pkl"%self.TestIdentifier.GetAsStringList(), 'wb') as output:
             pickle.dump(cuts, output)
 
     def LoadCuts(self):
 
-        with open("./Solutions/SDDP.pkl"%self.TestIdentifier.GetAsStringList(), 'rb') as input:
+        with open("./Solutions/SDDP_%r.pkl"%self.TestIdentifier.GetAsStringList(), 'rb') as input:
             cuts = pickle.load(input)
 
         for t in self.StagesSet:
