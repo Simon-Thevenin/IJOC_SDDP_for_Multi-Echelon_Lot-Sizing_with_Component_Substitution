@@ -58,8 +58,8 @@ class Tool:
         df = pd.read_excel(filename,
                       header=[0, 1],
                       index_col=[0],
-                      sheet_name=sheetname)
-
+                      sheetname=sheetname)
+                      
         return df;
 
     #This function transform the sheet given in arguments into a dataframe
