@@ -3,6 +3,7 @@ from Constants import Constants
 from Solution import Solution
 from EvaluatorIdentificator import EvaluatorIdentificator
 from EvaluationSimulator import EvaluationSimulator
+from SDDP import SDDP
 import subprocess
 import cPickle as pickle
 import csv
@@ -20,6 +21,12 @@ class Evaluator( object ):
         self.Solver = solver
         self.OutOfSampleTestResult = []
         self.InSampleTestResult =[]
+        if self.TestIdentifier.Method == Constants.SDDP:
+            self.Solver.SDDPSolver = SDDP(instance, self.TestIdentifier)
+            self.Solver.SDDPSolver.LoadCuts()
+            Constants.SDDPGenerateCutWith2Stage = False
+            Constants.SDDPRunSigleTree = False
+            Constants.SolveRelaxationFirst = False
 
     #Return the solution to evaluate
     def GetPreviouslyFoundSolution(self):
