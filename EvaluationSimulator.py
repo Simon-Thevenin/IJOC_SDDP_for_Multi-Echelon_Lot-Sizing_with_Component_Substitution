@@ -225,6 +225,7 @@ class EvaluationSimulator(object):
             # For model YFix, the quantities depend on the scenarion
             else:
                 givenquantty = [[0 for p in self.Instance.ProductSet] for t in self.Instance.TimeBucketSet]
+                givenconsumption = [[0 for c in self.Instance.ConsumptionSet] for t in self.Instance.TimeBucketSet]
 
                 previousnode = sol.ScenarioTree.RootNode
                 #At each time period the quantity to produce is decided based on the demand known up to now
@@ -232,9 +233,9 @@ class EvaluationSimulator(object):
                     demanduptotimet = [[scenario.Demands[t][p] for p in self.Instance.ProductSet] for t in range(ti)]
 
                     if self.Policy == Constants.Resolve:
-                         givenquantty[ti], error = self.GetQuantityByResolve(demanduptotimet, ti, givenquantty, sol,  givensetup)
+                         givenquantty[ti], givenconsumption[ti], error = self.GetQuantityByResolve(demanduptotimet, ti, givenquantty, givenconsumption, sol,  givensetup)
 
-        return givensetup, givenquantty
+        return givensetup, givenquantty, givenconsumption
 
     #This method run a forward pass of the SDDP algorithm on the considered set of scenarios
     def ForwardPassOnScenarios(self, sddp, scenarios):
@@ -386,7 +387,7 @@ class EvaluationSimulator(object):
         #Get the required number of scenario
         self.GetScenarioSet()
 
-    def GetQuantityByResolve(self, demanduptotimet, time, givenquantty, solution, givensetup):
+    def GetQuantityByResolve(self, demanduptotimet, time, givenquantty, givenconsumption, solution, givensetup):
         result = [0 for p in self.Instance.ProductSet]
         error = 0
         # decentralized = DecentralizedMRP(self.Instance)
@@ -401,12 +402,13 @@ class EvaluationSimulator(object):
             resultqtyconsumption = [solution.Consumption[0][time][c[0]][c[1]] for c in self.Instance.ConsumptionSet]
         else:
             quantitytofix = [[givenquantty[t][p] for p in self.Instance.ProductSet] for t in range(time)]
+            consumptiontfix = [[givenconsumption[t][c] for c in range(len(self.Instance.ConsumptionSet))] for t in range(time)]
 
 
             if Constants.IsRule(self.Model):
                 result = self.ResolveRule(quantitytofix,  givensetup, demanduptotimet, time)
             else:
-                result, error = self.ResolveMIP(quantitytofix, givensetup, demanduptotimet, time)
+                resultqty, resultqtyconsumption, error = self.ResolveMIP(quantitytofix, givensetup, consumptiontfix, demanduptotimet, time)
 
         return resultqty, resultqtyconsumption, error
 
@@ -420,7 +422,7 @@ class EvaluationSimulator(object):
 
 
 
-    def ResolveMIP(self, quantitytofix,  givensetup, demanduptotimet, time):
+    def ResolveMIP(self, quantitytofix,  givensetup, givenconsumption, demanduptotimet, time):
             if not self.IsDefineMIPResolveTime[time]:
                 treestructure = [1] \
                                 + [self.ReferenceTreeStructure[t - ( time - self.Instance.NrTimeBucketWithoutUncertaintyBefore)+ 1]
@@ -458,6 +460,7 @@ class EvaluationSimulator(object):
                                       evaluatesolution=True,
                                       givenquantities=quantitytofix,
                                       givensetups=givensetup,
+                                      givenconsumption= givenconsumption,
                                       fixsolutionuntil=(time -1), #time lower or equal
                                       demandknownuntil=time,
                                       usesafetystock=self.UseSafetyStock,
@@ -521,11 +524,14 @@ class EvaluationSimulator(object):
             if sol.is_primal_feasible():
                 array = [self.MIPResolveTime[time].GetIndexQuantityVariable(p, time, 0) for p in self.Instance.ProductSet];
 
-                result = sol.get_values(array)
+                resultqty = sol.get_values(array)
                 if Constants.Debug:
-                    print(result)
-                #result = [solution.ProductionQuantity[0][time][p] for p in
-                #          self.Instance.ProductSet]
+                    print(resultqty)
+
+                array = [self.MIPResolveTime[time].GetIndexConsumptionVariable(c[1], c[0], time, 0) for c in self.Instance.ConsumptionSet];
+                resultconsumption = sol.get_values(array)
+                if Constants.Debug:
+                    print(resultqty)
             else:
                 if Constants.Debug:
                     self.MIPResolveTime[time].Cplex.write("MRP-Re-Solve.lp")
@@ -533,4 +539,4 @@ class EvaluationSimulator(object):
 
                 error = 1
 
-            return result, error
+            return resultqty, resultconsumption, error
