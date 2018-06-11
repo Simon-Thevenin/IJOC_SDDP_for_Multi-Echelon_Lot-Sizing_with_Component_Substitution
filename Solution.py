@@ -411,7 +411,7 @@ class Solution(object):
                                 for t in timebucketset] for w in self.SenarioNrset]
         self.Production = [[[self.Production[w][t][p] for p in self.Instance.ProductSet]
                             for t in self.Instance.TimeBucketSet] for w in self.SenarioNrset]
-        self.BackOrder = [[[self.BackOrder[w][t][p] for p in self.Instance.ProductWithExternalDemand]
+        self.BackOrder = [[[self.BackOrder[w][t][self.Instance.ProductWithExternalDemandIndex[p]] for p in self.Instance.ProductWithExternalDemand]
                            for t in timebucketset] for w in self.SenarioNrset]
 
     #This function compute some statistic on the current solution
