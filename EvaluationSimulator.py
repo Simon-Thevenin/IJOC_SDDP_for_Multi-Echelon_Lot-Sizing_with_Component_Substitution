@@ -254,6 +254,10 @@ class EvaluationSimulator(object):
         sddp.ForwardPass(ignorefirststage=False)
 
         sddp.Stage[0].CopyDecisionOfScenario0ToAllScenario()
+        if Constants.Debug:
+            sddp.ComputeCost()
+            sddp.UpdateUpperBound()
+            print("Run forward pass on all evaluation scenarios, cost: %r" %sddp.CurrentExpvalueUpperBound)
 
     # This function return the setup decision and quantity to produce for the scenario given in argument
     def GetDecisionFromSDDPForScenario(self, sddp, scenario):
