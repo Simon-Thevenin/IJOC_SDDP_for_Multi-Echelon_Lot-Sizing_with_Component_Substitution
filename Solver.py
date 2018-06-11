@@ -247,6 +247,11 @@ class Solver( object ):
              self.SDDPSolver.HeuristicSetupValue = self.GivenSetup
              self.SDDPSolver.Run()
              solution = self.SDDPSolver.CreateSolutionAtFirstStage()
+
+             self.SDDPSolver.SaveSolver()
+
+             self.SDDPSolver = SDDP(self.Instance, self.TestIdentifier)
+             self.SDDPSolver.LoadCuts()
              #SolveInformation = sddpsolver.SolveInfo
              #evaluator = self.Evaluator(self.Instance, [], [sddpsolver], optimizationmethod=Constants.SDDP)
              #OutOfSampleTestResult = evaluator.EvaluateYQFixSolution(self.TestIdentifier, self.EvaluatorIdentifier, self.Model,

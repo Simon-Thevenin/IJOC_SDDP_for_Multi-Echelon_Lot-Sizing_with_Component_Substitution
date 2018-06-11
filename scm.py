@@ -78,10 +78,7 @@ def Solve(instance):
 
     solution = solver.Solve()
 
-    solver.SDDPSolver.SaveSolver()
 
-    solver.SDDPSolver = SDDP(instance, TestIdentifier)
-    solver.SDDPSolver.LoadCuts()
     LastFoundSolution = solution
     evaluator = Evaluator(instance, TestIdentifier, EvaluatorIdentifier, solver)
     evaluator.RunEvaluation()
