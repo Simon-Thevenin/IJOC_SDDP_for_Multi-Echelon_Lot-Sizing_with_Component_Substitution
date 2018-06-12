@@ -302,7 +302,7 @@ class SDDPLastStage( SDDPStage ):
                                                               rhs=righthandside)
                     self.FlowConstraintNR[p][t] = "Flowp%dy%d"%(p,t)
                     if Constants.Debug:
-                        self.Stage.Cplex.linear_constraints.set_names(self.LastAddedConstraintIndex,
+                        self.Cplex.linear_constraints.set_names(self.LastAddedConstraintIndex,
                                                                       self.FlowConstraintNR[p][t])
 
                     self.IndexFlowConstraint.append(self.LastAddedConstraintIndex)

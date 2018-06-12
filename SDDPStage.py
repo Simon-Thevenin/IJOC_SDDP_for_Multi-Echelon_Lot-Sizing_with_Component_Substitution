@@ -879,7 +879,13 @@ class SDDPStage(object):
                 for p in self.Instance.ProductWithExternalDemand:
                     scenario.Demands[t][p] = sum(w.Demands[t][p] for w in self.SDDPOwner.SetOfSAAScenario) \
                                              / self.SDDPOwner.NrScenarioSAA
+            #        for w in self.SDDPOwner.SetOfSAAScenario:
+            #            print("________________________________________")
+            #            print(w.Demands[t][p])
 
+            #for t in self.Instance.TimeBucketSet:
+            #    for p in self.Instance.ProductWithExternalDemand:
+            #        print("demand in period %r, prod %r: %r"%(t, p, scenario.Demands[t][p]) )
             self.CreatePIFlowConstraints()
             #self.CreatePICapacityConstraints()
             self.CreatePIConsumptionConstraints()

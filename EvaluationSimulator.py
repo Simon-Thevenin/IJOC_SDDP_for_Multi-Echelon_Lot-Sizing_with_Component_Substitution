@@ -241,8 +241,9 @@ class EvaluationSimulator(object):
     def ForwardPassOnScenarios(self, sddp, scenarios):
         sddp.EvaluationMode = True
         # Make a forward pass on the
+        #Create the SAA scenario, which are used to compute the EVPI scenario
+        sddp.GenerateSAAScenarios()
         # Get the set of scenarios
-
         sddp.CurrentSetOfTrialScenarios = scenarios
         sddp.ScenarioNrSet = len(scenarios)
         sddp.GenerateStrongCut = False
