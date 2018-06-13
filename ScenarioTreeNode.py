@@ -325,9 +325,9 @@ class ScenarioTreeNode(object):
             demandvector = [[float(instance.ForecastedAverageDemand[time][p])
                              for i in range(resultingnrpoints)] for p in instance.ProductSet]
 
-            for i in range( resultingnrpoints ):
+            for i in range(resultingnrpoints):
                 for p in instance.ProductWithExternalDemand:
-                    demandvector[ p][i] = points[ instance.ProductWithExternalDemandIndex[p] ][i]
+                    demandvector[p][i] = points[instance.ProductWithExternalDemandIndex[p]][i]
 
         return demandvector, probability
 

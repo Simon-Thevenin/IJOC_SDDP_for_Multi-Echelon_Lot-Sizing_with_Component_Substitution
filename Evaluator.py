@@ -163,6 +163,7 @@ class Evaluator( object ):
             self.OutOfSampleTestResult = evaluator.ComputeStatistic(EvaluationTab, ProbabilitiesTab, KPIStat, -1)
             if self.TestIdentifier.Method == Constants.MIP and not self.TestIdentifier.EVPI:
                 self.InSampleTestResult = self.ComputeInSampleStatistis()
+            self.InSampleTestResult = self.ComputeInSampleStatistis()
             self.PrintFinalResult()
 
         self.TestIdentifier.ScenarioSeed = currentseedvalue

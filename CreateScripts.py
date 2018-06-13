@@ -19,7 +19,7 @@ def CreateSDDPJob(instance, setting):
 #$ -j y
 #$ -o /home/thesim/log/outputjobevaluate%s%s.txt
 ulimit -v 30000000
-python scm.py  Evaluate %s YFix 25 RQMC -n 5000 -p Fix -m SDDP --mipsetting %s
+python scm.py  Solve %s YFix 200 RQMC -n 5000 -p Fix -m SDDP --mipsetting %s
 """ % (instance, setting, instance, setting))
     return qsub_filename
 

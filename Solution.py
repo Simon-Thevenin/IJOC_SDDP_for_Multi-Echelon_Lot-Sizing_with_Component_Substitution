@@ -64,6 +64,9 @@ class Solution(object):
         self.CplexNrConstraints = -1
         self.CplexNrVariables = -1
 
+        self.SDDPLB = -1
+        self.SDDPExpUB = -1
+        self.SDDPNrIteration =-1
 
 
 
@@ -92,9 +95,9 @@ class Solution(object):
             model = "Rule"
         general = [self.Instance.InstanceName, self.Instance.Distribution, model,
                    self.CplexCost, self.CplexTime, self.TotalTime, self.CplexGap, self.CplexNrConstraints,
-                   self.CplexNrVariables, self.IsPartialSolution, self.IsSDDPSolution]
+                   self.CplexNrVariables, self.SDDPLB, self.SDDPExpUB, self.SDDPNrIteration, self.IsPartialSolution, self.IsSDDPSolution]
         columnstab = ["Name", "Distribution", "Model", "CplexCost", "CplexTime", "TotalTime", "CplexGap", "CplexNrConstraints",
-                      "CplexNrVariables", "IsPartialSolution", "ISSDDPSolution"]
+                      "CplexNrVariables", "SDDP_LB", "SDDP_ExpUB", "SDDP_NrIteration", "IsPartialSolution", "ISSDDPSolution"]
         generaldf = pd.DataFrame(general, index=columnstab)
         return generaldf
 
@@ -225,6 +228,10 @@ class Solution(object):
         self.CplexGap = instanceinfo.at['CplexGap', 0]
         self.CplexNrConstraints = instanceinfo.at['CplexNrConstraints', 0]
         self.CplexNrVariables = instanceinfo.at['CplexNrVariables', 0]
+
+        self.SDDPLB = instanceinfo.at['SDDP_LB', 0]
+        self.SDDPExpUB = instanceinfo.at['SDDP_ExpUB', 0]
+        self.SDDPNrIteration = instanceinfo.at['SDDP_NrIteration', 0]
 
         self.Scenarioset = self.ScenarioTree.GetAllScenarios(False)
         if self.IsPartialSolution:
@@ -636,11 +643,15 @@ class Solution(object):
         nrsetups = self.GetNrSetup()
 #        averagecoverage = self.GetAverageCoverage()
 
+
         kpistat = [ self.CplexCost,
                     self.CplexTime,
                     self.CplexGap,
                     self.CplexNrConstraints,
                     self.CplexNrVariables,
+                    self.SDDPLB,
+                    self.SDDPExpUB,
+                    self.SDDPNrIteration,
                     self.TotalTime,
                     self.SetupCost,
                     self.InventoryCost,

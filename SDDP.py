@@ -57,6 +57,7 @@ class SDDP(object):
         self.LinkStages()
         self.CurrentNrScenario = Constants.SDDPNrScenarioForwardPass
         self.NrScenarioSAA = int(self.TestIdentifier.NrScenario)
+        self.SDDPNrScenarioTest = Constants.SDDPInitNrScenarioTest
 
         self.CurrentBigM = []
         self.ScenarioGenerationMethod = self.TestIdentifier.ScenarioSampling
@@ -133,13 +134,23 @@ class SDDP(object):
 
         scenariotree = ScenarioTree(self.Instance, treestructure, self.CurrentScenarioSeed,
                                     scenariogenerationmethod=self.ScenarioGenerationMethod,
-                                    generateasYQfix=False, averagescenariotree=average,
-                                    model=Constants.ModelYQFix)
+                                    averagescenariotree=average, model=Constants.ModelYQFix)
 
 
 
         #Get the set of scenarios
         scenarioset = scenariotree.GetAllScenarios(computeindex=False)
+
+        #import matplotlib.pyplot as plt
+        #for p in self.Instance.ProductWithExternalDemand:
+        #    for t in self.Instance.TimeBucketSet:
+        #          pts = [s.Demands[t][p] for s in scenarioset]
+        #         print " CONSTRUCTING THE TREE The transformed point at dim %d at time %d : %r  " % (p, time, pts)
+        #          fig = plt.figure()
+        #          ax1 = fig.add_subplot(111)
+        #          plt.title("p:%r, t:%r, avg:%r, std:%r"%(p,t,self.Instance.ForecastedAverageDemand[t][p], self.Instance.ForcastedStandardDeviation[t][p]))
+        #          n, bins, patches = ax1.hist(pts, bins=100, normed=1, facecolor='green')
+        #          plt.show()
 
 
 
@@ -153,7 +164,7 @@ class SDDP(object):
          #self.CurrentIteration % 25 == 0
 
         if self.IsIterationWithConvergenceTest:
-            self.CurrentNrScenario = Constants.SDDPNrScenarioTest
+            self.CurrentNrScenario = self.SDDPNrScenarioTest
         else:
             self.CurrentNrScenario = Constants.SDDPNrScenarioForwardPass
         self.CurrentSetOfTrialScenarios = self.GenerateScenarios(self.CurrentNrScenario, average=Constants.SDDPDebugSolveAverage)
@@ -252,14 +263,21 @@ class SDDP(object):
         duration = time.time() - self.StartOfAlsorithm
         timalimiteached = (duration > Constants.AlgorithmTimeLimit)
         optimalitygap = ( self.CurrentUpperBound - self.CurrentLowerBound)/self.CurrentUpperBound
-        convergencecriterion = 1000
+        convergencecriterion = Constants.Infinity
+        c = Constants.Infinity
         if self.CurrentLowerBound > 0:
-            convergencecriterion = float(self.CurrentUpperBound) / float(self.CurrentLowerBound)
+            convergencecriterion = float(self.CurrentUpperBound) / float(self.CurrentLowerBound) \
+                                   - (1.96 * math.sqrt(float(self.VarianceForwardPass)  \
+                                                     / float(self.CurrentNrScenario)) \
+                                         / float(self.CurrentLowerBound))
 
-        delta = 1000
-        if self.VarianceForwardPass > 0 and self.CurrentLowerBound> 0:
+            c = (1.96 * math.sqrt(float(self.VarianceForwardPass) / float(self.CurrentNrScenario)) \
+                                     / float(self.CurrentLowerBound))
+
+        delta = Constants.Infinity
+        if self.VarianceForwardPass > 0 and self.CurrentLowerBound > 0:
             delta = 3.92 * math.sqrt(float(self.VarianceForwardPass) / float(self.CurrentNrScenario)) \
-                    /  float(self.CurrentLowerBound)
+                    / float(self.CurrentLowerBound)
 
         convergencecriterionreached = convergencecriterion < 1 \
                                       and delta < Constants.AlgorithmOptimalityTolerence
@@ -270,19 +288,29 @@ class SDDP(object):
         iterationlimitreached = (self.CurrentIteration > Constants.SDDPIterationLimit)
         result = self.IsIterationWithConvergenceTest and convergencecriterionreached or timalimiteached or iterationlimitreached
         if Constants.PrintSDDPTrace:
-            self.WriteInTraceFile("Iteration: %d, Duration: %d, LB: %r, UB: %r (exp:%r), convtets:%r Gap: %r, conv: %r, delta : %r \n"
-                                  %(self.CurrentIteration, duration, self.CurrentLowerBound, self.CurrentUpperBound,
-                                    self.CurrentExpvalueUpperBound, self.IsIterationWithConvergenceTest,
-                                    optimalitygap, convergencecriterion, delta))
+            if self.IsIterationWithConvergenceTest:
+                self.WriteInTraceFile(
+                    "Convergence Test, Nr Scenario: %r, Duration: %d, LB: %r, (exp UB:%r), c: %r Gap: %r, conv: %r, delta : %r \n"
+                    % (self.SDDPNrScenarioTest, duration, self.CurrentLowerBound, self.CurrentExpvalueUpperBound,
+                       c, optimalitygap, convergencecriterion, delta))
+            else:
+                self.WriteInTraceFile("Iteration: %d, Duration: %d, LB: %r, (exp UB:%r), c: %r Gap: %r, conv: %r, delta : %r \n"
+                                  %(self.CurrentIteration, duration, self.CurrentLowerBound, self.CurrentExpvalueUpperBound,
+                                    c, optimalitygap, convergencecriterion, delta))
 
-        if result == False and self.CurrentLowerBound > self.CurrentExpvalueUpperBound\
-                and not self.IsIterationWithConvergenceTest:
+        if not result and convergencecriterion < 1:
+            if self.IsIterationWithConvergenceTest == True:
+                self.SDDPNrScenarioTest += Constants.SDDPIncreaseNrScenarioTest
+
             self.IsIterationWithConvergenceTest = True
             self.GenerateTrialScenarios()
             self.ForwardPass()
             self.ComputeCost()
             self.UpdateUpperBound()
             result = self.CheckStoppingCriterion()
+        else:
+            self.IsIterationWithConvergenceTest = False
+            #self.SDDPNrScenarioTest = Constants.SDDPInitNrScenarioTest
 
         return result
 
@@ -291,7 +319,7 @@ class SDDP(object):
         optimalitygap = (self.CurrentExpvalueUpperBound - self.CurrentLowerBound)/self.CurrentExpvalueUpperBound
         optimalitygapreached = (optimalitygap < Constants.SDDPGapRelax)
         iterationlimitreached = (self.CurrentIteration > Constants.SDDPNrIterationRelax * round)
-        result = optimalitygapreached or iterationlimitreached
+        result = iterationlimitreached
         return result
 
     #This funciton compute the solution of the scenario given in argument (used after to have run the algorithm, and the cost to go approximation are built)
@@ -322,10 +350,10 @@ class SDDP(object):
         round = 1
         createpreliminarycuts = Constants.SolveRelaxationFirst
         ExitLoop = not createpreliminarycuts and Constants.SDDPRunSigleTree
+        Stop = False
+        while (not Stop or createpreliminarycuts) and not ExitLoop:
 
-        while (not self.CheckStoppingCriterion() or createpreliminarycuts) and not ExitLoop:
-
-            if createpreliminarycuts and self.CheckStoppingRelaxationCriterion(round):
+            if createpreliminarycuts and (Stop or self.CheckStoppingRelaxationCriterion(round) ):
                 round += 1
                 #if round < 3:
                 #    self.Stage[0].ChangeSetupToValueOfTwoStage()
@@ -356,6 +384,7 @@ class SDDP(object):
             self.UpdateUpperBound()
             self.BackwardPass()
             self.CurrentIteration = self.CurrentIteration + 1
+            Stop = self.CheckStoppingCriterion()
             #if self.CurrentIteration % 50 == 0:
             #    self.CurrentNrScenario =  self.CurrentNrScenario  * 10
 
@@ -496,6 +525,10 @@ class SDDP(object):
 
             solution.IsSDDPSolution = True
             solution.FixedQuantity = [[-1 for p in self.Instance.ProductSet] for t in self.Instance.TimeBucketSet]
+
+            solution.SDDPLB = self.CurrentLowerBound
+            solution.SDDPExpUB = self.CurrentExpvalueUpperBound
+            solution.SDDPNrIteration = self.CurrentIteration
 
             return solution
 

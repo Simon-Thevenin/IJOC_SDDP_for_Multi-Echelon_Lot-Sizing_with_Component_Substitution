@@ -85,11 +85,12 @@ class ScenarioTree(object):
                      for t in timebucketswithuncertainty]
         dimension = len(self.Instance.ProductWithExternalDemand) * (nrtimebucketswithuncertainty)
 
-        nrscenarion = max(self.NrBranches[i] for i in range(len(self.NrBranches)))
-        rqmcpoint01 = RQMCGenerator.RQMC01(nrscenarion, dimension, withweight=True,
+        nrscenario = max(self.NrBranches[i] for i in range(len(self.NrBranches)))
+        rqmcpoint01 = RQMCGenerator.RQMC01(nrscenario, dimension, withweight=True,
                                            QMC=(self.ScenarioGenerationMethod == Constants.QMC))
-
-        rmcpoint = ScenarioTreeNode.TransformInverse(rqmcpoint01, nrscenarion, dimension, self.Instance.Distribution,
+        #print(rqmcpoint01)
+        #print(min(rqmcpoint01[a][b] for a in range(nrscenario) for b in range(dimension) ))
+        rmcpoint = ScenarioTreeNode.TransformInverse(rqmcpoint01, nrscenario, dimension, self.Instance.Distribution,
                                                      avgvector, stdvector)
 
         self.DemandYQFixRQMC = [[[rmcpoint[self.Instance.ProductWithExternalDemandIndex[p] * nrtimebucketswithuncertainty \
@@ -98,8 +99,8 @@ class ScenarioTree(object):
                                   else 0.0
                                   for p in self.Instance.ProductSet]
                                  for t in self.Instance.TimeBucketSet]
-                                for s in range(nrscenarion)]
-        for s in range(nrscenarion):
+                                for s in range(nrscenario)]
+        for s in range(nrscenario):
             for t in range(self.Instance.NrTimeBucketWithoutUncertaintyBefore, firstuknown):
                 for p in self.Instance.ProductSet:
                     self.DemandYQFixRQMC[s][t][p] = self.GivenFirstPeriod[t][p]

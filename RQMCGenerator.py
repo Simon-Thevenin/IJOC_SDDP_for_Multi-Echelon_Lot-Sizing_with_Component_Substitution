@@ -26,7 +26,7 @@ class RQMCGenerator(object):
     def RQMC01(nrpoints, dimensionpoint, withweight=True, QMC=False):
         randomizer = [0] * dimensionpoint
         if not QMC:
-            randomizer = [np.random.uniform(0.0, 100000000000000.0) for i in range(dimensionpoint)]
+            randomizer = [np.random.uniform(0.0, 10000000.0) for i in range(dimensionpoint)]
 
         a = RQMCGenerator.GetFromSavedValue(nrpoints, dimensionpoint)
         if a is None:
@@ -44,13 +44,16 @@ class RQMCGenerator(object):
             restable2 = restable[len(restable) - 1].split("[", 10000)
             restable3 = restable2[1].split("]", 10000)
             resaslistofstring = restable3[0].split(',')
-            a = [int(ai) for ai in resaslistofstring]
+            a = [float(ai) for ai in resaslistofstring]
+            #print(a)
+            #print(randomizer)
+            #print(min(randomizer[d] for d in range(dimensionpoint)))
             RQMCGenerator.AddToSavedValue(nrpoints, dimensionpoint, a)
 
         result = [[(i * a[d] % nrpoints) / float(nrpoints) for d in range(dimensionpoint)] for i
                   in range(nrpoints)]
 
-        result = [[(((i * a[d] % nrpoints) / float(nrpoints)) + randomizer[d]) % 1 for d in range(dimensionpoint)] for i
+        result = [[(((i * a[d] % nrpoints) / float(nrpoints)) + randomizer[d]) % 1.0 for d in range(dimensionpoint)] for i
                   in range(nrpoints)]
 
         return result

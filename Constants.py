@@ -54,7 +54,7 @@ class Constants( object ):
 
     #Code parameter
     Infinity = 9999999999999
-    AlgorithmTimeLimit = 36000
+    AlgorithmTimeLimit = 36000#36000
 
     #SDDPparameters
     AlgorithmOptimalityTolerence = 0.05
@@ -66,7 +66,9 @@ class Constants( object ):
 
     SDDPNrScenarioForwardPass = 1
     SDDPNrScenarioBackwardPass = 1
-    SDDPNrScenarioTest = 500
+
+    SDDPIncreaseNrScenarioTest = 100
+    SDDPInitNrScenarioTest = 10
 
     SolveRelaxationFirst = True
     SDDPNrIterationRelax = 500
