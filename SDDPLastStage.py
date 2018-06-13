@@ -98,7 +98,7 @@ class SDDPLastStage( SDDPStage ):
         #Variable for the inventory
         self.Cplex.variables.add(obj=[math.pow(self.Instance.Gamma, t)
                                       * self.Instance.InventoryCosts[p]
-                                      for p in self.Instance.ProductSet
+                                      for p in self.Instance.ProductWithExternalDemand
                                       for t in self.GetLastStageTimeRangeStock(p)],
                                   lb=[0.0] * self.NrStockVariable,
                                   ub=[self.M] * self.NrStockVariable)
@@ -107,9 +107,7 @@ class SDDPLastStage( SDDPStage ):
         #backordertime = self.GetLastStageTimeRangeStock(p)
         #backordertime.pop()
 
-        backordercost = [math.pow(self.Instance.Gamma, t) * self.Instance.BackorderCosts[p]
-                          if t < self.Instance.NrTimeBucket -1
-                          else math.pow(self.Instance.Gamma, t) * self.Instance.LostSaleCost[p]
+        backordercost = [ math.pow(self.Instance.Gamma, t) * self.Instance.LostSaleCost[p]
                                         for p in self.Instance.ProductWithExternalDemand
                                         for t in self.GetLastStageTimeRangeStock(p)]
 

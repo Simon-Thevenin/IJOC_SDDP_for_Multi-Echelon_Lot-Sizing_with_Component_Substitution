@@ -64,8 +64,8 @@ class Constants( object ):
     GenerateStrongCut = True
     SDDPRunSigleTree = False
 
-    SDDPNrScenarioForwardPass = 1
-    SDDPNrScenarioBackwardPass = 1
+    SDDPNrScenarioForwardPass = 10
+    SDDPNrScenarioBackwardPass = 10
 
     SDDPIncreaseNrScenarioTest = 100
     SDDPInitNrScenarioTest = 10
