@@ -4,7 +4,8 @@ import openpyxl as opxl
 import pandas as pd
 import glob as glob
 
-columnname = ["Instance name",
+columnname = ["_",
+              "Instance name",
               "Model",
               "Method",
               "Scenario Generation Method",
