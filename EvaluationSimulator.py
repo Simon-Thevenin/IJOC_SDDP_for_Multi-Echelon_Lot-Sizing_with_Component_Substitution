@@ -85,7 +85,8 @@ class EvaluationSimulator(object):
                 if self.TestIdentificator.Method == Constants.SDDP:
                     sddp = self.SDDPs[n]
                     seed = sddp.StartingSeed
-                evaluatoinscenarios, scenariotrees = self.GetScenarioSet(seed, nrscenario, allscenario)
+                print("Attention hardcoded seed!!!!")
+                evaluatoinscenarios, scenariotrees = self.GetScenarioSet(7639397, nrscenario, allscenario)
                 if self.TestIdentificator.Method == Constants.SDDP:
                     self.ForwardPassOnScenarios(sddp, evaluatoinscenarios)
                 firstscenario = True
