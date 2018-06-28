@@ -8,8 +8,8 @@ from Constants import Constants
 
 NrScenarioEvaluation = "5000"
 
-def CreateSDDPJob(instance, setting):
-    qsub_filename = "./Jobs/job_sddp_%s_%s" % (instance, setting)
+def CreateSDDPJob(instance, nrback, nrforward):
+    qsub_filename = "./Jobs/job_sddp_%s_%s_%s" % (instance, nrback, nrforward)
     qsub_file = open(qsub_filename, 'w')
     qsub_file.write("""
 #!/bin/bash -l
@@ -17,10 +17,10 @@ def CreateSDDPJob(instance, setting):
 #$ -cwd
 #$ -q idra
 #$ -j y
-#$ -o /home/thesim/log/outputjobevaluate%s%s.txt
+#$ -o /home/thesim/log/outputjobevaluate%s%s%s.txt
 ulimit -v 30000000
-python scm.py  Solve %s YFix 200 RQMC -n 5000 -p Fix -m SDDP --mipsetting %s
-""" % (instance, setting, instance, setting))
+python scm.py  Solve %s YFix %s RQMC -n 5000 -p Fix -m SDDP --mipsetting Default --nrforward %s
+""" % (instance, nrback, nrforward, instance, nrback, nrforward))
     return qsub_filename
 
 def CreateMIPJob(instance):
@@ -49,7 +49,7 @@ if __name__ == "__main__":
     instancetosolvename = ""
 
     if sys.argv[1] == "SDDP":
-        settings = ["Default", "NoFirstCuts", "NoEVPI", "NoStongCut"]
+        #settings = ["Default", "NoFirstCuts", "NoEVPI", "NoStongCut"]
         # Create the sh file for resolution
         filesddpname = "runallsddp.sh"
         filesddp = open(filesddpname, 'w')
@@ -59,9 +59,10 @@ if __name__ == "__main__":
 """)
 
         for instance in InstanceSet:
-            for setting in settings:
-                jobname = CreateSDDPJob(instance, setting)
-                filesddp.write("qsub %s \n" % (jobname) )
+            for nrback in [10, 25, 50, 100, 200]:
+                for nrforward in [1, 2, 5, 10, 20, 50]:
+                    jobname = CreateSDDPJob(instance, nrback, nrforward)
+                    filesddp.write("qsub %s \n" % (jobname) )
 
 
     if sys.argv[1] == "MIP":

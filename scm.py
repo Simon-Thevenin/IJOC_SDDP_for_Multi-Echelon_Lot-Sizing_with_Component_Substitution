@@ -47,6 +47,9 @@ def parseArguments():
     parser.add_argument("-c", "--mipsetting", help="test a specific mip solver parameter",  default="")
     parser.add_argument("-t", "--timehorizon", help="the time horizon used in shiting window.", type=int, default=1)
     parser.add_argument("-a", "--allscenario", help="generate all possible scenario.", type=int, default=0)
+    parser.add_argument("-w", "--nrforward", help="number of scenario in the forward pass of sddp.", type=int, default=0)
+
+
     # Print version
     parser.add_argument("--version", action="version", version='%(prog)s - Version 1.0')
 
@@ -69,6 +72,7 @@ def parseArguments():
                                        args.NrScenario,
                                        Constants.SeedArray[args.ScenarioSeed],
                                        args.evpi,
+                                       args.nrforward,
                                        args.mipsetting)
     EvaluatorIdentifier = EvaluatorIdentificator(policygeneration,  args.nrevaluation, args.timehorizon, args.allscenario)
 
@@ -141,7 +145,7 @@ if __name__ == '__main__':
             Constants.GenerateStrongCut = False
 
         instance = Instance()
-        # instance.DefineAsSuperSmallIntance()
+        #instance.DefineAsSuperSmallIntance()
         # instance.ReadFromFile("K0011525", "NonStationary", "Normal")
         # GenerateInstances()
         instance.ReadInstanceFromExelFile(TestIdentifier.InstanceName)

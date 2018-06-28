@@ -107,6 +107,11 @@ class Solver( object ):
                                     scenariogenerationmethod=self.ScenarioGeneration,
                                     model=scenariotreemodel)
 
+        scenarioset = scenariotree.GetAllScenarios(computeindex=False)
+        print("********************Scenarios SAA*********************")
+        for s in scenarioset:
+            print("Demands: %r" % s.Demands)
+
         MIPModel = self.TestIdentifier.Model
         if self.TestIdentifier.Model == Constants.Average:
             MIPModel = Constants.ModelYQFix
@@ -130,7 +135,7 @@ class Solver( object ):
             print("Start to model in Cplex")
         mipsolver.BuildModel()
         if Constants.Debug:
-            print( "Start to solve instance %s with Cplex"% self.Instance.InstanceName)
+            print("Start to solve instance %s with Cplex"% self.Instance.InstanceName)
 
 
         # scenario = mipsolver.Scenarios
@@ -155,7 +160,7 @@ class Solver( object ):
         return solution, mipsolver
 
     #Solve the two-stage version of the problem
-    def SolveYQFix( self ):
+    def SolveYQFix(self):
         tmpmodel = self.TestIdentifier.Model
         start = time.time()
 
@@ -164,7 +169,7 @@ class Solver( object ):
 
         average = False
         nrscenario = int(self.TestIdentifier.NrScenario)
-        if Constants.IsDeterministic( self.TestIdentifier.Model ):
+        if Constants.IsDeterministic(self.TestIdentifier.Model):
             average = True
             nrscenario = 1
 
@@ -174,8 +179,8 @@ class Solver( object ):
                  self.UseSSGrave = True
             self.TestIdentifier.Model = Constants.Average
 
-        treestructure = [1, nrscenario] +  [1] * ( self.Instance.NrTimeBucket - 1 ) +[ 0 ]
-        solution, mipsolver = self.MRP( treestructure, average, recordsolveinfo=True )
+        treestructure = [1, nrscenario] + [1] * (self.Instance.NrTimeBucket - 1 ) +[ 0 ]
+        solution, mipsolver = self.MRP(treestructure, average, recordsolveinfo=True )
 
         end = time.time()
         solution.TotalTime = end - start
@@ -239,8 +244,9 @@ class Solver( object ):
             self.TestIdentifier.Model = Constants.ModelYFix
             self.TestIdentifier.Method = methodtemp
 
-
-            solution, mipsolver = self.MRP(self.TreeStructure, averagescenario=False, recordsolveinfo=True, warmstart=True)
+            print("attention solve average")
+            self.TreeStructure = [1, 1, 1, 1, 1, 1, 0]
+            solution, mipsolver = self.MRP(self.TreeStructure, averagescenario=True, recordsolveinfo=True, warmstart=True)
 
         if self.TestIdentifier.Method == "SDDP":
              self.SDDPSolver = SDDP(self.Instance, self.TestIdentifier)

@@ -50,22 +50,22 @@ class Constants( object ):
     RunEvaluationInSeparatedJob = False
     PrintScenarios = False
     PrintSolutionFileInTMP = False
-    LauchEvalAfterSolve = True
+    LauchEvalAfterSolve = False
 
     #Code parameter
     Infinity = 9999999999999
-    AlgorithmTimeLimit = 36000#36000
+    AlgorithmTimeLimit = 36000
 
     #SDDPparameters
-    AlgorithmOptimalityTolerence = 0.05
+    AlgorithmOptimalityTolerence = 0.005
     SDDPIterationLimit = 10000
     SDDPPrintDebugLPFiles = False
     PrintSDDPTrace = True
     GenerateStrongCut = True
     SDDPRunSigleTree = False
 
-    SDDPNrScenarioForwardPass = 10
-    SDDPNrScenarioBackwardPass = 10
+    #SDDPNrScenarioForwardPass = 10
+    #SDDPNrScenarioBackwardPass = 10
 
     SDDPIncreaseNrScenarioTest = 100
     SDDPInitNrScenarioTest = 10
@@ -83,6 +83,7 @@ class Constants( object ):
     SDDPUseEVPI = True
     SDDPNrEVPIScenario = 1
     SDDPDebugSolveAverage = False
+
 
     @staticmethod
     def IsDeterministic(s):

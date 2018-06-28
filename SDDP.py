@@ -28,7 +28,13 @@ class SDDP(object):
     #Fill the links predecessor and next of each object stage
     def LinkStages(self):
         previousstage = None
-        for stage in self.Stage:
+        for stage in self.ForwardStage:
+            stage.PreviousSDDPStage = previousstage
+            if not previousstage is None:
+                previousstage.NextSDDPStage = stage
+            previousstage = stage
+
+        for stage in self.BackwardStage:
             stage.PreviousSDDPStage = previousstage
             if not previousstage is None:
                 previousstage.NextSDDPStage = stage
@@ -52,11 +58,18 @@ class SDDP(object):
         self.IsIterationWithConvergenceTest = False
         self.CurrentScenarioSeed = int(self.TestIdentifier.ScenarioSeed)
         self.StartingSeed = self.TestIdentifier.ScenarioSeed
-        self.Stage = [SDDPStage(owner=self, decisionstage=t) for t in range(nrstage)] \
-                        + [SDDPLastStage(owner=self, decisionstage=nrstage)]
-        self.LinkStages()
-        self.CurrentNrScenario = Constants.SDDPNrScenarioForwardPass
         self.NrScenarioSAA = int(self.TestIdentifier.NrScenario)
+        self.ForwardStage = [SDDPStage(owner=self, decisionstage=t, fixedccenarioset =[0], isforward=True) for t in range(nrstage)] \
+                             + [SDDPLastStage(owner=self, decisionstage=nrstage, fixedccenarioset =[0], isforward=True)]
+
+        backwardstagescenarioset = range(self.NrScenarioSAA)
+        self.BackwardStage = [SDDPStage(owner=self, decisionstage=t, fixedccenarioset=backwardstagescenarioset, forwardstage=self.ForwardStage[t], isforward=False) for t in range(nrstage)] \
+                             + [SDDPLastStage(owner=self, decisionstage=nrstage, fixedccenarioset=backwardstagescenarioset, forwardstage=self.ForwardStage[nrstage], isforward=False)]
+
+        self.DefineBakwarMip = False
+        self.LinkStages()
+        self.CurrentNrScenario = self.TestIdentifier.NrScenarioForward# Constants.SDDPNrScenarioForwardPass
+
         self.SDDPNrScenarioTest = Constants.SDDPInitNrScenarioTest
 
         self.CurrentBigM = []
@@ -75,7 +88,6 @@ class SDDP(object):
     def ForwardPass(self, ignorefirststage = False):
         if Constants.Debug:
             print("Start forward pass")
-        self.SetCurrentBigM()
         for t in self.StagesSet:
             if not ignorefirststage or t >= 1:
 
@@ -84,9 +96,10 @@ class SDDP(object):
                     and self.CurrentIteration % 100 == 0 \
                     and (t >= 1 or not Constants.SDDPRunSigleTree):
                         self.Stage[t].CleanCuts()
+                        print("Clean cut Should not be used")
 
                 #Run the forward pass at each stage t
-                self.Stage[t].RunForwardPassMIP()
+                self.ForwardStage[t].RunForwardPassMIP()
 
                 #try to use core point method, remove if it does not work
                 #if self.Stage[t].IsFirstStage()
@@ -100,9 +113,11 @@ class SDDP(object):
 
         self.UseCorePoint = self.GenerateStrongCut
 
+
+
         for t in self.StagesSet:
             if self.GenerateStrongCut:
-                self.Stage[t].UpdateCorePoint()
+                self.ForwardStage[t].UpdateCorePoint()
 
         #if self.IsIterationWithConvergenceTest:
         #    self.ConsideredTrialForBackward = np.random.randint(self.CurrentNrScenario, size=Constants.SDDPNrScenarioBackwardPass)
@@ -112,12 +127,22 @@ class SDDP(object):
         #self.ConsideredTrialForBackward = np.random.randint(self.CurrentNrScenario,
         #                                                    size=Constants.SDDPNrScenarioBackwardPass)
 
+        if not self.DefineBakwarMip:
+            for stage in self.StagesSet:
+                if not self.BackwardStage[stage].IsFirstStage():
+                    self.BackwardStage[stage].DefineMIP()
+            self.DefineBakwarMip = True
+
+        if Constants.SDDPPrintDebugLPFiles:  # or self.IsFirstStage():
+            for stage in self.StagesSet:
+                self.BackwardStage[stage].Cplex.write(
+                    "./Temp/Backwardstage_%d.lp" % (self.BackwardStage[stage].DecisionStage))
 
         #generate a cut for each trial solution
         for t in reversed(range(1, len(self.StagesSet))):
             #Build or update the MIP of stage t
             returncutinsteadofadd = (returnfirststagecut and t == 1)
-            firststagecuts, avgsubprobcosts = self.Stage[t].GernerateCut(returncutinsteadofadd)
+            firststagecuts, avgsubprobcosts = self.BackwardStage[t].GernerateCut(returncutinsteadofadd)
 
         self.UseCorePoint = False
 
@@ -152,10 +177,6 @@ class SDDP(object):
         #          n, bins, patches = ax1.hist(pts, bins=100, normed=1, facecolor='green')
         #          plt.show()
 
-
-
-
-
         return scenarioset
 
     #This function generates the scenarios for the current iteration of the algorithm
@@ -166,14 +187,15 @@ class SDDP(object):
         if self.IsIterationWithConvergenceTest:
             self.CurrentNrScenario = self.SDDPNrScenarioTest
         else:
-            self.CurrentNrScenario = Constants.SDDPNrScenarioForwardPass
+            self.CurrentNrScenario = self.TestIdentifier.NrScenarioForward
         self.CurrentSetOfTrialScenarios = self.GenerateScenarios(self.CurrentNrScenario, average=Constants.SDDPDebugSolveAverage)
         self.TrialScenarioNrSet = range(len(self.CurrentSetOfTrialScenarios))
         self.CurrentNrScenario = len(self.CurrentSetOfTrialScenarios)
         #Modify the number of scenario at each stage
         for stage in self.StagesSet:
-            self.Stage[stage].SetNrTrialScenario(self.CurrentNrScenario)
-
+            self.ForwardStage[stage].SetNrTrialScenario(self.CurrentNrScenario)
+            self.ForwardStage[stage].FixedScenarioPobability = [1]
+            self.BackwardStage[stage].SAAStageCostPerScenarioWithoutCostoGopertrial = [0 for w in self.TrialScenarioNrSet]
         self.CurrentScenarioSeed = self.CurrentScenarioSeed + 1
 
 
@@ -184,18 +206,24 @@ class SDDP(object):
         self.SAAScenarioNrSet = range(len(self.SetOfSAAScenario))
         self.NrScenarioSAA = len(self.SetOfSAAScenario)
         #Modify the number of scenario at each stage
-        #for stage in self.StagesSet:
-        #    self.Stage[stage].SAAScenarioNrSet(len(self.CurrentSetOfTrialScenarios))
+        for stage in self.StagesSet:
+            #self.BackwardStage[stage].SAAScenarioNrSet(len(self.CurrentSetOfTrialScenarios))
+            self.BackwardStage[stage].FixedScenarioSet = self.SAAScenarioNrSet
+            self.BackwardStage[stage].FixedScenarioPobability = [w.Probability for w in self.SetOfSAAScenario]
+            self.BackwardStage[stage].SAAStageCostPerScenarioWithoutCostoGopertrial = [0 for w in self.TrialScenarioNrSet]
+           # if not self.BackwardStage[stage].IsFirstStage():
+           #     self.BackwardStage[stage].DefineMIP()
 
         self.CurrentScenarioSeed = self.CurrentScenarioSeed + 1
 
+        self.SetCurrentBigM()
 
     #This function return the quanity of product to produce at time which has been decided at an earlier stage
     def GetQuantityFixedEarlier(self, product, time, scenario):
         if self.UseCorePoint:
-            result = self.Stage[time].CorePointQuantityValues[scenario][product]
+            result = self.ForwardStage[time].CorePointQuantityValues[scenario][product]
         else:
-            result = self.Stage[time].QuantityValues[scenario][product]
+            result = self.ForwardStage[time].QuantityValues[scenario][product]
 
         return result
 
@@ -211,9 +239,9 @@ class SDDP(object):
                 decisiontime = time
 
             if self.UseCorePoint:
-                result = self.Stage[decisiontime].CorePointInventoryValue[scenario][product]
+                result = self.ForwardStage[decisiontime].CorePointInventoryValue[scenario][product]
             else:
-                result = self.Stage[decisiontime].InventoryValue[scenario][product]
+                result = self.ForwardStage[decisiontime].InventoryValue[scenario][product]
 
         return result
 
@@ -223,28 +251,29 @@ class SDDP(object):
             result = 0
         else:
             if self.UseCorePoint:
-                result = self.Stage[time + 1].CorePointBackorderValue[scenario][self.Instance.ProductWithExternalDemandIndex[product]]
+                result = self.ForwardStage[time + 1].CorePointBackorderValue[scenario][self.Instance.ProductWithExternalDemandIndex[product]]
             else:
-                result = self.Stage[time + 1].BackorderValue[scenario][self.Instance.ProductWithExternalDemandIndex[product]]
+                result = self.ForwardStage[time + 1].BackorderValue[scenario][self.Instance.ProductWithExternalDemandIndex[product]]
 
         return result
 
     #This function return the value of the setup variable of product to produce at time which has been decided at an earlier stage
     def GetSetupFixedEarlier(self, product, time, scenario):
         if self.UseCorePoint:
-            result = self.Stage[0].CorePointProductionValue[scenario][time][product]
+            result = self.ForwardStage[0].CorePointProductionValue[scenario][time][product]
         else:
-            result = self.Stage[0].ProductionValue[scenario][time][product]
+            result = self.ForwardStage[0].ProductionValue[scenario][time][product]
         return result
 
     #This function return the demand of product at time in scenario
     def GetDemandQuantity(self, product, time, scenario):
         result = 0
+        print("Is that called????")
         return result
 
     #This funciton update the lower bound based on the last forward pass
     def UpdateLowerBound(self):
-        result = self.Stage[0].PassCostWithAproxCosttoGo
+        result = self.ForwardStage[0].PassCostWithAproxCosttoGo
         self.CurrentLowerBound = result
 
     #This funciton update the upper bound based on the last forward pass
@@ -252,8 +281,8 @@ class SDDP(object):
             laststage = len(self.StagesSet) - 1
 #            expectedupperbound = sum( self.Stage[ s ].PassCost for s in self.StagesSet )
 #            variance = math.pow( np.std(  [ sum( self.Stage[ s ].PartialCostPerScenario[w] for s in self.StagesSet ) for w in self.ScenarioNrSet]  ), 2 )
-            expectedupperbound = self.Stage[laststage].PassCost
-            variance = sum(math.pow(expectedupperbound-self.Stage[laststage].PartialCostPerScenario[w], 2) for w in self.TrialScenarioNrSet) / self.CurrentNrScenario
+            expectedupperbound = self.ForwardStage[laststage].PassCost
+            variance = sum(math.pow(expectedupperbound-self.ForwardStage[laststage].PartialCostPerScenario[w], 2) for w in self.TrialScenarioNrSet) / self.CurrentNrScenario
             self.CurrentUpperBound = expectedupperbound - 1.96 * math.sqrt(variance / self.CurrentNrScenario)
             self.CurrentExpvalueUpperBound = expectedupperbound
             self.VarianceForwardPass = variance
@@ -275,12 +304,12 @@ class SDDP(object):
                                      / float(self.CurrentLowerBound))
 
         delta = Constants.Infinity
-        if self.VarianceForwardPass > 0 and self.CurrentLowerBound > 0:
+        if self.CurrentLowerBound > 0:
             delta = 3.92 * math.sqrt(float(self.VarianceForwardPass) / float(self.CurrentNrScenario)) \
                     / float(self.CurrentLowerBound)
 
-        convergencecriterionreached = convergencecriterion < 1 \
-                                      and delta < Constants.AlgorithmOptimalityTolerence
+        convergencecriterionreached = convergencecriterion <= 1 \
+                                      and delta <= Constants.AlgorithmOptimalityTolerence
 
 
 
@@ -298,7 +327,7 @@ class SDDP(object):
                                   %(self.CurrentIteration, duration, self.CurrentLowerBound, self.CurrentExpvalueUpperBound,
                                     c, optimalitygap, convergencecriterion, delta))
 
-        if not result and convergencecriterion < 1:
+        if not result and convergencecriterion <= 1:
             if self.IsIterationWithConvergenceTest == True:
                 self.SDDPNrScenarioTest += Constants.SDDPIncreaseNrScenarioTest
 
@@ -366,16 +395,24 @@ class SDDP(object):
                 self.CurrentUpperBound = Constants.Infinity
                 self.CurrentLowerBound = 0
                 if not ExitLoop:
-                    self.Stage[0].ChangeSetupToBinary()
+                    self.ForwardStage[0].ChangeSetupToBinary()
                     self.WriteInTraceFile("Change stage 1 problem to integer \n")
 
             #print("Attention uncomment")
             self.IsIterationWithConvergenceTest = False
             self.GenerateTrialScenarios()
+
             if Constants.Debug:
-                print("********************Scenarios*********************")
+                print("********************Scenarios Trial*********************")
                 for s in self.CurrentSetOfTrialScenarios:
                     print("Demands: %r" % s.Demands)
+                print("********************Scenarios SAA*********************")
+                for s in self.SetOfSAAScenario:
+                    print("Demands: %r" % s.Demands)
+                print("********************Scenarios EVPI*********************")
+                if Constants.SDDPUseEVPI and self.ForwardStage[0].EVPIScenarioSet is not None:
+                    for s in self.ForwardStage[0].EVPIScenarioSet:
+                        print("Demands: %r" % s.Demands)
                 print("****************************************************")
 
             self.ForwardPass()
@@ -402,6 +439,7 @@ class SDDP(object):
 
     # This function runs the SDDP algorithm
     def RunSingleTreeSDDP(self):
+        print("RunSingleTreeSDDP Should not be used")
 
         if not Constants.SolveRelaxationFirst:
             #run forward pass to create the MIPS
@@ -448,12 +486,12 @@ class SDDP(object):
         self.WriteInTraceFile("End Solve in one tree cost: %r " % self.CopyFirstStage.Cplex.solution.get_objective_value())
 
     def ComputeCost(self):
-        for stage in self.Stage:
+        for stage in self.ForwardStage:
             stage.ComputePassCost()
             #stage.PassCost = sum( stage.StageCostPerScenario[w] for w in self.ScenarioNrSet  ) / len(self.ScenarioNrSet)
 
     def SetCurrentBigM(self):
-       self.CurrentBigM =[MIPSolver.GetBigMValue(self.Instance, self.CurrentSetOfTrialScenarios, p) for p in self.Instance.ProductSet]
+       self.CurrentBigM =[MIPSolver.GetBigMValue(self.Instance, self.SetOfSAAScenario, p) for p in self.Instance.ProductSet]
 
     def GetFileName(self):
         result ="./Solutions/SDDP_%s_%s_%s_Solution.sddp"%(self.Instance.InstanceName, self.StartingSeed, self.CurrentNrScenario)
@@ -513,7 +551,7 @@ class SDDP(object):
             k=-1
             for c in self.Instance.ConsumptionSet:
                  k += 1
-                 solconsumption[0][0][c[0]][c[1]] = self.Stage[0].ConsumptionValues[0][k]
+                 solconsumption[0][0][c[0]][c[1]] = self.ForwardStage[0].ConsumptionValues[0][k]
 
             emptyscenariotree = ScenarioTree(instance=self.Instance,
                                              branchperlevel=[0,0,0,0,0],
@@ -556,7 +594,7 @@ class SDDP(object):
                 k = -1
                 for c in self.Instance.ConsumptionSet:
                      k += 1
-                     solconsumption[scenario][t][c[0]][c[1]] = self.Stage[t].ConsumptionValues[scenario][k]
+                     solconsumption[scenario][t][c[0]][c[1]] = self.ForwardStage[t].ConsumptionValues[scenario][k]
 
             emptyscenariotree = ScenarioTree(instance=self.Instance,
                                              branchperlevel=[0,0,0,0,0],
@@ -574,8 +612,9 @@ class SDDP(object):
     def SaveSolver(self):
         cuts = [[] for _ in self.StagesSet]
         for t in self.StagesSet:
-            for cut in self.Stage[t].SDDPCuts:
-                cut.Stage = None
+            for cut in self.ForwardStage[t].SDDPCuts:
+                cut.ForwardStage = None
+                cut.BackwarStage = None
                 cuts[t].append(cut)
         with open("./Solutions/SDDP_%r.pkl"%self.TestIdentifier.GetAsStringList(), 'wb') as output:
             pickle.dump(cuts, output)
@@ -587,5 +626,5 @@ class SDDP(object):
 
         for t in self.StagesSet:
             for cut in cuts[t]:
-                cut.Stage = self.Stage[t]
-                self.Stage[t].SDDPCuts.append(cut)
+                cut.ForwardStage = self.ForwardStage[t]
+                self.ForwardStage[t].SDDPCuts.append(cut)

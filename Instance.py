@@ -198,14 +198,14 @@ class Instance(object):
                                         [10, 0, 0],
                                         [10, 0, 0]
                                         ]
-        self.ForecastError = [0.5, 0, 0]
+        self.ForecastError = [0.25, 0, 0]
         self.RateOfKnownDemand = 0.0
-        self.YearlyStandardDevDemands = [5, 0, 0]
-        self.ForcastedStandardDeviation = [[5, 0, 0],
-                                           [5, 0, 0],
-                                           [5, 0, 0],
-                                           [5, 0, 0],
-                                           [5, 0, 0]]
+        self.YearlyStandardDevDemands = [2, 0, 0]
+        self.ForcastedStandardDeviation = [[2, 0, 0],
+                                           [2, 0, 0],
+                                           [2, 0, 0],
+                                           [2, 0, 0],
+                                           [2, 0, 0]]
 
         self.StartingInventories = [10.0, 5.0, 5.0]
         self.InventoryCosts = [5.0, 2.0, 2.0]
