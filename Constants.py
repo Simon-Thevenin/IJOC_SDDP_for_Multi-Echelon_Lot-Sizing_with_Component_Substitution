@@ -50,7 +50,7 @@ class Constants( object ):
     RunEvaluationInSeparatedJob = False
     PrintScenarios = False
     PrintSolutionFileInTMP = False
-    LauchEvalAfterSolve = False
+    LauchEvalAfterSolve = True
 
     #Code parameter
     Infinity = 9999999999999

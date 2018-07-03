@@ -79,7 +79,7 @@ class SDDP(object):
         self.UseCorePoint = False
         self.GenerateStrongCut = Constants.GenerateStrongCut
         self.TraceFile = None
-        self.TraceFileName = "./Temp/trace_%s_%s.txt" % (self.Instance.InstanceName, self.TestIdentifier.MIPSetting)
+        self.TraceFileName = "./Temp/trace_%s.txt" % (self.TestIdentifier.GetAsString())
         self.HeuristicSetupValue = []
 
 
