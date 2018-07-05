@@ -243,19 +243,19 @@ class EvaluationSimulator(object):
         sddp.EvaluationMode = True
         # Make a forward pass on the
         #Create the SAA scenario, which are used to compute the EVPI scenario
-        sddp.GenerateSAAScenarios()
+        #sddp.GenerateSAAScenarios()
         # Get the set of scenarios
         sddp.CurrentSetOfTrialScenarios = scenarios
         sddp.ScenarioNrSet = len(scenarios)
         sddp.GenerateStrongCut = False
         # Modify the number of scenario at each stage
         for stage in sddp.StagesSet:
-            sddp.Stage[stage].SetNrTrialScenario(len(scenarios))
-            sddp.Stage[stage].CurrentTrialNr = 0
-        sddp.Stage[0].CopyDecisionOfScenario0ToAllScenario()
+            sddp.ForwardStage[stage].SetNrTrialScenario(len(scenarios))
+            sddp.ForwardStage[stage].CurrentTrialNr = 0
+        sddp.ForwardStage[0].CopyDecisionOfScenario0ToAllScenario()
         sddp.ForwardPass(ignorefirststage=False)
 
-        sddp.Stage[0].CopyDecisionOfScenario0ToAllScenario()
+        sddp.ForwardStage[0].CopyDecisionOfScenario0ToAllScenario()
         if Constants.Debug:
             sddp.ComputeCost()
             sddp.UpdateUpperBound()
@@ -276,14 +276,14 @@ class EvaluationSimulator(object):
         #givenquantty=[]
         #Copy the quantity from the last stage
         for t in self.Instance.TimeBucketSet:
-            if not sddp.Stage[t].IsLastStage():
+            if not sddp.ForwardStage[t].IsLastStage():
                 givenquantty = givenquantty + \
-                                 [[sddp.Stage[t].QuantityValues[scenario][p]
+                                 [[sddp.ForwardStage[t].QuantityValues[scenario][p]
                                    for p in self.Instance.ProductSet]]
         for t in sddp.StagesSet:
-            if not sddp.Stage[t].IsLastStage():
+            if not sddp.ForwardStage[t].IsLastStage():
                 givenconsumption = givenconsumption + \
-                                    [[sddp.Stage[t].ConsumptionValues[scenario][c]
+                                    [[sddp.ForwardStage[t].ConsumptionValues[scenario][c]
                                       for c in range(len(self.Instance.ConsumptionSet))]]
 
         return givensetup, givenquantty, givenconsumption
