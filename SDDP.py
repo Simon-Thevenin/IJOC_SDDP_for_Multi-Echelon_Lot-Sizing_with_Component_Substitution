@@ -628,3 +628,5 @@ class SDDP(object):
             for cut in cuts[t]:
                 cut.ForwardStage = self.ForwardStage[t]
                 self.ForwardStage[t].SDDPCuts.append(cut)
+                cut.BackwarStage = self.BackwardStage[t]
+                self.BackwardStage[t].SDDPCuts.append(cut)

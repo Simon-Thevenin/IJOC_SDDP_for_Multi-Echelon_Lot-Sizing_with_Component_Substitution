@@ -203,7 +203,7 @@ class SDDPStage(object):
             self.NrStockVariable = len(self.Instance.ProductWithExternalDemand)
 
     # return the index of the cost to go variable for scenario w
-    def GetIndexCostToGo(self,w):
+    def GetIndexCostToGo(self, w):
             return self.StartCostToGo + w
 
     #return the index of the production variable associated with the product p at time t

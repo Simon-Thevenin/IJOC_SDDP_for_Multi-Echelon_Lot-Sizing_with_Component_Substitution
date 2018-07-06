@@ -101,7 +101,7 @@ class SDDPCut(object):
 
         if addtomodel:
             self.ActualyAddToModel(self.ForwardStage,   righthandside, True)
-            if not self.BackwarStage.IsFirstStage():
+            if not self.BackwarStage.IsFirstStage() and self.BackwarStage.MIPDefined:
                 self.ActualyAddToModel(self.BackwarStage,   righthandside, False)
 
 

@@ -243,15 +243,23 @@ class EvaluationSimulator(object):
         sddp.EvaluationMode = True
         # Make a forward pass on the
         #Create the SAA scenario, which are used to compute the EVPI scenario
-        #sddp.GenerateSAAScenarios()
+        sddp.GenerateSAAScenarios()
+
         # Get the set of scenarios
         sddp.CurrentSetOfTrialScenarios = scenarios
         sddp.ScenarioNrSet = len(scenarios)
+        sddp.CurrentNrScenario = len(scenarios)
+        sddp.TrialScenarioNrSet = range(len(sddp.CurrentSetOfTrialScenarios))
+
         sddp.GenerateStrongCut = False
         # Modify the number of scenario at each stage
         for stage in sddp.StagesSet:
             sddp.ForwardStage[stage].SetNrTrialScenario(len(scenarios))
-            sddp.ForwardStage[stage].CurrentTrialNr = 0
+            sddp.ForwardStage[stage].FixedScenarioPobability = [1]
+            sddp.ForwardStage[stage].FixedScenarioSet = [0]
+            sddp.BackwardStage[stage].SAAStageCostPerScenarioWithoutCostoGopertrial = [0 for w in
+                                                                                       sddp.TrialScenarioNrSet]
+
         sddp.ForwardStage[0].CopyDecisionOfScenario0ToAllScenario()
         sddp.ForwardPass(ignorefirststage=False)
 
