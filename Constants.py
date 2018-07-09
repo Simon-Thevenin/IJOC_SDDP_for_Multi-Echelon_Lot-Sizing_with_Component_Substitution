@@ -54,7 +54,7 @@ class Constants( object ):
 
     #Code parameter
     Infinity = 9999999999999
-    AlgorithmTimeLimit = 36000
+    AlgorithmTimeLimit = 3600
 
     #SDDPparameters
     AlgorithmOptimalityTolerence = 0.005

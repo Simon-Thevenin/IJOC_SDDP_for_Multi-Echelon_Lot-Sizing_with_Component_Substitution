@@ -108,7 +108,7 @@ class SDDPCut(object):
 
     def ActualyAddToModel(self, stage,  righthandside, forward):
 
-        RHSFromPreviousCuts = self.ComputeRHSFromPreviousStage()
+        RHSFromPreviousCuts = self.ComputeRHSFromPreviousStage(forward)
         stage.Cplex.variables.add(obj=[0.0],
                             lb=[RHSFromPreviousCuts],
                             ub=[RHSFromPreviousCuts])
@@ -234,30 +234,34 @@ class SDDPCut(object):
         righthandside = self.GetRHS()
 
 
-    def ComputeRHSFromPreviousStage(self):
+    def ComputeRHSFromPreviousStage(self, forward):
+        scenarionr = self.BackwarStage.CurrentTrialNr
+        if forward:
+            scenarionr = self.ForwardStage.CurrentTrialNr
+
         result = 0
         for tuple in self.NonZeroFixedEarlierProductionVar:
             p = tuple[0]
             t = tuple[1]
-            result = result - self.BackwarStage.SDDPOwner.GetSetupFixedEarlier(p, t, self.BackwarStage.CurrentTrialNr) \
+            result = result - self.BackwarStage.SDDPOwner.GetSetupFixedEarlier(p, t, scenarionr) \
                                             * self.CoefficientProductionVariable[t][p]
 
         for tuple in self.NonZeroFixedEarlierQuantityVar:
             p = tuple[0]
             t = tuple[1]
-            result = result - self.BackwarStage.SDDPOwner.GetQuantityFixedEarlier(p, t, self.BackwarStage.CurrentTrialNr) \
+            result = result - self.BackwarStage.SDDPOwner.GetQuantityFixedEarlier(p, t, scenarionr) \
                                             * self.CoefficientQuantityVariable[t][p]
         for tuple in self.NonZeroFixedEarlierBackOrderVar:
             p = tuple[0]
             t = tuple[1]
             indexp = self.Instance.ProductWithExternalDemandIndex[p]
-            result = result - self.BackwarStage.SDDPOwner.GetBackorderFixedEarlier(p, t, self.BackwarStage.CurrentTrialNr) \
+            result = result - self.BackwarStage.SDDPOwner.GetBackorderFixedEarlier(p, t, scenarionr) \
                                             * self.CoefficientBackorderyVariable[t][indexp]
 
         for tuple in self.NonZeroFixedEarlierStockVar:
             p = tuple[0]
             t = tuple[1]
-            result = result - self.BackwarStage.SDDPOwner.GetInventoryFixedEarlier(p, t, self.BackwarStage.CurrentTrialNr) \
+            result = result - self.BackwarStage.SDDPOwner.GetInventoryFixedEarlier(p, t, scenarionr) \
                                             * self.CoefficientStockVariable[t][p]
         return result
 
@@ -331,7 +335,7 @@ class SDDPCut(object):
         coefficientvariableatstage = coefficientvariableatstage[1:-1]
         valueofvarsinconsraint = sum(i[0] * i[1] for i in zip(valueofvariable, coefficientvariableatstage))
 
-        RHS = self.ComputeRHSFromPreviousStage() + self.GetRHS()
+        RHS = self.ComputeRHSFromPreviousStage(False) + self.GetRHS()
 
         costtogo = RHS - valueofvarsinconsraint
 
@@ -360,7 +364,7 @@ class SDDPCut(object):
         coefficientvariableatstage = coefficientvariableatstage[1:-1]
         valueofvarsinconsraint = sum(i[0] * i[1] for i in zip(valueofvariable, coefficientvariableatstage))
 
-        RHS = self.ComputeRHSFromPreviousStage() + self.GetRHS()
+        RHS = self.ComputeRHSFromPreviousStage(False) + self.GetRHS()
 
         costtogo = RHS - valueofvarsinconsraint
         return costtogo

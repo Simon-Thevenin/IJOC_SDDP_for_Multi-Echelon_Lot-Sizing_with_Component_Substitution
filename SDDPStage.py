@@ -1056,7 +1056,7 @@ class SDDPStage(object):
 
         constraintuples = []
         if len(self.SDDPCuts) > 0:
-            cutvariabletuples = [(self.GetIndexCutRHSFromPreviousSatge(cut), cut.ComputeRHSFromPreviousStage())
+            cutvariabletuples = [(self.GetIndexCutRHSFromPreviousSatge(cut), cut.ComputeRHSFromPreviousStage(False))
                                       for cut in self.SDDPCuts if cut.IsActive]
             self.Cplex.variables.set_lower_bounds(cutvariabletuples)
             self.Cplex.variables.set_upper_bounds(cutvariabletuples)
@@ -1088,7 +1088,7 @@ class SDDPStage(object):
             constraintuples.append((constr, rhs))
 
         if len(self.SDDPCuts) > 0:
-            cutvariabletuples = [(self.GetIndexCutRHSFromPreviousSatge(cut), cut.ComputeRHSFromPreviousStage())
+            cutvariabletuples = [(self.GetIndexCutRHSFromPreviousSatge(cut), cut.ComputeRHSFromPreviousStage(forward))
                                          for cut in self.SDDPCuts if cut.IsActive]
             self.Cplex.variables.set_lower_bounds(cutvariabletuples)
             self.Cplex.variables.set_upper_bounds(cutvariabletuples)

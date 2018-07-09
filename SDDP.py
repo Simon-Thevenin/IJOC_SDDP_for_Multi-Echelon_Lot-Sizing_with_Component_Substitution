@@ -59,8 +59,8 @@ class SDDP(object):
         self.CurrentScenarioSeed = int(self.TestIdentifier.ScenarioSeed)
         self.StartingSeed = self.TestIdentifier.ScenarioSeed
         self.NrScenarioSAA = int(self.TestIdentifier.NrScenario)
-        self.ForwardStage = [SDDPStage(owner=self, decisionstage=t, fixedccenarioset =[0], isforward=True) for t in range(nrstage)] \
-                             + [SDDPLastStage(owner=self, decisionstage=nrstage, fixedccenarioset =[0], isforward=True)]
+        self.ForwardStage = [SDDPStage(owner=self, decisionstage=t, fixedccenarioset=[0], isforward=True) for t in range(nrstage)] \
+                             + [SDDPLastStage(owner=self, decisionstage=nrstage, fixedccenarioset=[0], isforward=True)]
 
         backwardstagescenarioset = range(self.NrScenarioSAA)
         self.BackwardStage = [SDDPStage(owner=self, decisionstage=t, fixedccenarioset=backwardstagescenarioset, forwardstage=self.ForwardStage[t], isforward=False) for t in range(nrstage)] \
@@ -311,11 +311,9 @@ class SDDP(object):
         convergencecriterionreached = convergencecriterion <= 1 \
                                       and delta <= Constants.AlgorithmOptimalityTolerence
 
-
-
         optimalitygapreached = (optimalitygap < Constants.AlgorithmOptimalityTolerence)
         iterationlimitreached = (self.CurrentIteration > Constants.SDDPIterationLimit)
-        result = self.IsIterationWithConvergenceTest and convergencecriterionreached or timalimiteached or iterationlimitreached
+        result = ( self.IsIterationWithConvergenceTest and convergencecriterionreached) or timalimiteached or iterationlimitreached
         if Constants.PrintSDDPTrace:
             if self.IsIterationWithConvergenceTest:
                 self.WriteInTraceFile(
@@ -327,11 +325,13 @@ class SDDP(object):
                                   %(self.CurrentIteration, duration, self.CurrentLowerBound, self.CurrentExpvalueUpperBound,
                                     c, optimalitygap, convergencecriterion, delta))
 
-        if not result and convergencecriterion <= 1:
-            if self.IsIterationWithConvergenceTest == True:
+        if (not result and convergencecriterion <= 1) or (result and self.SDDPNrScenarioTest < 100):
+            if self.IsIterationWithConvergenceTest:
                 self.SDDPNrScenarioTest += Constants.SDDPIncreaseNrScenarioTest
 
+
             self.IsIterationWithConvergenceTest = True
+            result = False
             self.GenerateTrialScenarios()
             self.ForwardPass()
             self.ComputeCost()
