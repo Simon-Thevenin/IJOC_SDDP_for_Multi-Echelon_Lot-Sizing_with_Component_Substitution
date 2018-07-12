@@ -21,9 +21,7 @@ def CreatHeaderCirrelt(file):
 #
 #$ -cwd
 #$ -q idra
-#$ -j y
-#$ -o /home/thesim/log/outputjobevaluate%s%s%s.txt
-ulimit -v 30000000""")
+#$ -j y""")
 
 def CreatHeaderQuebec(file):
     file.write("""
@@ -32,7 +30,6 @@ def CreatHeaderQuebec(file):
 #PBS -l walltime=30:00:00
 #PBS -l nodes=1:ppn=1
 #PBS -r n
-ulimit -v 16000000
 mkdir /tmp/thesim
 cd /home/thesim/stochasticmrp/""")
 
@@ -42,6 +39,8 @@ def CreateSDDPJob(instance, nrback, nrforward):
     qsub_file = open(qsub_filename, 'w')
     CreatHeader(qsub_file )
     qsub_file.write("""
+#$ -o /home/thesim/log/outputjobevaluate%s%s%s.txt
+ulimit -v 30000000
 python scm.py  Solve %s YFix %s RQMC -n 5000 -p Fix -m SDDP --mipsetting Default --nrforward %s
 """ % (instance, nrback, nrforward, instance, nrback, nrforward))
     return qsub_filename
@@ -51,6 +50,8 @@ def CreateMIPJob(instance):
     qsub_file = open(qsub_filename, 'w')
     CreatHeader(qsub_file)
     qsub_file.write("""
+#$ -o /home/thesim/log/outputjobevaluate%s%s%s.txt
+ulimit -v 30000000
 python scm.py  Solve %s YFix 6400b RQMC -n 5000 -p Fix -m MIP 
 """ % (instance, instance))
     return qsub_filename
