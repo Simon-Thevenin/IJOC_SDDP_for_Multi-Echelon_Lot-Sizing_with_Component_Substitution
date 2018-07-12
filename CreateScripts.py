@@ -7,18 +7,41 @@ import csv
 from Constants import Constants
 
 NrScenarioEvaluation = "5000"
+ForCIRRELT = True
 
-def CreateSDDPJob(instance, nrback, nrforward):
-    qsub_filename = "./Jobs/job_sddp_%s_%s_%s" % (instance, nrback, nrforward)
-    qsub_file = open(qsub_filename, 'w')
-    qsub_file.write("""
+def CreatHeader(file):
+    if ForCIRRELT:
+        CreatHeaderCirrelt(file)
+    else:
+        CreatHeaderQuebec(file)
+
+def CreatHeaderCirrelt(file):
+    file.write("""
 #!/bin/bash -l
 #
 #$ -cwd
 #$ -q idra
 #$ -j y
 #$ -o /home/thesim/log/outputjobevaluate%s%s%s.txt
-ulimit -v 30000000
+ulimit -v 30000000""")
+
+def CreatHeaderQuebec(file):
+    file.write("""
+#!/bin/bash
+#PBS -A abc-123-aa
+#PBS -l walltime=30:00:00
+#PBS -l nodes=1:ppn=1
+#PBS -r n
+ulimit -v 16000000
+mkdir /tmp/thesim
+cd /home/thesim/stochasticmrp/""")
+
+
+def CreateSDDPJob(instance, nrback, nrforward):
+    qsub_filename = "./Jobs/job_sddp_%s_%s_%s" % (instance, nrback, nrforward)
+    qsub_file = open(qsub_filename, 'w')
+    CreatHeader(qsub_file )
+    qsub_file.write("""
 python scm.py  Solve %s YFix %s RQMC -n 5000 -p Fix -m SDDP --mipsetting Default --nrforward %s
 """ % (instance, nrback, nrforward, instance, nrback, nrforward))
     return qsub_filename
@@ -26,14 +49,8 @@ python scm.py  Solve %s YFix %s RQMC -n 5000 -p Fix -m SDDP --mipsetting Default
 def CreateMIPJob(instance):
     qsub_filename = "./Jobs/job_mip_%s" % (instance)
     qsub_file = open(qsub_filename, 'w')
+    CreatHeader(qsub_file)
     qsub_file.write("""
-#!/bin/bash -l
-#
-#$ -cwd 
-#$ -q idra
-#$ -j y
-#$ -o /home/thesim/log/outputjobevaluate%s.txt
-ulimit -v 30000000
 python scm.py  Solve %s YFix 6400b RQMC -n 5000 -p Fix -m MIP 
 """ % (instance, instance))
     return qsub_filename

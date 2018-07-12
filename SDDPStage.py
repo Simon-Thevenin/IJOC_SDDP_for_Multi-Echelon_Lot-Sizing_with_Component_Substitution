@@ -412,6 +412,7 @@ class SDDPStage(object):
                 righthandside = righthandside \
                                 + self.SDDPOwner.SetOfSAAScenario[scenario].Demands[
                                   self.GetTimePeriodAssociatedToInventoryVariable(p)][p]
+
         return righthandside
 
     def GetFlowFromPreviousStage(self, p):
@@ -1087,6 +1088,10 @@ class SDDPStage(object):
             #    rhs = self.GetRHSFlowConst(p, t)
             constraintuples.append((constr, rhs))
 
+
+        if len(constraintuples) > 0:
+           self.Cplex.linear_constraints.set_rhs(constraintuples)
+
         if len(self.SDDPCuts) > 0:
             cutvariabletuples = [(self.GetIndexCutRHSFromPreviousSatge(cut), cut.ComputeRHSFromPreviousStage(forward))
                                          for cut in self.SDDPCuts if cut.IsActive]
@@ -1098,8 +1103,8 @@ class SDDPStage(object):
         #        constraintuples = constraintuples + cut.ModifyCut(forward)
 
 
-        #if len(constraintuples) > 0:
-        #   self.Cplex.linear_constraints.set_rhs(constraintuples)
+        if len(constraintuples) > 0:
+           self.Cplex.linear_constraints.set_rhs(constraintuples)
 
 
     #This function update the MIP for the current stage, taking into account the new value fixedin the previous stage
@@ -1158,7 +1163,6 @@ class SDDPStage(object):
         #    cut = SDDPCut(self.PreviousSDDPStage)
 
         averagecostofthesubproblem = 0
-
         if self.MIPDefined:
             self.UpdateMIPForStage()
 
@@ -1312,6 +1316,9 @@ class SDDPStage(object):
                 print("******************** Solution at stage %d cost: %r cost to go %r *********************"
                       %(self.DecisionStage, sol.get_objective_value(),cotogo))
                 print(" Quantities: %r"%self.QuantityValues)
+                if not self.IsLastStage():
+                    print(" Demand: %r" %(self.SDDPOwner.CurrentSetOfTrialScenarios[self.CurrentTrialNr].Demands[
+                                             self.DecisionStage] ) )
                 print(" Inventory: %r"%self.InventoryValue)
                 print(" BackOrder: %r"%self.BackorderValue)
                 if self.IsFirstStage():

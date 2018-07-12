@@ -235,9 +235,10 @@ class SDDPCut(object):
 
 
     def ComputeRHSFromPreviousStage(self, forward):
-        scenarionr = self.BackwarStage.CurrentTrialNr
         if forward:
             scenarionr = self.ForwardStage.CurrentTrialNr
+        else:
+            scenarionr = self.BackwarStage.CurrentTrialNr
 
         result = 0
         for tuple in self.NonZeroFixedEarlierProductionVar:

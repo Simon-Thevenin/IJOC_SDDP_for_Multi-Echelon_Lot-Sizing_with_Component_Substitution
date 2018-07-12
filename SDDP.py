@@ -81,7 +81,7 @@ class SDDP(object):
         self.TraceFile = None
         self.TraceFileName = "./Temp/trace_%s.txt" % (self.TestIdentifier.GetAsString())
         self.HeuristicSetupValue = []
-
+        self.LastIterationWithTest = 0
 
 
     #This function make the forward pass of SDDP
@@ -99,6 +99,7 @@ class SDDP(object):
                         print("Clean cut Should not be used")
 
                 #Run the forward pass at each stage t
+
                 self.ForwardStage[t].RunForwardPassMIP()
 
                 #try to use core point method, remove if it does not work
@@ -325,11 +326,12 @@ class SDDP(object):
                                   %(self.CurrentIteration, duration, self.CurrentLowerBound, self.CurrentExpvalueUpperBound,
                                     c, optimalitygap, convergencecriterion, delta))
 
-        if (not result and convergencecriterion <= 1) or (result and self.SDDPNrScenarioTest < 100):
+        if  not result and convergencecriterion <= 1 \
+            and self.IsIterationWithConvergenceTest \
+                or ( (self.CurrentIteration - self.LastIterationWithTest) > Constants.SDDPMinimumNrIterationBetweenTest):
             if self.IsIterationWithConvergenceTest:
                 self.SDDPNrScenarioTest += Constants.SDDPIncreaseNrScenarioTest
-
-
+            self.LastIterationWithTest = self.CurrentIteration
             self.IsIterationWithConvergenceTest = True
             result = False
             self.GenerateTrialScenarios()
@@ -618,6 +620,11 @@ class SDDP(object):
                 cuts[t].append(cut)
         with open("./Solutions/SDDP_%r.pkl"%self.TestIdentifier.GetAsStringList(), 'wb') as output:
             pickle.dump(cuts, output)
+
+        for t in self.StagesSet:
+            for cut in cuts[t]:
+                cut.ForwardStage = self.ForwardStage[t]
+                cut.BackwarStage = self.BackwardStage[t]
 
     def LoadCuts(self):
 

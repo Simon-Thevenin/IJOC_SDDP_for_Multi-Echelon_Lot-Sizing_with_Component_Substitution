@@ -85,10 +85,9 @@ class EvaluationSimulator(object):
                 if self.TestIdentificator.Method == Constants.SDDP:
                     sddp = self.SDDPs[n]
                     seed = sddp.StartingSeed
-                print("Attention hardcoded seed!!!!")
-                evaluatoinscenarios, scenariotrees = self.GetScenarioSet(2934, nrscenario, allscenario)
+                evaluatoinscenarios, scenariotrees = self.GetScenarioSet(Constants.EvaluationScenarioSeed, nrscenario, allscenario)
                 if self.TestIdentificator.Method == Constants.SDDP:
-                    self.ForwardPassOnScenarios(sddp, evaluatoinscenarios)
+                     self.ForwardPassOnScenarios(sddp, evaluatoinscenarios)
                 firstscenario = True
                 self.IsDefineMIPResolveTime = [False for t in self.Instance.TimeBucketSet]
 

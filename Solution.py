@@ -526,7 +526,9 @@ class Solution(object):
 
         general = testidentifier.GetAsStringList() + [self.InSampleAverageDemand, offsetseed, nrevaluation, testidentifier.ScenarioSeed, evaluationmethod]
         columnstab = ["Instance", "Model", "Method", "ScenarioGeneration", "NrScenario", "ScenarioSeed",
-                      "EVPI", "mipsetting", "Average demand", "offsetseed", "nrevaluation", "solutionseed", "evaluationmethod"]
+                      "EVPI", "NrForwardScenario", "mipsetting", "Average demand", "offsetseed", "nrevaluation", "solutionseed", "evaluationmethod"]
+
+
         generaldf = pd.DataFrame(general, index=columnstab)
         generaldf.to_excel(writer, "General")
         writer.save()

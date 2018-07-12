@@ -41,10 +41,11 @@ class Constants( object ):
 
     #The set of seeds used for random number generator
     SeedArray = [2934, 875, 3545, 765, 546, 768, 242, 375, 142, 236, 788]
+    EvaluationScenarioSeed = 2934
 
     #Running option
     Debug = False
-    PrintSolutionFileToExcel = True
+    PrintSolutionFileToExcel = False
     PrintDetailsExcelFiles = False
     PrintOnlyFirstStageDecision = True
     RunEvaluationInSeparatedJob = False
@@ -83,7 +84,7 @@ class Constants( object ):
     SDDPUseEVPI = True
     SDDPNrEVPIScenario = 1
     SDDPDebugSolveAverage = False
-
+    SDDPMinimumNrIterationBetweenTest = 10
 
     @staticmethod
     def IsDeterministic(s):
