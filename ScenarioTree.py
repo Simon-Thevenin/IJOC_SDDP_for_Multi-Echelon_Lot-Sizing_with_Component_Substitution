@@ -15,7 +15,7 @@ class ScenarioTree(object):
         self.CopyscenariofromYFIX= CopyscenariofromYFIX
         self.Seed = seed
         if Constants.Debug:
-            print("Createa tree with seed %r structure: %r"%(seed, branchperlevel))
+            print("Create a tree with seed %r structure: %r"%(seed, branchperlevel))
         np.random.seed(seed)
         self.Nodes = []
         self.Owner = mipsolver
@@ -28,7 +28,7 @@ class ScenarioTree(object):
 
         #For some types of evaluation, the demand of the  first periods are given and the rest is stochastic
         self.GivenFirstPeriod = givenfirstperiod
-        self.FollowGivenUntil = len(self.GivenFirstPeriod )
+        self.FollowGivenUntil = len(self.GivenFirstPeriod)
 
         #In case the scenario tree has to be the same aas the two stage (YQFix) scenario tree.
         self.GenerateasYQfix = generateasYQfix
@@ -47,7 +47,7 @@ class ScenarioTree(object):
 
         self.DemandYQFixRQMC = []
         self.Model = model
-        self.GenerateRQMCForYQFix = (Constants.IsQMCMethos(self.ScenarioGenerationMethod ) and self.Model == Constants.ModelYQFix)
+        self.GenerateRQMCForYQFix = (Constants.IsQMCMethos(self.ScenarioGenerationMethod) and self.Model == Constants.ModelYQFix)
 
         firstuknown = len(self.GivenFirstPeriod)
         firststochastic = max(self.Instance.NrTimeBucketWithoutUncertaintyBefore, firstuknown)

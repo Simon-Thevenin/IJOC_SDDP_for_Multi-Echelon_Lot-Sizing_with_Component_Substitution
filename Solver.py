@@ -4,6 +4,7 @@ from ScenarioTree import ScenarioTree
 import time
 from MIPSolver import MIPSolver
 from SDDP import SDDP
+from ProgressiveHedging import ProgressiveHedging
 import csv
 import datetime
 #from DecentralizedMRP import DecentralizedMRP
@@ -244,19 +245,25 @@ class Solver( object ):
             self.TestIdentifier.Model = Constants.ModelYFix
             self.TestIdentifier.Method = methodtemp
 
-            print("attention solve average")
-            self.TreeStructure = [1, 1, 1, 1, 1, 1, 0]
+            self.TreeStructure = self.GetTreeStructure()
             solution, mipsolver = self.MRP(self.TreeStructure, averagescenario=True, recordsolveinfo=True, warmstart=True)
 
-        if self.TestIdentifier.Method == "SDDP":
+        if self.TestIdentifier.Method == Constants.SDDP:
              self.SDDPSolver = SDDP(self.Instance, self.TestIdentifier)
              self.SDDPSolver.HeuristicSetupValue = self.GivenSetup
              self.SDDPSolver.Run()
              solution = self.SDDPSolver.CreateSolutionAtFirstStage()
 
-             self.SDDPSolver.SaveSolver()
+             if Constants.SDDPSaveInExcel:
+                self.SDDPSolver.SaveSolver()
 
-             #self.SDDPSolver = SDDP(self.Instance, self.TestIdentifier)
+        if self.TestIdentifier.Method == Constants.ProgressiveHedging:
+            self.TreeStructure = self.GetTreeStructure()
+
+            self.ProgressiveHedging = ProgressiveHedging(self.Instance, self.TestIdentifier, self.TreeStructure)
+            solution = self.ProgressiveHedging.Run()
+
+        #self.SDDPSolver = SDDP(self.Instance, self.TestIdentifier)
              #self.SDDPSolver.LoadCuts()
              #SolveInformation = sddpsolver.SolveInfo
              #evaluator = self.Evaluator(self.Instance, [], [sddpsolver], optimizationmethod=Constants.SDDP)

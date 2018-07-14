@@ -13,6 +13,7 @@ class Constants( object ):
     #Method
     MIP = "MIP"
     SDDP = "SDDP"
+    ProgressiveHedging = "PH"
 
     #Demand distributions:
     Lumpy = "Lumpy"
@@ -45,7 +46,7 @@ class Constants( object ):
 
     #Running option
     Debug = False
-    PrintSolutionFileToExcel = False
+    PrintSolutionFileToExcel = True
     PrintDetailsExcelFiles = False
     PrintOnlyFirstStageDecision = True
     RunEvaluationInSeparatedJob = False
@@ -85,6 +86,10 @@ class Constants( object ):
     SDDPNrEVPIScenario = 1
     SDDPDebugSolveAverage = False
     SDDPMinimumNrIterationBetweenTest = 10
+    SDDPSaveInExcel = False
+
+    PHIterationLimit = 2
+
 
     @staticmethod
     def IsDeterministic(s):

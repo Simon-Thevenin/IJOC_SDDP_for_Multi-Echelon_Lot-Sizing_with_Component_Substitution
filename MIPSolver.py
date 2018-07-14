@@ -21,22 +21,22 @@ class MIPSolver(object):
                  instance,
                  model,
                  scenariotree,
-                 evpi = False,
-                 implicitnonanticipativity = False,
-                 givenquantities = [],
+                 evpi=False,
+                 implicitnonanticipativity=False,
+                 givenquantities=[],
                  givensetups=[],
                  givenconsumption=[],
-                 fixsolutionuntil = -1,
-                 evaluatesolution = False,
-                 yfixheuristic = False,
-                 demandknownuntil = -1,
-                 mipsetting = "",
-                 warmstart = False,
-                 usesafetystock = False,
-                 usesafetystockgrave = False,
-                 rollinghorizon = False,
-                 logfile = "",
-                 givenSGrave = []):
+                 fixsolutionuntil=-1,
+                 evaluatesolution=False,
+                 yfixheuristic=False,
+                 demandknownuntil=-1,
+                 mipsetting="",
+                 warmstart=False,
+                 usesafetystock=False,
+                 usesafetystockgrave=False,
+                 rollinghorizon=False,
+                 logfile="",
+                 givenSGrave=[]):
 
         # Define some attributes and functions which help to et the index of the variable.
         # the attributs nrquantiyvariables, nrinventoryvariable, nrproductionvariable, and nrbackordervariable gives the number
@@ -68,8 +68,8 @@ class MIPSolver(object):
         #The set of scenarios used to solve the instance
         self.DemandScenarioTree = scenariotree
         self.DemandScenarioTree.Owner = self
-        self.NrScenario = len( [ n for n in self.DemandScenarioTree.Nodes if len( n.Branches ) == 0 ] )
-        # DemandKnownUntil is used fgor the YQFix model, when the first period are considered known.
+        self.NrScenario = len([n for n in self.DemandScenarioTree.Nodes if len(n.Branches) == 0])
+        # DemandKnownUntil is used for the YQFix model, when the first period are considered known.
         self.DemandKnownUntil = demandknownuntil
         self.YFixHeuristic= yfixheuristic
         self.UseSafetyStock = usesafetystock
@@ -182,7 +182,7 @@ class MIPSolver(object):
         return "Big_S_%d_%d"%(p, t)
 
     # the function GetIndexQuantityVariable returns the index of the variable Q_{p, t}. Quantity of product p produced at time t
-    def GetIndexQuantityVariable( self, p, t, w ):
+    def GetIndexQuantityVariable( self, p, t, w):
         #Defined in the subclasses
         if self.Model == Constants.ModelYQFix:
             return self.GetStartQuantityVariable() + t * self.Instance.NrProduct + p
@@ -284,7 +284,7 @@ class MIPSolver(object):
         return self.NrInventoryVariable
 
     # This function define the variables
-    def CreateVariable( self ):
+    def CreateVariable(self):
 
         if self.UseSafetyStockGrave:
             decentralized = DecentralizedMRP(self.Instance, self.UseSafetyStockGrave)

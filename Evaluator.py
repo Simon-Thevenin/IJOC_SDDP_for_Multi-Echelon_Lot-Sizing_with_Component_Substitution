@@ -22,8 +22,9 @@ class Evaluator( object ):
         self.OutOfSampleTestResult = []
         self.InSampleTestResult =[]
         if self.TestIdentifier.Method == Constants.SDDP:
-            self.Solver.SDDPSolver = SDDP(instance, self.TestIdentifier)
-            self.Solver.SDDPSolver.LoadCuts()
+            if Constants.SDDPSaveInExcel:
+                self.Solver.SDDPSolver = SDDP(instance, self.TestIdentifier)
+                self.Solver.SDDPSolver.LoadCuts()
             Constants.SDDPGenerateCutWith2Stage = False
             Constants.SDDPRunSigleTree = False
             Constants.SolveRelaxationFirst = False

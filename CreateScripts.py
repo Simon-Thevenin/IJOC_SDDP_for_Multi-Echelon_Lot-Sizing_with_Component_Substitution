@@ -21,7 +21,8 @@ def CreatHeaderCirrelt(file):
 #
 #$ -cwd
 #$ -q idra
-#$ -j y""")
+#$ -j y
+""")
 
 def CreatHeaderQuebec(file):
     file.write("""
@@ -31,7 +32,8 @@ def CreatHeaderQuebec(file):
 #PBS -l nodes=1:ppn=1
 #PBS -r n
 mkdir /tmp/thesim
-cd /home/thesim/stochasticmrp/""")
+cd /home/thesim/stochasticmrp/
+""")
 
 
 def CreateSDDPJob(instance, nrback, nrforward):
