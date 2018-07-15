@@ -427,9 +427,9 @@ class SDDP(object):
             #if self.CurrentIteration % 50 == 0:
             #    self.CurrentNrScenario =  self.CurrentNrScenario  * 10
 
-            if self.CurrentIteration % 100 < 5:
-                solution = self.CreateSolutionOfScenario(0)
-                solution.PrintToExcel("solution_at_iteration_%r"%self.CurrentIteration)
+            #if self.CurrentIteration % 100 < 5:
+            #    solution = self.CreateSolutionOfScenario(0)
+            #    solution.PrintToExcel("solution_at_iteration_%r"%self.CurrentIteration)
 
         if Constants.SDDPRunSigleTree:
             self.RunSingleTreeSDDP()
