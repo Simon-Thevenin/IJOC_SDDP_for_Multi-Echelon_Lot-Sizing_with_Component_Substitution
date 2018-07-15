@@ -59,7 +59,7 @@ class Constants( object ):
     AlgorithmTimeLimit = 36000
 
     #SDDPparameters
-    AlgorithmOptimalityTolerence = 0.005
+    AlgorithmOptimalityTolerence = 0.0005
     SDDPIterationLimit = 10000
     SDDPPrintDebugLPFiles = False
     PrintSDDPTrace = True
@@ -74,7 +74,7 @@ class Constants( object ):
 
     SolveRelaxationFirst = True
     SDDPNrIterationRelax = 500
-    SDDPGapRelax = 0.001
+    SDDPGapRelax = 0.01
 
     SDDPUseValidInequalities = False
 

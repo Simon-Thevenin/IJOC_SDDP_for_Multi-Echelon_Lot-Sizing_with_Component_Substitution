@@ -350,7 +350,7 @@ class SDDP(object):
         optimalitygap = (self.CurrentExpvalueUpperBound - self.CurrentLowerBound)/self.CurrentExpvalueUpperBound
         optimalitygapreached = (optimalitygap < Constants.SDDPGapRelax)
         iterationlimitreached = (self.CurrentIteration > Constants.SDDPNrIterationRelax * round)
-        result = iterationlimitreached
+        result = iterationlimitreached or optimalitygapreached
         return result
 
     #This funciton compute the solution of the scenario given in argument (used after to have run the algorithm, and the cost to go approximation are built)
