@@ -53,7 +53,7 @@ class ScenarioTreeNode(object):
         self.BackOrderLevelNextTime = []  # After solving the MILP, the attribut contains the back order level at the node
         self.InventoryLevelTime = []  # After solving the MILP, the attribut contains the inventory level at the node
         self.BackOrderLevelTime = []  # After solving the MILP, the attribut contains the back order level at the node
-        self.Scenario = None
+        self.Scenarios = []
         self.OneOfScenario = None
 
     # This function creates the children of the current node
@@ -478,7 +478,7 @@ class ScenarioTreeNode(object):
             for q in self.Instance.ProductSet:
               inventory[q] += node.QuantityToOrderNextTime[q]
             #       # minus internal  demand
-              inventory[q]  -= sum( node.QuantityToOrderNextTime[q2] * self.Instance.Requirements[q2][q] for q2 in self.Instance.ProductSet )
+              inventory[q] -= sum(node.QuantityToOrderNextTime[q2] * self.Instance.Requirements[q2][q] for q2 in self.Instance.ProductSet )
             #     #minus external demand
               if node.Time > 0:
                   inventory[q] -= node.Demand[q]
@@ -498,9 +498,9 @@ class ScenarioTreeNode(object):
         hasrequirement = sum(self.Instance.Requirements[p][q2] for q2 in self.Instance.ProductSet  )
         m=0
         if hasrequirement:
-            m = min( self.InventoryLevelNextTime[q2]
-                     for q2 in self.Instance.ProductSet
-                     if  self.Instance.Requirements[p][q2]>0  )
+            m = min(self.InventoryLevelNextTime[q2]
+                    for q2 in self.Instance.ProductSet
+                    if self.Instance.Requirements[p][q2]>0)
         return hasrequirement == 0 or m > 0
 
     #return true the capacity of the resource used to produce p is not all consumed at this node

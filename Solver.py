@@ -305,19 +305,19 @@ class Solver( object ):
                 if nrtimebucketstochastic == 2:
                     stochasticparttreestructure = [4, 1]
                 if nrtimebucketstochastic == 3:
-                    stochasticparttreestructure = [4, 1, 1]
+                    stochasticparttreestructure = [2, 2, 1]
                 if nrtimebucketstochastic == 4:
-                    stochasticparttreestructure = [4, 1, 1, 1]
+                    stochasticparttreestructure = [2, 2, 1, 1]
                 if nrtimebucketstochastic == 5:
-                    stochasticparttreestructure = [4, 1, 1, 1, 1]
+                    stochasticparttreestructure = [2, 2, 1, 1, 1]
                 if nrtimebucketstochastic == 6:
-                    stochasticparttreestructure = [4, 1, 1, 1, 1, 1]
+                    stochasticparttreestructure = [2, 2, 1, 1, 1, 1]
                 if nrtimebucketstochastic == 7:
-                    stochasticparttreestructure = [4, 1, 1, 1, 1, 1, 1]
+                    stochasticparttreestructure = [2, 2, 1, 1, 1, 1, 1]
                 if nrtimebucketstochastic == 8:
-                    stochasticparttreestructure = [4, 1, 1, 1, 1, 1, 1, 1]
+                    stochasticparttreestructure = [2, 2, 1, 1, 1, 1, 1, 1]
                 if nrtimebucketstochastic == 9:
-                    stochasticparttreestructure = [4, 1, 1, 1, 1, 1, 1, 1, 1]
+                    stochasticparttreestructure = [2, 2, 1, 1, 1, 1, 1, 1, 1]
                 if nrtimebucketstochastic == 10:
                     stochasticparttreestructure = [4, 1, 1, 1, 1, 1, 1, 1, 1, 1]
                 if nrtimebucketstochastic == 11:

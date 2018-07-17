@@ -9,20 +9,36 @@ import time
 class ProgressiveHedging(object):
 
     def __init__(self, instance, testidentifier, treestructure):
+
+        if Constants.PrintOnlyFirstStageDecision:
+            raise NameError("Progressive Hedging requires to print the full solution, set Constants.PrintOnlyFirstStageDecision to True")
+
         self.Instance = instance
         self.TestIdentifier = testidentifier
         self.TreeStructure = treestructure
 
         self.GenerateScenarios()
 
-        self.LagrangianMultiplier = 0
+        self.LagrangianMultiplier = 0.1
+        self.LagrangianQuantity = [[[0 for p in self.Instance.ProductSet]
+                                       for t in self.Instance.TimeBucketSet]
+                                       for w in self.ScenarioNrSet]
+
+        self.LagrangianProduction = [[[0 for p in self.Instance.ProductSet]
+                                       for t in self.Instance.TimeBucketSet]
+                                       for w in self.ScenarioNrSet]
+
+        self.LagrangianConsumption = [[[[0 for p in self.Instance.ProductSet]
+                                           for q in self.Instance.ProductSet]
+                                           for t in self.Instance.TimeBucketSet]
+                                           for w in self.ScenarioNrSet]
+
         self.CurrentIteration = 0
         self.StartTime = time.time()
         self.BuildMIPs()
 
     #This function creates the scenario tree
     def GenerateScenarios(self):
-        print("to be defined")
         #Build the scenario tree
         print(self.TreeStructure)
         self.ScenarioTree = ScenarioTree(self.Instance, self.TreeStructure, self.TestIdentifier.ScenarioSeed,
@@ -35,7 +51,6 @@ class ProgressiveHedging(object):
 
     def BuildMIPs(self):
         #Build the mathematicals models (1 per scenarios)
-        print("To be implemented")
         self.MIPSolvers = [MIPSolver(self.Instance, Constants.ModelYFix, self.SplitedScenarioTree[w],
                                      implicitnonanticipativity=True)
                            for w in self.ScenarioNrSet]
@@ -68,26 +83,48 @@ class ProgressiveHedging(object):
         return result
 
     def SolveScenariosIndependently(self):
-        print("To be implemented")
         #For each scenario
         for w in self.ScenarioNrSet:
 
             #Update the coeffient in the objective function
-            self.UpdateLagrangianCoeff()
+            self.UpdateLagrangianCoeff(w)
 
             #Solve the model.
-            solution = self.MIPSolvers[w].Solve(True)
-            solution.Print()
 
-    def UpdateLagrangianCoeff(self):
-        print("To be implemented")
+            self.CurrentSolution[w] = self.MIPSolvers[w].Solve(True)
+            #self.CurrentSolution[w].Print()
 
-    def GetScenariosAssociatedWithNode(self):
-        print("To be implemented")
+
+    def UpdateLagrangianCoeff(self, scenario):
+        variables = []
+        mipsolver = self.MIPSolvers[scenario]
+        for t in self.Instance.TimeBucketSet:
+                for p in self.Instance.ProductSet:
+                    variable = mipsolver.GetIndexQuantityVariable(p, t, 0)
+                    coeff = mipsolver.GetQuantityCoeff(p, t, 0) + self.LagrangianQuantity[scenario][t][p]
+                    variables.append((variable, coeff))
+
+                    variable = mipsolver.GetIndexProductionVariable(p, t, 0)
+                    coeff = mipsolver.GetProductionCefficient(p, t, 0) + self.LagrangianProduction[scenario][t][p]
+                    variables.append((variable, coeff))
+
+                for c in self.Instance.ConsumptionSet:
+                        variable = mipsolver.GetIndexConsumptionVariable(c[1], c[0], t, 0)
+                        coeff = mipsolver.GetConsumptionCoeff(c[1], c[0], t, 0) + self.LagrangianConsumption[scenario][t][c[1]][c[0]]
+                        variables.append((variable, coeff))
+
+        print("New coeff: %r"%variables)
+        mipsolver.Cplex.objective.set_linear(variables)
+
+    def GetScenariosAssociatedWithNode(self, node):
+        scenarios = node.Scenarios
+        result = []
+        for s in scenarios:
+            result.append(self.ScenarioSet.index(s))
+
+        return result
 
     def CreateImplementableSolution(self):
-        print("To be implemented")
-
         solquantity = [[[-1 for p in self.Instance.ProductSet]
                             for t in self.Instance.TimeBucketSet]
                           for w in self.ScenarioNrSet]
@@ -104,32 +141,72 @@ class ProgressiveHedging(object):
                         for t in self.Instance.TimeBucketSet]
                        for w in self.ScenarioNrSet]
 
-        solconsumption = [[[-1 for c in self.Instance.ConsumptionSet]
+        solconsumption = [[[[-1 for p in self.Instance.ProductSet]
+                           for q in self.Instance.ProductSet]
                         for t in self.Instance.TimeBucketSet]
                        for w in self.ScenarioNrSet]
 
         #For each node on the tree
         for n in self.ScenarioTree.Nodes:
-            scenarios = self.GetScenariosAssociatedWithNode(n)
-            time = n.Time
+            if n.Time >= 0:
+                scenarios = self.GetScenariosAssociatedWithNode(n)
+                time = n.Time
 
-            # Average the quantities, and setups for this nodes.
-            qty = [sum(self.CurrentSolution[w].ProductionQuantity[time][p] for w in scenarios) \
-                        / len(scenarios)
-                       for p in self.Instance.ProductSet]
+                # Average the quantities, and setups for this nodes.
+                if time < self.Instance.NrTimeBucket:
+                    qty = [sum(self.CurrentSolution[w].ProductionQuantity[0][time][p] for w in scenarios) \
+                           / len(scenarios) for p in self.Instance.ProductSet]
 
-            for w in scenarios:
-                for p in self.Instance.ProductSet:
-                    solquantity[w][time][p]= qty[p]
+                    prod = [sum(self.CurrentSolution[w].Production[0][time][p] for w in scenarios)
+                            / len(scenarios) for p in self.Instance.ProductSet]
+
+                    cons = [[sum(self.CurrentSolution[w].Consumption[0][time][p][q] for w in scenarios)
+                            / len(scenarios) for p in self.Instance.ProductSet]
+                            for q in self.Instance.ProductSet]
+
+                    for w in scenarios:
+                        for p in self.Instance.ProductSet:
+                            solproduction[w][time][p] = int(round(prod[p]))
+                            solquantity[w][time][p] = qty[p]
+                            for q in self.Instance.ProductSet:
+                                solconsumption[w][time][q][p] = cons[p][q]
+
 
 
         solution = Solution(self.Instance, solquantity, solproduction, solinventory, solbackorder,
-                            solconsumption,  scenarios, self.DemandScenarioTree)
+                            solconsumption,  self.ScenarioSet, self.ScenarioTree)
+
 
         return solution
 
     def UpdateLagragianMultipliers(self):
-        print("To be implemented")
+        for w in self.ScenarioNrSet:
+            for t in self.Instance.TimeBucketSet:
+                for p in self.Instance.ProductSet:
+                    self.LagrangianQuantity[w][t][p] += self.LagrangianMultiplier \
+                                                        * (self.CurrentSolution[w].ProductionQuantity[0][t][p] \
+                                                            - self.CurrentImplementableSolution.ProductionQuantity[w][t][p])
+
+                    self.LagrangianProduction[w][t][p] += self.LagrangianMultiplier \
+                                                          * (self.CurrentSolution[w].Production[0][t][p] \
+                                                            - self.CurrentImplementableSolution.Production[w][t][p])
+
+
+                    for q in self.Instance.ProductSet:
+                        self.LagrangianConsumption[w][t][p][q] +=  self.LagrangianMultiplier \
+                                                        * (self.CurrentSolution[w].Consumption[0][t][p][q]\
+                                                            - self.CurrentImplementableSolution.Consumption[w][t][p][q])
+
+
+    def PrintCurrentIteration(self):
+        print("----------------Independent solutions--------------")
+        for w in self.ScenarioNrSet:
+            self.CurrentSolution[w].Print()
+            print("+++++++++++++++++++++")
+        print("-----------IMPLEMENTABLE: -------------------------")
+        self.CurrentImplementableSolution.Print()
+        print("---------------------------------------------------")
+
 
     #This function run the algorithm
     def Run(self):
@@ -140,11 +217,12 @@ class ProgressiveHedging(object):
             self.SolveScenariosIndependently()
 
             # Create an implementable solution on the scenario tree
-            self.CurrentSolution[w] = self.CreateImplementableSolution(True)
+            self.CurrentImplementableSolution = self.CreateImplementableSolution()
 
             # Update the lagrangian multiplier
             self.UpdateLagragianMultipliers()
 
             self.CurrentIteration += 1
+        self.PrintCurrentIteration()
 
         return

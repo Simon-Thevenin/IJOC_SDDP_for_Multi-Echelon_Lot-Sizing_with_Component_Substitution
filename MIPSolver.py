@@ -55,8 +55,6 @@ class MIPSolver(object):
         self.StartProductionVariable = 0
         self.StartBackorderVariable = 0
 
-
-
         self.Instance = instance
         #Takes value in _Fix, Y_Fix, YQFix
         self.Model = model
@@ -75,7 +73,7 @@ class MIPSolver(object):
         self.UseSafetyStock = usesafetystock
         self.UseSafetyStockGrave = usesafetystockgrave
         self.ComputeIndices()
-        self.Scenarios = scenariotree.GetAllScenarios( True )
+        self.Scenarios = scenariotree.GetAllScenarios(True)
 
         self.GivenQuantity = givenquantities
 
@@ -94,10 +92,10 @@ class MIPSolver(object):
 
         #This list will contain the set of constraint number for each flow constraint
         self.FlowConstraintNR = []
-        self.BigMConstraintNR =[]
+        self.BigMConstraintNR = []
 
         self.QuantityConstraintNR = []
-        self.SetupConstraint= []
+        self.SetupConstraint = []
         self.RollingHorizon = rollinghorizon
         self.GivenSSGrave = givenSGrave
 
@@ -111,15 +109,13 @@ class MIPSolver(object):
 
         else:
             self.NrQuantityVariables = self.Instance.NrProduct * self.Instance.NrTimeBucket
-            self.NrConsumptionVariables =  sum(self.Instance.NrComponent[p] for p in self.Instance.ProductSet)  \
+            self.NrConsumptionVariables = sum(self.Instance.NrComponent[p] for p in self.Instance.ProductSet)  \
                                           * self.Instance.NrTimeBucket
         # There is no decision regarding inventories at node 1
         nodeproductafterfirstperiod = self.Instance.NrProduct * (self.DemandScenarioTree.NrNode - 2)
         self.NrInventoryVariable = nodeproductafterfirstperiod
         self.NrProductionVariable = self.Instance.NrProduct * self.Instance.NrTimeBucket
         self.NrBackorderVariable = len(self.Instance.ProductWithExternalDemand) * (self.DemandScenarioTree.NrNode - 2)
-
-
 
         self.StartQuantityVariable = 0
         self.StartConsumptionVariable = self.StartQuantityVariable + self.NrQuantityVariables
@@ -283,6 +279,21 @@ class MIPSolver(object):
     def GetNrInventoryVariable(self):
         return self.NrInventoryVariable
 
+    def GetQuantityCoeff(self, p,t,w):
+        return (self.Instance.VariableCost[p]
+                 * self.Scenarios[w].Probability) \
+                 * (np.power(self.Instance.Gamma, t))
+
+    def GetConsumptionCoeff(self, p, q, t, w):
+        return (self.Instance.AternateCosts[p][q]
+            * self.Scenarios[w].Probability) \
+            * (np.power(self.Instance.Gamma, t))
+
+    def GetProductionCefficient(self, p, t, w):
+        return self.Instance.SetupCosts[p] \
+                * sum(self.Scenarios[w].Probability for w in self.ScenarioSet) \
+                * np.power(self.Instance.Gamma, t)
+
     # This function define the variables
     def CreateVariable(self):
 
@@ -311,18 +322,13 @@ class MIPSolver(object):
                     # Add the cost of the variable representing multiple scenarios
                     quantityindex = self.GetIndexQuantityVariable(p, t, w) - self.StartQuantityVariable
                     variableproductioncosts[quantityindex] = variableproductioncosts[quantityindex] \
-                                                                + (self.Instance.VariableCost[p]
-                                                                * self.Scenarios[w].Probability) \
-                                                                * (np.power(self.Instance.Gamma, t))
+                                                            + self.GetQuantityCoeff(p, t, w)
 
                     for q in self.Instance.ProductSet:
                         if self.Instance.PossibleComponents[p][q]:
                             consumptionindex = self.GetIndexConsumptionVariable(p, q,  t, w) - self.StartConsumptionVariable
                             conumptioncost[consumptionindex] = conumptioncost[consumptionindex] \
-                                                                 + (self.Instance.AternateCosts[p][q]
-                                                                * self.Scenarios[w].Probability) \
-                                                                * (np.power(self.Instance.Gamma, t))
-
+                                                               + self.GetConsumptionCoeff(p, q, t, w)
                     if self.Instance.HasExternalDemand[p]:
                         backordercostindex = self.Scenarios[w].BackOrderVariable[t][
                                                  self.Instance.ProductWithExternalDemandIndex[p]] - self.StartBackorderVariable
@@ -337,9 +343,7 @@ class MIPSolver(object):
                                                                      *np.power(self.Instance.Gamma, t)
 
 
-        setupcosts = [ self.Instance.SetupCosts[p]
-                       * sum( self.Scenarios[w].Probability for w in self.ScenarioSet)
-                       * np.power(self.Instance.Gamma, t)
+        setupcosts = [ self.GetProductionCefficient(p,t,w)
                        for t in self.Instance.TimeBucketSet for p in self.Instance.ProductSet]
 
         # the variable quantity_prod_time_scenario_p_t_w indicated the quantity of product p produced at time t in scneario w
@@ -940,7 +944,7 @@ class MIPSolver(object):
                                     varsecheloninv.append(self.GetIndexBackorderVariable(q, t - 1, w))
                                     coeffecheloninv.append(-1.0 * extendedrequirement[q][p])
 
-                        M = BigM2[ p]
+                        M = BigM2[p]
 
                         coeff = coeffecheloninv + [1.0, -1.0]
                         vars = varsecheloninv + \
@@ -1531,8 +1535,6 @@ class MIPSolver(object):
         scenarios = self.Scenarios
         timebucketset = self.Instance.TimeBucketSet
         partialsol = Constants.PrintOnlyFirstStageDecision and (self.Model == Constants.ModelYFix or self.Model == Constants.ModelHeuristicYFix) and not self.EvaluateSolution
-
-
         objvalue = sol.get_objective_value()
         array = [self.GetIndexQuantityVariable(p, t, w) for p in self.Instance.ProductSet for t in timebucketset for w
                  in scenarioset]

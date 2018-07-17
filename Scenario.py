@@ -22,6 +22,7 @@ class Scenario(object):
         self.Nodes = nodesofscenario
         for n in self.Nodes:
             n.OneOfScenario = self
+            n.Scenarios.append(self)
         self.ScenarioId = Scenario.NrScenario
 
     def DisplayScenario(self):

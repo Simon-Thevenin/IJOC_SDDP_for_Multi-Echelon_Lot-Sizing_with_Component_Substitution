@@ -55,7 +55,10 @@ class Solution(object):
         self.InSampleAverageLostSale = -1
 
         self.SValue = []
-        self.FixedQuantity= []
+        if not instance is None:
+            self.FixedQuantity = [[-1 for p in instance.ProductSet] for t in instance.TimeBucketSet]
+        else:
+            self.FixedQuantity = []
         # The objecie value as outputed by CPLEx,
         self.CplexCost =-1
         self.CplexGap = -1
@@ -422,12 +425,12 @@ class Solution(object):
                            for t in timebucketset] for w in self.SenarioNrset]
 
     #This function compute some statistic on the current solution
-    def ComputeStatistics( self ):
+    def ComputeStatistics(self):
 
-        self.InSampleAverageInventory = [[sum( self.InventoryLevel[w][t][p] for w in self.SenarioNrset)
+        self.InSampleAverageInventory = [[sum(self.InventoryLevel[w][t][p] for w in self.SenarioNrset)
                                           /len(self.SenarioNrset)
-                                           for p in  self.Instance.ProductSet ]
-                                            for t in self.Instance.TimeBucketSet]
+                                           for p in self.Instance.ProductSet]
+                                           for t in self.Instance.TimeBucketSet]
 
         self.InSampleAverageBackOrder = [[sum( self.BackOrder[w][t][ self.Instance.ProductWithExternalDemandIndex[p] ]
                                                for w in self.SenarioNrset)

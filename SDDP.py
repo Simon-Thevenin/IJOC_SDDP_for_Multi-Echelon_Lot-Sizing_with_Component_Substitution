@@ -326,9 +326,10 @@ class SDDP(object):
                                   %(self.CurrentIteration, duration, self.CurrentLowerBound, self.CurrentExpvalueUpperBound,
                                     c, optimalitygap, convergencecriterion, delta))
 
-        if  not result and convergencecriterion <= 1 \
-            and self.IsIterationWithConvergenceTest \
-                or ( (self.CurrentIteration - self.LastIterationWithTest) > Constants.SDDPMinimumNrIterationBetweenTest):
+        if not result and convergencecriterion <= 1 \
+            and ( self.IsIterationWithConvergenceTest \
+                or ((self.CurrentIteration - self.LastIterationWithTest) > Constants.SDDPMinimumNrIterationBetweenTest)):
+
             if self.IsIterationWithConvergenceTest:
                 self.SDDPNrScenarioTest += Constants.SDDPIncreaseNrScenarioTest
             self.LastIterationWithTest = self.CurrentIteration
