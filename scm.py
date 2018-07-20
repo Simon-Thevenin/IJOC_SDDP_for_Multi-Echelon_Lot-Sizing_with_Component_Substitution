@@ -8,6 +8,10 @@ from Instance import Instance
 import os
 import argparse
 from SDDP import SDDP
+
+
+from Tkinter import *
+
 import csv
 import datetime
 
@@ -131,6 +135,16 @@ if __name__ == '__main__':
     #instance.ReadFromFile("lpopt_input.dat", Constants.NonStationary)
     #instance.ReadInstanceFromExelFile( "G0044432_NonStationary_b2_fe25_en_rk50_ll0_l20_HFalse_c0" )
     #instance.SaveCompleteInstanceInExelFile()
+    if Constants.UseGUI:
+        fenetre = Tk()
+
+        label = Label(fenetre, text="SCM")
+        label.pack()
+
+        bouton = Button(fenetre, text="Fermer", command=fenetre.quit)
+        bouton.pack()
+
+        fenetre.mainloop()
 
     try:
         CreateRequiredDir()
@@ -145,10 +159,10 @@ if __name__ == '__main__':
             Constants.GenerateStrongCut = False
 
         instance = Instance()
-        #instance.DefineAsSuperSmallIntance()
+        instance.DefineAsSuperSmallIntance()
         # instance.ReadFromFile("K0011525", "NonStationary", "Normal")
         # GenerateInstances()
-        instance.ReadInstanceFromExelFile(TestIdentifier.InstanceName)
+        #instance.ReadInstanceFromExelFile(TestIdentifier.InstanceName)
         #instance.DrawSupplyChain()
     except KeyError:
         print("This instance does not exist.")

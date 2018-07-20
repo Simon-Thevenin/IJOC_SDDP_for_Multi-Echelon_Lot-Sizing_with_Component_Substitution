@@ -42,7 +42,7 @@ def CreateSDDPJob(instance, nrback, nrforward):
     CreatHeader(qsub_file )
     qsub_file.write("""
 #$ -o /home/thesim/log/outputjobevaluate%s%s%s.txt
-ulimit -v 30000000
+ulimit -v 16000000
 python scm.py  Solve %s YFix %s RQMC -n 5000 -p Fix -m SDDP --mipsetting Default --nrforward %s
 """ % (instance, nrback, nrforward, instance, nrback, nrforward))
     return qsub_filename
@@ -53,7 +53,7 @@ def CreateMIPJob(instance):
     CreatHeader(qsub_file)
     qsub_file.write("""
 #$ -o /home/thesim/log/outputjobevaluate%s%s%s.txt
-ulimit -v 30000000
+ulimit -v 16000000
 python scm.py  Solve %s YFix 6400b RQMC -n 5000 -p Fix -m MIP 
 """ % (instance, instance))
     return qsub_filename
