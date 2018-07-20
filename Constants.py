@@ -46,7 +46,6 @@ class Constants( object ):
 
     #Running option
     Debug = False
-    UseGUI = False
     PrintSolutionFileToExcel = True
     PrintDetailsExcelFiles = False
     PrintOnlyFirstStageDecision = True

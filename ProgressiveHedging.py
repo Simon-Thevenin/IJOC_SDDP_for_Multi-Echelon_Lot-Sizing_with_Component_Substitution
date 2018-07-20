@@ -55,7 +55,8 @@ class ProgressiveHedging(object):
     #This function creates the scenario tree
     def GenerateScenarios(self):
         #Build the scenario tree
-        print(self.TreeStructure)
+        if Constants.Debug:
+            print(self.TreeStructure)
         self.ScenarioTree = ScenarioTree(self.Instance, self.TreeStructure, self.TestIdentifier.ScenarioSeed,
                                          scenariogenerationmethod=self.TestIdentifier.ScenarioSampling,
                                          model=Constants.ModelYFix)
@@ -90,9 +91,11 @@ class ProgressiveHedging(object):
             justotest[0].DisplayScenario()
 
     def CheckStopingCriterion(self):
-        print("Check stopping criterion")
+        gap = Constants.Infinity
+
         if self.CurrentIteration > 0:
-            self.ComputeConvergence()
+            gap = self.ComputeConvergence()
+
         duration = time.time() - self.StartTime
         timelimitreached = duration > Constants.AlgorithmTimeLimit
         iterationlimitreached = self.CurrentIteration > Constants.PHIterationLimit
@@ -264,8 +267,9 @@ class ProgressiveHedging(object):
 
         convergence = math.sqrt(difference)
 
-        print("Convergence Gap %r"%convergence)
-
+        if Constants.Debug:
+            print("Convergence Gap %r"%convergence)
+        return convergence
 
 
     def PrintCurrentIteration(self):
@@ -298,6 +302,7 @@ class ProgressiveHedging(object):
             self.SolveScenariosIndependently()
 
             self.CurrentIteration += 1
-            self.PrintCurrentIteration()
+            if Constants.Debug:
+                self.PrintCurrentIteration()
 
         return self.CurrentImplementableSolution
