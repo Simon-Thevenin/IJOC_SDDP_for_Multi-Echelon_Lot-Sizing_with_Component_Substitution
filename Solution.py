@@ -452,7 +452,7 @@ class Solution(object):
         self.InSampleAverageOnTime = [[(sum(max([self.Scenarioset[s].Demands[t][p]
                                                  - self.BackOrder[s][t][self.Instance.ProductWithExternalDemandIndex[p]],0])
                                            for s in self.SenarioNrset)
-                                             / len( self.SenarioNrset))
+                                             / len(self.SenarioNrset))
                                         for p in self.Instance.ProductWithExternalDemand]
                                         for t in self.Instance.TimeBucketSet]
 
@@ -460,7 +460,7 @@ class Solution(object):
                                                    for t in self.Instance.TimeBucketSet)
                                                for s in self.Scenarioset]
 
-        totaldemand = sum( self.InSampleTotalDemandPerScenario )
+        totaldemand = sum(self.InSampleTotalDemandPerScenario)
 
         backordertime = range( self.Instance.NrTimeBucket - 1)
 
@@ -476,9 +476,9 @@ class Solution(object):
                                                   for w in  self.SenarioNrset]
 
         self.InSampleTotalLostSalePerScenario = [sum(self.BackOrder[w][self.Instance.NrTimeBucket -1][self.Instance.ProductWithExternalDemandIndex[p] ]
-                                                     for p in self.Instance.ProductWithExternalDemand) for w in  self.SenarioNrset]
+                                                     for p in self.Instance.ProductWithExternalDemand) for w in self.SenarioNrset]
 
-        nrscenario = len( self.Scenarioset )
+        nrscenario = len(self.Scenarioset)
 
         self.InSampleAverageDemand = sum(self.InSampleTotalDemandPerScenario[s] for s in self.SenarioNrset)/nrscenario
         self.InSamplePercentOnTime = 100 * (sum(self.InSampleTotalOnTimePerScenario[s] for s in self.SenarioNrset))/totaldemand
@@ -711,7 +711,7 @@ class Solution(object):
 
         # sum of quantity and initial inventory minus demands
         projinventory = [(self.Instance.StartingInventories[p]
-                                  + sum(prevquanity[t][p] for t in range(max(time - self.Instance.Leadtimes[p] + 1 , 0)))
+                                  + sum(prevquanity[t][p] for t in range(max(time - self.Instance.LeadTimes[p] + 1 , 0)))
                                   - sum(prevquanity[t][q] * self.Instance.Requirements[q][p] for t in range(time +1) for q in self.Instance.ProductSet)
                                   - sum(prevdemand[t][p] for t in range(time +1)))
                                     for p in self.Instance.ProductSet]
@@ -723,7 +723,7 @@ class Solution(object):
                                     for p in self.Instance.ProductSet]
 
         currentinventory = [(self.Instance.StartingInventories[p]
-                             + sum(prevquanity[t][p] for t in range( max( time - self.Instance.Leadtimes[p] + 1, 0)))
+                             + sum(prevquanity[t][p] for t in range(max(time - self.Instance.LeadTimes[p] + 1, 0)))
                              - sum(prevquanity[t][q] * self.Instance.Requirements[q][p] for t in range(time) for q in self.Instance.ProductSet)
                              - sum(prevdemand[t][p] for t in range(time)))
                             for p in self.Instance.ProductSet]
@@ -731,6 +731,8 @@ class Solution(object):
              if projinventory[p] > - 0.0001: projectedinventory[p] = projinventory[p]
              else:
                  if not self.Instance.HasExternalDemand[p] and not self.NotCompleteSolution and projinventorymusbepositive:
+                     print("time: %r " % (time))
+                     print("prevquanity: %r " % (prevquanity))
                      print("inventory: %r " % (projinventory))
                      raise NameError(" A product without external demand cannot have backorder")
                      projectedbackorder[ self.Instance.ProductWithExternalDemandIndex[p] ] = -projinventory[p]
@@ -948,3 +950,24 @@ class Solution(object):
 
         result.FixedQuantity= [[0 for p in instance.ProductSet] for t in instance.TimeBucketSet]
         return result
+
+    def ComputeInventory(self):
+        for w in self.SenarioNrset:
+            for t in self.Instance.TimeBucketSet:
+                for p in self.Instance.ProductSet:
+                    prevdemand = [[self.Scenarioset[w].Demands[tau][q] for q in self.Instance.ProductSet] for tau in range(t+1)]
+                    prevquanty = [[self.ProductionQuantity[w][tau][q] for q in self.Instance.ProductSet] for tau in range(t+1)]
+                    currentinventory = [(self.Instance.StartingInventories[p]
+                                         + sum(prevquanty[t][p] for t in range(max(t - self.Instance.LeadTimes[p] + 1, 0)))
+                                         - sum(prevquanty[t][q] * self.Instance.Requirements[q][p] for t in range(t) for q in self.Instance.ProductSet)
+                                         - sum(prevdemand[t][p] for t in range(t)))
+                                        for p in self.Instance.ProductSet]
+
+
+                    if currentinventory >= 0:
+                        self.InventoryLevel[w][t][p] = currentinventory[p]
+                        if self.Instance.HasExternalDemand[p]:
+                            self.BackOrder[w][t][p] = 0.0
+                    else:
+                        self.BackOrder[w][t][p] = currentinventory[p]
+                        self.InventoryLevel[w][t][p] = 0.0

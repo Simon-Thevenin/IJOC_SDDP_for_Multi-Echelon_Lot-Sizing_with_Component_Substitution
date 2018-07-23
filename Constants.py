@@ -56,7 +56,7 @@ class Constants( object ):
 
     #Code parameter
     Infinity = 9999999999999
-    AlgorithmTimeLimit = 36000
+    AlgorithmTimeLimit = 14400
 
     #SDDPparameters
     AlgorithmOptimalityTolerence = 0.0005
@@ -89,7 +89,7 @@ class Constants( object ):
     SDDPSaveInExcel = False
 
     PHIterationLimit = 1000
-
+    PHConvergenceTolerence = 0.5
 
     @staticmethod
     def IsDeterministic(s):

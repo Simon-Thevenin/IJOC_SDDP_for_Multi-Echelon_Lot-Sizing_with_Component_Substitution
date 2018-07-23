@@ -20,7 +20,8 @@ class ProgressiveHedging(object):
 
         self.GenerateScenarios()
 
-        self.LagrangianMultiplier = 0.5
+        self.LagrangianMultiplier = 0.1
+        self.TraceFileName = "./Temp/PHtrace_%s.txt" % (self.TestIdentifier.GetAsString())
         self.LagrangianQuantity = [[[0 for p in self.Instance.ProductSet]
                                        for t in self.Instance.TimeBucketSet]
                                        for w in self.ScenarioNrSet]
@@ -96,10 +97,23 @@ class ProgressiveHedging(object):
         if self.CurrentIteration > 0:
             gap = self.ComputeConvergence()
 
+        convergencereached = gap < Constants.PHConvergenceTolerence
+
         duration = time.time() - self.StartTime
         timelimitreached = duration > Constants.AlgorithmTimeLimit
         iterationlimitreached = self.CurrentIteration > Constants.PHIterationLimit
-        result = timelimitreached or iterationlimitreached
+        result = convergencereached or timelimitreached or iterationlimitreached
+
+        if Constants.PrintSDDPTrace and self.CurrentIteration > 0:
+            self.CurrentImplementableSolution.ComputeInventory()
+            self.CurrentImplementableSolution.ComputeCost()
+
+            print("Demands")
+            for w in self.CurrentImplementableSolution.Scenarioset:
+                print(w.Demands)
+
+            self.WriteInTraceFile("Iteration: %r Duration: %r Gap: %r UB: %r Multiplier: %r \n" % (self.CurrentIteration, duration, gap, self.CurrentImplementableSolution.TotalCost, self.LagrangianMultiplier))
+
         return result
 
     def SolveScenariosIndependently(self):
@@ -179,9 +193,12 @@ class ProgressiveHedging(object):
                 scenarios = self.GetScenariosAssociatedWithNode(n)
                 time = n.Time
                 sumprob = sum(self.ScenarioSet[w].Probability for w in scenarios)
-
+                print("sumprob %r"%sumprob)
                 # Average the quantities, and setups for this nodes.
                 if time < self.Instance.NrTimeBucket:
+                    for w in scenarios:
+                        print("qty %r"%self.CurrentSolution[w].ProductionQuantity[0][time])
+
                     qty = [sum(self.ScenarioSet[w].Probability
                                 * self.CurrentSolution[w].ProductionQuantity[0][time][p] for w in scenarios) \
                            / sumprob
@@ -200,7 +217,7 @@ class ProgressiveHedging(object):
 
                     for w in scenarios:
                         for p in self.Instance.ProductSet:
-                            solproduction[w][time][p] = prod[p]#int(round(prod[p]))
+                            solproduction[w][time][p] = prod[p]# int(round(prod[p]))
                             solquantity[w][time][p] = qty[p]
                             for q in self.Instance.ProductSet:
                                 solconsumption[w][time][q][p] = cons[p][q]
@@ -267,8 +284,6 @@ class ProgressiveHedging(object):
 
         convergence = math.sqrt(difference)
 
-        if Constants.Debug:
-            print("Convergence Gap %r"%convergence)
         return convergence
 
 
@@ -279,18 +294,41 @@ class ProgressiveHedging(object):
 
             print("Scena %r: %r"%(w, self.CurrentSolution[w].ProductionQuantity))
         print("Implementable: %r" % ( self.CurrentImplementableSolution.ProductionQuantity))
-        #print("-----------IMPLEMENTABLE: -------------------------")
-        #self.CurrentImplementableSolution.Print()
+        print("-----------IMPLEMENTABLE: -------------------------")
+        self.CurrentImplementableSolution.Print()
         print("---------------------------------------------------")
+        print("----------------------Multipliers------------------")
+        print("Quantity:%r"%self.LagrangianQuantity)
+        print("Linear Quantity:%r" % self.LinearLagQuantity)
+        print("---------------------------------------------------")
+
+    def WriteInTraceFile(self, string):
+        if Constants.PrintSDDPTrace:
+            self.TraceFile = open(self.TraceFileName, "a")
+            self.TraceFile.write(string)
+            self.TraceFile.close()
+
+        # This function runs the SDDP algorithm
+
+    def InitTrace(self):
+        if Constants.PrintSDDPTrace:
+            self.TraceFile = open(self.TraceFileName, "w")
+            self.TraceFile.write("Start the Progressive Hedging algorithm \n")
+            self.TraceFile.close()
+
+
 
 
     #This function run the algorithm
     def Run(self):
-        solution = None
+        self.InitTrace()
         self.CurrentSolution = [None for w in self.ScenarioNrSet]
-        self.SolveScenariosIndependently()
+
 
         while not self.CheckStopingCriterion():
+
+            # Solve each scenario independentely
+            self.SolveScenariosIndependently()
 
             # Create an implementable solution on the scenario tree
             self.CurrentImplementableSolution = self.CreateImplementableSolution()
@@ -298,11 +336,21 @@ class ProgressiveHedging(object):
             # Update the lagrangian multiplier
             self.UpdateLagragianMultipliers()
 
-            # Solve each scenario independentely
-            self.SolveScenariosIndependently()
+
 
             self.CurrentIteration += 1
+
+            #if self.CurrentIteration == 5 :
+            #    self.LagrangianMultiplier = 200
+
+            self.LagrangianMultiplier *= 0.9
+
+            if self.LagrangianMultiplier < 1:
+                self.LagrangianMultiplier = 1
+
             if Constants.Debug:
                 self.PrintCurrentIteration()
+
+
 
         return self.CurrentImplementableSolution

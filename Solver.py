@@ -330,7 +330,7 @@ class Solver( object ):
                                 stochasticparttreestructure = [4, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
 
             if self.TestIdentifier.NrScenario == "1010":
-                stochasticparttreestructure = [10, 10, 1, 1, 1]
+                stochasticparttreestructure = [5, 5, 1, 1, 1]
             if self.TestIdentifier.NrScenario == "6400b":
                 if nrtimebucketstochastic == 3:
                     stochasticparttreestructure = [50, 32, 4]
