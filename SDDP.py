@@ -292,7 +292,7 @@ class SDDP(object):
     def CheckStoppingCriterion(self):
         duration = time.time() - self.StartOfAlsorithm
         timalimiteached = (duration > Constants.AlgorithmTimeLimit)
-        optimalitygap = ( self.CurrentUpperBound - self.CurrentLowerBound)/self.CurrentUpperBound
+        optimalitygap = (self.CurrentUpperBound - self.CurrentLowerBound)/self.CurrentUpperBound
         convergencecriterion = Constants.Infinity
         c = Constants.Infinity
         if self.CurrentLowerBound > 0:

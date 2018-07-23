@@ -4,6 +4,7 @@ from Constants import Constants
 from MIPSolver import MIPSolver
 from Solution import Solution
 
+import copy
 import time
 import math
 
@@ -21,6 +22,7 @@ class ProgressiveHedging(object):
         self.GenerateScenarios()
 
         self.LagrangianMultiplier = 0.1
+        self.CurrentImplementableSolution = None
         self.TraceFileName = "./Temp/PHtrace_%s.txt" % (self.TestIdentifier.GetAsString())
         self.LagrangianQuantity = [[[0 for p in self.Instance.ProductSet]
                                        for t in self.Instance.TimeBucketSet]
@@ -112,9 +114,36 @@ class ProgressiveHedging(object):
             for w in self.CurrentImplementableSolution.Scenarioset:
                 print(w.Demands)
 
-            self.WriteInTraceFile("Iteration: %r Duration: %r Gap: %r UB: %r Multiplier: %r \n" % (self.CurrentIteration, duration, gap, self.CurrentImplementableSolution.TotalCost, self.LagrangianMultiplier))
+            dualconv = -1
+            primconv = -1
+            lpenalty = self.GetLinearPenalty()
+            qpenalty = self.GetQuadraticPenalty()
+            ratequad_lin = self.RateQuadLinear()
+            ratechangeimplem = -1
+            ratedualprimal = -1
+            rateprimaldual = -1
+            if self.CurrentIteration>1:
+                primconv = self.GetPrimalConvergenceIndice()
+                dualconv = self.GetDualConvergenceIndice()
+                ratechangeimplem = self.RateLargeChangeInImplementable()
+                rateprimaldual = self.RatePrimalDual()
+                ratedualprimal = self.RateDualPrimal()
+
+
+
+                print("completeCost %r"%(self.CurrentImplementableSolution.TotalCost + lpenalty + qpenalty))
+
+
+
+            self.WriteInTraceFile("Iteration: %r Duration: %.2f Gap: %.2f UB:%.2f linear penalty:%.2f quadratic penalty: %.2f"
+                                  " Multiplier:%.2f primal conv:%.2f dual conv:%.2f Rate Large Change(l): %.2f"
+                                  " rate quad_lin(s):%.2f rateprimaldual(l<-):%.2f ratedualprimal(l->): %.2f \n"
+                                  % (self.CurrentIteration, duration, gap, self.CurrentImplementableSolution.TotalCost,
+                                     lpenalty, qpenalty, self.LagrangianMultiplier, primconv, dualconv, ratechangeimplem,
+                                     ratequad_lin, rateprimaldual, ratedualprimal))
 
         return result
+
 
     def SolveScenariosIndependently(self):
         #For each scenario
@@ -126,6 +155,85 @@ class ProgressiveHedging(object):
             #Solve the model.
 
             self.CurrentSolution[w] = self.MIPSolvers[w].Solve(True)
+
+            if self.CurrentIteration > 1:
+
+                qp = sum(math.pow((self.CurrentSolution[w].ProductionQuantity[0][t][p]
+                                         - self.CurrentImplementableSolution.ProductionQuantity[w][t][p]), 2)
+                             for p in self.Instance.ProductSet
+                             for t in self.Instance.TimeBucketSet)
+
+                qp += sum(math.pow((self.CurrentSolution[w].Production[0][t][p]
+                                          - self.CurrentImplementableSolution.Production[w][t][p]), 2)
+                              for p in self.Instance.ProductSet
+                              for t in self.Instance.TimeBucketSet)
+
+                qp += sum(math.pow((self.CurrentSolution[w].Consumption[0][t][c[0]][c[1]]
+                                          - self.CurrentImplementableSolution.Consumption[w][t][c[0]][c[1]]), 2)
+                              for c in self.Instance.ConsumptionSet
+                              for t in self.Instance.TimeBucketSet)
+
+                qp *= self.LagrangianMultiplier * 0.5
+
+                lp = sum( self.LinearLagQuantity[w][t][p] \
+                             * (self.CurrentSolution[w].ProductionQuantity[0][t][p]
+                                - self.CurrentImplementableSolution.ProductionQuantity[w][t][p])
+                             for p in self.Instance.ProductSet
+                             for t in self.Instance.TimeBucketSet)
+
+                lp += sum(self.LinearLagProduction[w][t][p]
+                              * (self.CurrentSolution[w].Production[0][t][p]
+                                 - self.CurrentImplementableSolution.Production[w][t][p])
+                              for p in self.Instance.ProductSet
+                              for t in self.Instance.TimeBucketSet)
+
+                lp += sum(self.LinearLagConsumption[0][t][c[0]][c[1]] \
+                          * (self.CurrentSolution[w].Consumption[0][t][c[0]][c[1]]
+                             - self.CurrentImplementableSolution.Consumption[w][t][c[0]][c[1]])
+                              for c in self.Instance.ConsumptionSet
+                              for t in self.Instance.TimeBucketSet)
+
+                penalty = lp + qp
+
+                lpconst = sum(- self.LinearLagQuantity[w][t][p] \
+                              * (self.CurrentImplementableSolution.ProductionQuantity[w][t][p])
+                              for p in self.Instance.ProductSet
+                              for t in self.Instance.TimeBucketSet)
+
+                lpconst += sum(-self.LinearLagProduction[w][t][p]
+                               * (self.CurrentImplementableSolution.Production[w][t][p])
+                               for p in self.Instance.ProductSet
+                               for t in self.Instance.TimeBucketSet)
+
+                lpconst += sum(- self.LinearLagConsumption[0][t][c[0]][c[1]] \
+                               * (self.CurrentImplementableSolution.Consumption[w][t][c[0]][c[1]])
+                               for c in self.Instance.ConsumptionSet
+                               for t in self.Instance.TimeBucketSet)
+
+                qpconst = sum(0.5 * self.LagrangianMultiplier \
+                              * math.pow((self.CurrentImplementableSolution.ProductionQuantity[w][t][p]), 2)
+                              for p in self.Instance.ProductSet
+                              for t in self.Instance.TimeBucketSet)
+
+                qpconst += sum(0.5 * self.LagrangianMultiplier \
+                               * math.pow((self.CurrentImplementableSolution.Production[w][t][p]), 2)
+                               for p in self.Instance.ProductSet
+                               for t in self.Instance.TimeBucketSet)
+
+                qpconst += sum(0.5 * self.LagrangianMultiplier \
+                               * math.pow((self.CurrentImplementableSolution.Consumption[w][t][c[0]][c[1]]), 2)
+                               for c in self.Instance.ConsumptionSet
+                               for t in self.Instance.TimeBucketSet)
+
+                constant = lpconst + qpconst
+
+                print("Python Cost of the scenario %r, penalties %r " % (self.CurrentSolution[w].TotalCost, penalty))
+                print("Cost in cplex %r, ignored constant %r " % (self.MIPSolvers[w].Cplex.solution.get_objective_value(), constant))
+
+                costwithconstant = self.MIPSolvers[w].Cplex.solution.get_objective_value() + constant
+                actualcostwithpenalty = self.CurrentSolution[w].TotalCost + penalty
+                print("cost with penalty from python %r / from cplex %r" % (actualcostwithpenalty, costwithconstant))
+
             #self.CurrentSolution[w].Print()
 
 
@@ -318,12 +426,214 @@ class ProgressiveHedging(object):
 
 
 
+    def GetDistance(self, solution):
+        result = sum(self.ScenarioSet[w].Probability \
+                     * math.pow(solution.ProductionQuantity[w][t][p], 2)
+                     for p in self.Instance.ProductSet
+                     for t in self.Instance.TimeBucketSet
+                     for w in self.ScenarioNrSet)
+
+        result += sum(self.ScenarioSet[w].Probability \
+                      * math.pow(solution.Production[w][t][p], 2)
+                      for p in self.Instance.ProductSet
+                      for t in self.Instance.TimeBucketSet
+                      for w in self.ScenarioNrSet)
+
+        result += sum(self.ScenarioSet[w].Probability \
+                      * math.pow(solution.Consumption[w][t][c[0]][c[1]], 2)
+                      for c in self.Instance.ConsumptionSet
+                      for t in self.Instance.TimeBucketSet
+                      for w in self.ScenarioNrSet)
+
+        return result
+
+    def RateLargeChangeInImplementable(self):
+        primalcon = self.GetPrimalConvergenceIndice()
+        divider = max(self.GetDistance(self.CurrentImplementableSolution),
+                      self.GetDistance(self.PreviousImplementableSolution))
+
+        result =(primalcon / divider)
+        return result
+
+    def RatePrimalDual(self):
+        primalcon = self.GetPrimalConvergenceIndice()
+        dualcon = self.GetDualConvergenceIndice()
+        divider = max(1,dualcon)
+
+        result =(primalcon-dualcon / divider)
+        return result
+
+    def RateDualPrimal(self):
+        primalcon = self.GetPrimalConvergenceIndice()
+        dualcon = self.GetDualConvergenceIndice()
+        divider = max(1, primalcon)
+
+        result = (dualcon - primalcon / divider)
+        return result
+
+    def RateQuadLinear(self):
+        result = self.GetQuadraticPenalty()/ (self.CurrentImplementableSolution.TotalCost + self.GetLinearPenalty())
+
+        return result
+
+    def GetPrimalConvergenceIndice(self):
+        result = sum(self.ScenarioSet[w].Probability \
+                     * math.pow(self.CurrentImplementableSolution.ProductionQuantity[w][t][p]
+                                - self.PreviousImplementableSolution.ProductionQuantity[w][t][p], 2)
+            for p in self.Instance.ProductSet
+            for t in self.Instance.TimeBucketSet
+            for w in self.ScenarioNrSet)
+
+        result += sum(self.ScenarioSet[w].Probability \
+                      * math.pow(self.CurrentImplementableSolution.Production[w][t][p]
+                                 - self.PreviousImplementableSolution.Production[w][t][p], 2)
+                    for p in self.Instance.ProductSet
+                    for t in self.Instance.TimeBucketSet
+                    for w in self.ScenarioNrSet)
+
+        result += sum(self.ScenarioSet[w].Probability \
+                      * math.pow(self.CurrentImplementableSolution.Consumption[w][t][c[0]][c[1]]
+                                 - self.PreviousImplementableSolution.Consumption[w][t][c[0]][c[1]], 2)
+                      for c in self.Instance.ConsumptionSet
+                      for t in self.Instance.TimeBucketSet
+                      for w in self.ScenarioNrSet)
+
+        return result
+
+    def GetQuadraticPenaltyConstant(self):
+        result = sum(- self.ScenarioSet[w].Probability \
+                     * self.LagrangianMultiplier * 0.5 \
+                     * math.pow(self.CurrentImplementableSolution.ProductionQuantity[w][t][p], 2)
+                     for p in self.Instance.ProductSet
+                     for t in self.Instance.TimeBucketSet
+                     for w in self.ScenarioNrSet)
+
+        result += sum(- self.ScenarioSet[w].Probability \
+                      * self.LagrangianMultiplier * 0.5 \
+                      * math.pow(self.CurrentImplementableSolution.Production[w][t][p], 2)
+                      for p in self.Instance.ProductSet
+                      for t in self.Instance.TimeBucketSet
+                      for w in self.ScenarioNrSet)
+
+        result += sum(- self.ScenarioSet[w].Probability \
+                      * self.LagrangianMultiplier * 0.5 \
+                      * math.pow(self.CurrentImplementableSolution.Consumption[w][t][c[0]][c[1]], 2)
+                      for c in self.Instance.ConsumptionSet
+                      for t in self.Instance.TimeBucketSet
+                      for w in self.ScenarioNrSet)
+
+        return result
+
+    def GetQuadraticPenalty(self):
+        result = sum(self.ScenarioSet[w].Probability \
+                     * self.LagrangianMultiplier \
+                     * math.pow((self.CurrentSolution[w].ProductionQuantity[0][t][p]
+                                 - self.CurrentImplementableSolution.ProductionQuantity[w][t][p]), 2)
+                     for p in self.Instance.ProductSet
+                     for t in self.Instance.TimeBucketSet
+                     for w in self.ScenarioNrSet)
+
+        result += sum(self.ScenarioSet[w].Probability \
+                     * self.LagrangianMultiplier \
+                     * math.pow((self.CurrentSolution[w].Production[0][t][p]
+                                 - self.CurrentImplementableSolution.Production[w][t][p]), 2)
+                      for p in self.Instance.ProductSet
+                      for t in self.Instance.TimeBucketSet
+                      for w in self.ScenarioNrSet)
+
+        result += sum(self.ScenarioSet[w].Probability \
+                     * self.LagrangianMultiplier \
+                     * math.pow((self.CurrentSolution[w].Consumption[0][t][c[0]][c[1]]
+                                - self.CurrentImplementableSolution.Consumption[w][t][c[0]][c[1]]), 2)
+                      for c in self.Instance.ConsumptionSet
+                      for t in self.Instance.TimeBucketSet
+                      for w in self.ScenarioNrSet)
+
+        return result
+
+    def GetLinearPenaltyConstant(self):
+        result = sum(-self.ScenarioSet[w].Probability \
+                     * self.LinearLagQuantity[w][t][p] \
+                     * (self.CurrentImplementableSolution.ProductionQuantity[w][t][p])
+                     for p in self.Instance.ProductSet
+                     for t in self.Instance.TimeBucketSet
+                     for w in self.ScenarioNrSet)
+
+        result += sum(-self.ScenarioSet[w].Probability \
+                      * self.LinearLagProduction[w][t][p]
+                      * (self.CurrentImplementableSolution.Production[w][t][p])
+                      for p in self.Instance.ProductSet
+                      for t in self.Instance.TimeBucketSet
+                      for w in self.ScenarioNrSet)
+
+        result += sum(-self.ScenarioSet[w].Probability \
+                      * self.LinearLagConsumption[0][t][c[0]][c[1]] \
+                      * (self.CurrentImplementableSolution.Consumption[w][t][c[0]][c[1]])
+                      for c in self.Instance.ConsumptionSet
+                      for t in self.Instance.TimeBucketSet
+                      for w in self.ScenarioNrSet)
+
+        return result
+
+    def GetLinearPenalty(self):
+        result = sum(self.ScenarioSet[w].Probability \
+                     * self.LinearLagQuantity[w][t][p] \
+                     * (self.CurrentSolution[w].ProductionQuantity[0][t][p]
+                         - self.CurrentImplementableSolution.ProductionQuantity[w][t][p])
+                     for p in self.Instance.ProductSet
+                     for t in self.Instance.TimeBucketSet
+                     for w in self.ScenarioNrSet)
+
+        result += sum(self.ScenarioSet[w].Probability \
+                      * self.LinearLagProduction[w][t][p]
+                      * (self.CurrentSolution[w].Production[0][t][p]
+                          - self.CurrentImplementableSolution.Production[w][t][p])
+                     for p in self.Instance.ProductSet
+                     for t in self.Instance.TimeBucketSet
+                     for w in self.ScenarioNrSet)
+
+        result += sum(self.ScenarioSet[w].Probability \
+                      * self.LinearLagConsumption[0][t][c[0]][c[1]] \
+                      * (self.CurrentSolution[w].Consumption[0][t][c[0]][c[1]]
+                         - self.CurrentImplementableSolution.Consumption[w][t][c[0]][c[1]])
+                     for c in self.Instance.ConsumptionSet
+                     for t in self.Instance.TimeBucketSet
+                     for w in self.ScenarioNrSet)
+
+        return result
+
+    def GetDualConvergenceIndice(self):
+        result = sum(self.ScenarioSet[w].Probability \
+                     * math.pow(self.CurrentSolution[w].ProductionQuantity[0][t][p]
+                                  - self.CurrentImplementableSolution.ProductionQuantity[w][t][p],
+                                  2)
+                    for p in self.Instance.ProductSet
+                    for t in self.Instance.TimeBucketSet
+                    for w in self.ScenarioNrSet)
+
+        result += sum(self.ScenarioSet[w].Probability \
+                      * math.pow(self.CurrentSolution[w].Production[0][t][p]
+                                  - self.CurrentImplementableSolution.Production[w][t][p],
+                                  2)
+                     for p in self.Instance.ProductSet
+                     for t in self.Instance.TimeBucketSet
+                     for w in self.ScenarioNrSet)
+
+        result += sum(self.ScenarioSet[w].Probability \
+                      * math.pow(self.CurrentSolution[w].Consumption[0][t][c[0]][c[1]]
+                                  - self.CurrentImplementableSolution.Consumption[w][t][c[0]][c[1]],
+                                  2)
+                     for c in self.Instance.ConsumptionSet
+                     for t in self.Instance.TimeBucketSet
+                     for w in self.ScenarioNrSet)
+
+        return result
+
 
     #This function run the algorithm
     def Run(self):
         self.InitTrace()
         self.CurrentSolution = [None for w in self.ScenarioNrSet]
-
 
         while not self.CheckStopingCriterion():
 
@@ -331,26 +641,23 @@ class ProgressiveHedging(object):
             self.SolveScenariosIndependently()
 
             # Create an implementable solution on the scenario tree
+            self.PreviousImplementableSolution = copy.deepcopy(self.CurrentImplementableSolution)
             self.CurrentImplementableSolution = self.CreateImplementableSolution()
 
             # Update the lagrangian multiplier
             self.UpdateLagragianMultipliers()
 
-
-
             self.CurrentIteration += 1
 
-            #if self.CurrentIteration == 5 :
-            #    self.LagrangianMultiplier = 200
-
-            self.LagrangianMultiplier *= 0.9
-
-            if self.LagrangianMultiplier < 1:
+            if self.CurrentIteration == 5 :
                 self.LagrangianMultiplier = 1
+
+            #self.LagrangianMultiplier *= 0.9
+
+            #if self.LagrangianMultiplier < 1:
+            #    self.LagrangianMultiplier = 1
 
             if Constants.Debug:
                 self.PrintCurrentIteration()
-
-
 
         return self.CurrentImplementableSolution

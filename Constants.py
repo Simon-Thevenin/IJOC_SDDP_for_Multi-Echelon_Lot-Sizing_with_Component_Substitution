@@ -73,7 +73,7 @@ class Constants( object ):
     SDDPInitNrScenarioTest = 10
 
     SolveRelaxationFirst = True
-    SDDPNrIterationRelax = 1000
+    SDDPNrIterationRelax = 100
     SDDPGapRelax = 0.01
 
     SDDPUseValidInequalities = False
