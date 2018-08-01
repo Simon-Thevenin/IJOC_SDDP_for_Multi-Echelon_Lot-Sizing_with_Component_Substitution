@@ -56,7 +56,7 @@ def CreateMIPJob(instance):
     qsub_file = open(qsub_filename, 'w')
     CreatHeader(qsub_file)
     qsub_file.write("""
-#$ -o /home/thesim/log/outputjobevaluate%s%s%s.txt
+#$ -o /home/thesim/log/outputjobevaluate%s.txt
 ulimit -v 16000000
 python scm.py  Solve %s YFix 6400b RQMC -n 5000 -p Fix -m MIP 
 """ % (instance, instance))
@@ -68,7 +68,7 @@ def CreatePHJob(instance):
     qsub_file = open(qsub_filename, 'w')
     CreatHeader(qsub_file)
     qsub_file.write("""
-#$ -o /home/thesim/log/outputjobevaluateph%s%s%s.txt
+#$ -o /home/thesim/log/outputjobevaluateph%s.txt
 ulimit -v 16000000
 python scm.py  Solve %s YFix 6400b RQMC -n 5000 -p Fix -m PH 
 """ % (instance, instance))
