@@ -83,7 +83,7 @@ class Evaluator( object ):
     #Get the temporary file conting the results of the simulation
     def GetEvaluationFileName(self):
 
-        result = Constants.EvaluationFolder + self.TestIdentifier.GetAsString() + self.EvalutorIdentificator.GetAsString()
+        result = Constants.GetEvaluationFolder() + self.TestIdentifier.GetAsString() + self.EvalutorIdentificator.GetAsString()
         return result
 
     #run the simulation

@@ -2,7 +2,7 @@ from __future__ import absolute_import, division, print_function
 class Constants( object ):
     PathInstances = "./Instances/"
     PathCPLEXLog = "./CPLEXLog/"
-    EvaluationFolder = "./Evaluations/"# "/tmp/thesim/Evaluations/"
+
 
     #Scenario sampling methods:
     MonteCarlo = "MC"
@@ -118,3 +118,11 @@ class Constants( object ):
     @staticmethod
     def IsRule(s):
         return False
+
+    @staticmethod
+    def GetEvaluationFolder():
+        if Constants.PrintSolutionFileInTMP:
+            return "/tmp/thesim/Evaluations/"
+        else:
+            return "./Evaluations/"
+

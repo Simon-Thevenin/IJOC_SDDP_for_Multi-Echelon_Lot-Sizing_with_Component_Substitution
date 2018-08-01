@@ -22,6 +22,10 @@ def CreatHeaderCirrelt(file):
 #$ -cwd
 #$ -q idra
 #$ -j y
+mkdir -p /tmp/thesim
+mkdir -p /tmp/thesim/Evaluations
+mkdir -p /tmp/thesim/Solutions
+mkdir -p /tmp/thesim/CPLEXLog
 """)
 
 def CreatHeaderQuebec(file):
