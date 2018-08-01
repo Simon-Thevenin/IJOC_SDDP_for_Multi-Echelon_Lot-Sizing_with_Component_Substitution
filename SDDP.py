@@ -612,6 +612,12 @@ class SDDP(object):
 
             return solution
 
+    def GetSaveFileName(self):
+        if Constants.PrintSolutionFileInTMP:
+            result = "/tmp/thesim/Solutions/SDDP_%r.pkl" % self.TestIdentifier.GetAsStringList()
+        else:
+            result = "./Solutions/SDDP_%r.pkl" % self.TestIdentifier.GetAsStringList()
+        return result
     def SaveSolver(self):
         cuts = [[] for _ in self.StagesSet]
         for t in self.StagesSet:
@@ -619,7 +625,9 @@ class SDDP(object):
                 cut.ForwardStage = None
                 cut.BackwarStage = None
                 cuts[t].append(cut)
-        with open("./Solutions/SDDP_%r.pkl"%self.TestIdentifier.GetAsStringList(), 'wb') as output:
+
+        filename = self.GetSaveFileName()
+        with open(filename, 'wb') as output:
             pickle.dump(cuts, output)
 
         for t in self.StagesSet:
@@ -628,8 +636,9 @@ class SDDP(object):
                 cut.BackwarStage = self.BackwardStage[t]
 
     def LoadCuts(self):
+        filename = self.GetSaveFileName()
 
-        with open("./Solutions/SDDP_%r.pkl"%self.TestIdentifier.GetAsStringList(), 'rb') as input:
+        with open(filename, 'rb') as input:
             cuts = pickle.load(input)
 
         for t in self.StagesSet:
