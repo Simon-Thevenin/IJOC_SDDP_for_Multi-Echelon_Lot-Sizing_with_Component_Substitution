@@ -43,7 +43,7 @@ class SDDP(object):
     def __init__(self, instance, testidentifier):
         self.Instance = instance
         self.TestIdentifier = testidentifier
-        nrstage = self.Instance.NrTimeBucket# - self.Instance.NrTimeBucketWithoutUncertainty
+        nrstage = self.Instance.NrTimeBucket # - self.Instance.NrTimeBucketWithoutUncertainty
         self.StagesSet = range(nrstage + 1)
         self.CurrentIteration = 0
         self.CurrentLowerBound = 0

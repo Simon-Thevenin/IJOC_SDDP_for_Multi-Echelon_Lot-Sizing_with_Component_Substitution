@@ -87,6 +87,7 @@ def Solve(instance):
     solution = solver.Solve()
 
 
+
     LastFoundSolution = solution
     evaluator = Evaluator(instance, TestIdentifier, EvaluatorIdentifier, solver)
     evaluator.RunEvaluation()
@@ -97,6 +98,9 @@ def Evaluate():
 
 
     evaluator = Evaluator(instance, TestIdentifier, EvaluatorIdentifier, solver)
+
+
+
     evaluator.RunEvaluation()
     evaluator.GatherEvaluation()
 
@@ -104,7 +108,7 @@ def Evaluate():
 def GenerateInstances():
     instancecreated = []
     instance = Instance()
-    # instance.DefineAsSuperSmallIntance()
+    #instance.DefineAsSuperSmallIntance()
     # instance.ReadFromFile("K0011525", "NonStationary", "Normal")
     instance.ReadFromFile("01", "NonStationary", "Normal")
     instance.SaveCompleteInstanceInExelFile()
@@ -160,6 +164,7 @@ if __name__ == '__main__':
 
         instance = Instance()
         #instance.DefineAsSuperSmallIntance()
+        #instance.DefineAsTwoItemIntance()
         # instance.ReadFromFile("K0011525", "NonStationary", "Normal")
         # GenerateInstances()
         instance.ReadInstanceFromExelFile(TestIdentifier.InstanceName)

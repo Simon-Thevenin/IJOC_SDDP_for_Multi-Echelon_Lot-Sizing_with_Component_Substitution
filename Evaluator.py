@@ -189,7 +189,7 @@ class Evaluator( object ):
         if Constants.LauchEvalAfterSolve:
             policyset = ["S", "Re-solve"]
 
-            if self.TestIdentifier.NrScenario == "6400b" or self.TestIdentifier.Method == Constants.SDDP:
+            if self.TestIdentifier.NrScenario == "6400b" or self.TestIdentifier.Method == Constants.SDDP or self.TestIdentifier.Method == Constants.ProgressiveHedging:
                 policyset = ["Re-solve"]
 
             if self.TestIdentifier.NrScenario == "6400c":

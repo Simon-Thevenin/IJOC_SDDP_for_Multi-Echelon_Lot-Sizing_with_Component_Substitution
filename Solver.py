@@ -203,13 +203,12 @@ class Solver( object ):
     def SolveYFixHeuristic(self):
 
         start = time.time()
-        treestructure = [1, 5] + [1] * (self.Instance.NrTimeBucket - 1) + [0]
+        treestructure = [1, 500] + [1] * (self.Instance.NrTimeBucket - 1) + [0]
         self.TestIdentifier.Model = Constants.ModelYQFix
         chosengeneration = self.ScenarioGeneration
         self.ScenarioGeneration = Constants.RQMC
         solution, mipsolver = self.MRP(treestructure, False, recordsolveinfo=True)
         self.GivenSetup = [[solution.Production[0][t][p] for p in self.Instance.ProductSet] for t in self.Instance.TimeBucketSet]
-
         if Constants.Debug:
             self.Instance.PrintInstance()
 
@@ -246,7 +245,7 @@ class Solver( object ):
             self.TestIdentifier.Method = methodtemp
 
             self.TreeStructure = self.GetTreeStructure()
-            solution, mipsolver = self.MRP(self.TreeStructure, averagescenario=True, recordsolveinfo=True, warmstart=True)
+            solution, mipsolver = self.MRP(self.TreeStructure, averagescenario=False, recordsolveinfo=True, warmstart=True)
 
         if self.TestIdentifier.Method == Constants.SDDP:
              self.SDDPSolver = SDDP(self.Instance, self.TestIdentifier)

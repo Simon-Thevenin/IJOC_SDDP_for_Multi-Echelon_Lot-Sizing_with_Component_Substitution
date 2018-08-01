@@ -66,6 +66,8 @@ class Solution(object):
         self.TotalTime = 0
         self.CplexNrConstraints = -1
         self.CplexNrVariables = -1
+        self.PHCost = -1
+        self.PHNrIteration = -1
 
         self.SDDPLB = -1
         self.SDDPExpUB = -1
@@ -98,9 +100,9 @@ class Solution(object):
             model = "Rule"
         general = [self.Instance.InstanceName, self.Instance.Distribution, model,
                    self.CplexCost, self.CplexTime, self.TotalTime, self.CplexGap, self.CplexNrConstraints,
-                   self.CplexNrVariables, self.SDDPLB, self.SDDPExpUB, self.SDDPNrIteration, self.IsPartialSolution, self.IsSDDPSolution]
+                   self.CplexNrVariables, self.SDDPLB, self.SDDPExpUB, self.SDDPNrIteration, self.PHCost, self.PHNrIteration, self.IsPartialSolution, self.IsSDDPSolution]
         columnstab = ["Name", "Distribution", "Model", "CplexCost", "CplexTime", "TotalTime", "CplexGap", "CplexNrConstraints",
-                      "CplexNrVariables", "SDDP_LB", "SDDP_ExpUB", "SDDP_NrIteration", "IsPartialSolution", "ISSDDPSolution"]
+                      "CplexNrVariables", "SDDP_LB", "SDDP_ExpUB", "SDDP_NrIteration", "PH_Cost", "PH_NrIteration", "IsPartialSolution", "ISSDDPSolution"]
         generaldf = pd.DataFrame(general, index=columnstab)
         return generaldf
 
@@ -657,6 +659,8 @@ class Solution(object):
                     self.SDDPLB,
                     self.SDDPExpUB,
                     self.SDDPNrIteration,
+                    self.PHCost,
+                    self.PHNrIteration,
                     self.TotalTime,
                     self.SetupCost,
                     self.InventoryCost,
@@ -954,20 +958,25 @@ class Solution(object):
     def ComputeInventory(self):
         for w in self.SenarioNrset:
             for t in self.Instance.TimeBucketSet:
-                for p in self.Instance.ProductSet:
-                    prevdemand = [[self.Scenarioset[w].Demands[tau][q] for q in self.Instance.ProductSet] for tau in range(t+1)]
-                    prevquanty = [[self.ProductionQuantity[w][tau][q] for q in self.Instance.ProductSet] for tau in range(t+1)]
-                    currentinventory = [(self.Instance.StartingInventories[p]
+                prevdemand = [[self.Scenarioset[w].Demands[tau][q] for q in self.Instance.ProductSet] for tau in range(t+1)]
+                prevquanty = [[self.ProductionQuantity[w][tau][q] for q in self.Instance.ProductSet] for tau in range(t+1)]
+                currentinventory = [(self.Instance.StartingInventories[p]
                                          + sum(prevquanty[t][p] for t in range(max(t - self.Instance.LeadTimes[p] + 1, 0)))
-                                         - sum(prevquanty[t][q] * self.Instance.Requirements[q][p] for t in range(t) for q in self.Instance.ProductSet)
-                                         - sum(prevdemand[t][p] for t in range(t)))
+                                         - sum(self.Consumption[w][t][c[0]][c[1]] for t in range(t+1) for c in self.Instance.ConsumptionSet if c[0]==p)
+                                         - sum(prevdemand[t][p] for t in range(t+1)))
                                         for p in self.Instance.ProductSet]
 
+                for p in self.Instance.ProductSet:
 
-                    if currentinventory >= 0:
+                    if currentinventory[p] >= -0.0001:
                         self.InventoryLevel[w][t][p] = currentinventory[p]
                         if self.Instance.HasExternalDemand[p]:
                             self.BackOrder[w][t][p] = 0.0
                     else:
-                        self.BackOrder[w][t][p] = currentinventory[p]
-                        self.InventoryLevel[w][t][p] = 0.0
+                        if self.Instance.HasExternalDemand[p]:
+                            self.BackOrder[w][t][p] = -currentinventory[p]
+                            self.InventoryLevel[w][t][p] = 0.0
+                        else:
+                            self.InventoryLevel[w][t][p] = currentinventory[p]
+                            if Constants.Debug:
+                                print("THE SOlution is not feasible!!!!!!")

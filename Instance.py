@@ -215,6 +215,98 @@ class Instance(object):
         self.LostSaleCost = [100.0, 0.0, 0.0]
         self.ComputeInstanceData()
 
+        # This function defines a very small instance, this is useful for debugging.
+    def DefineAsTwoItemIntance(self):
+            self.InstanceName = "TwoItemIntance"
+            self.Distribution = Constants.NonStationary
+            self.ProductName = ["P1", "P2"]
+            self.NrProduct = 2
+            self.NrTimeBucket = 2
+            self.NrTimeBucketWithoutUncertaintyAfter = 0
+            self.NrTimeBucketWithoutUncertaintyBefore = 0
+            self.NrResource = 2
+            self.Gamma = 1
+            self.Requirements = [[0, 1],
+                                 [0, 0]]
+            self.MasterProduct = [0, 1]
+            # Alternates[p][p2] 1 if p2 can be used as alternate for p
+            self.Alternates = [[0, 0],
+                               [0, 0]]
+            # AternateCosts[p][c] the cost (per unit) of using component c for product p
+            self.AternateCosts = [[0, 0],
+                                  [0, 0]]
+            self.Capacity = [50, 50]
+            self.LeadTimes = [0, 0]
+            self.ProcessingTime = [[1, 0],
+                                   [0, 1]]
+            self.YearlyAverageDemand = [10, 0]
+            self.ForecastedAverageDemand = [[10, 0],
+                                            [10, 0],
+                                            [10, 0],
+                                            [10, 0],
+                                            [10, 0]
+                                            ]
+            self.ForecastError = [0.25, 0]
+            self.RateOfKnownDemand = 0.0
+            self.YearlyStandardDevDemands = [2, 0]
+            self.ForcastedStandardDeviation = [[2, 0],
+                                               [2, 0],
+                                               [2, 0],
+                                               [2, 0],
+                                               [2, 0]]
+
+            self.StartingInventories = [10.0, 5.0]
+            self.InventoryCosts = [5.0, 2.0]
+            self.VariableCost = [5.0, 0.0]
+            self.SetupCosts = [5.0, 5.0]
+            self.BackorderCosts = [10.0, 0.0]  # for now assume no external demand for components
+            self.LostSaleCost = [100.0, 0.0]
+            self.ComputeInstanceData()
+
+        # This function defines a very small instance, this is useful for debugging.
+    def DefineAsOneItemIntance(self):
+            self.InstanceName = "OneItemIntance"
+            self.Distribution = Constants.NonStationary
+            self.ProductName = ["P1"]
+            self.NrProduct = 1
+            self.NrTimeBucket = 5
+            self.NrTimeBucketWithoutUncertaintyAfter = 0
+            self.NrTimeBucketWithoutUncertaintyBefore = 0
+            self.NrResource = 1
+            self.Gamma = 1
+            self.Requirements = [[0]]
+            self.MasterProduct = [0]
+            # Alternates[p][p2] 1 if p2 can be used as alternate for p
+            self.Alternates = [[0]]
+            # AternateCosts[p][c] the cost (per unit) of using component c for product p
+            self.AternateCosts = [[0]]
+            self.Capacity = [50]
+            self.LeadTimes = [1]
+            self.ProcessingTime = [[1]]
+            self.YearlyAverageDemand = [10]
+            self.ForecastedAverageDemand = [[10],
+                                            [10],
+                                            [10],
+                                            [10],
+                                            [10]
+                                            ]
+            self.ForecastError = [0.25]
+            self.RateOfKnownDemand = 0.0
+            self.YearlyStandardDevDemands = [2]
+            self.ForcastedStandardDeviation = [[2],
+                                               [2],
+                                               [2],
+                                               [2],
+                                               [2]]
+
+            self.StartingInventories = [10.0]
+            self.InventoryCosts = [5.0]
+            self.VariableCost = [5.0]
+            self.SetupCosts = [5.0]
+            self.BackorderCosts = [10.0]  # for now assume no external demand for components
+            self.LostSaleCost = [100.0]
+            self.ComputeInstanceData()
+
     def IsMaterProduct(self, prod):
         return sum(self.Alternates[p][prod] for p in self.ProductSet) == 0
 

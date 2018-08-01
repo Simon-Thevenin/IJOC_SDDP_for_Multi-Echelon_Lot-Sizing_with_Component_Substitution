@@ -28,6 +28,7 @@ class SDDPCut(object):
         self.NonZeroFixedEarlierBackOrderVar = set()
 
         self.DemandRHS = 0.0
+        self.DemandAVGRHS = 0.0
         self.CapacityRHS = 0.0
         self.PreviousCutRHS = 0.0
         self.InitialInventoryRHS = 0.0
@@ -201,9 +202,9 @@ class SDDPCut(object):
         righthandside = self.GetRHS()
 
         for p in self.Instance.ProductSet:
-                for t in range(0,self.Stage.GetTimePeriodAssociatedToQuantityVariable(p)):
+                for t in range(0, self.Stage.GetTimePeriodAssociatedToQuantityVariable(p)):
                    if self.CoefficientQuantityVariable[t][p] > 0:
-                        righthandside = righthandside - self.Stage.SDDPOwner.GetQuantityFixedEarlier(p,t, self.Stage.CurrentTrialNr) \
+                        righthandside = righthandside - self.Stage.SDDPOwner.GetQuantityFixedEarlier(p, t, self.Stage.CurrentTrialNr) \
                                                           * self.CoefficientQuantityVariable[t][p]
 
         if not self.Stage.IsFirstStage():
@@ -300,6 +301,9 @@ class SDDPCut(object):
     def IncreaseDemandRHS(self, value):
          self.DemandRHS = self.DemandRHS + value
 
+    def IncreaseAvgDemandRHS(self, value):
+        self.DemandAVGRHS = self.DemandAVGRHS + value
+
     def IncreaseCapacityRHS(self, value):
         self.CapacityRHS = self.CapacityRHS + value
 
@@ -310,7 +314,7 @@ class SDDPCut(object):
         self.InitialInventoryRHS = self.InitialInventoryRHS + value
 
     def UpdateRHS (self):
-        self.RHSConstantValue = self.DemandRHS + self.CapacityRHS + self.PreviousCutRHS + self.InitialInventoryRHS
+        self.RHSConstantValue = self.DemandAVGRHS + self.DemandRHS + self.CapacityRHS + self.PreviousCutRHS + self.InitialInventoryRHS
 
 
     def GetCostToGoLBInCUrrentSolution(self,  w):
@@ -358,8 +362,6 @@ class SDDPCut(object):
             valueofvariable = valueofvariable + [self.ForwardStage.CorePointProductionValue[w][t][p]
                                                  for p in self.Instance.ProductSet
                                                  for t in self.Instance.TimeBucketSet]
-
-
 
         coefficientvariableatstage = self.GetCutVariablesCoefficientAtStage()
         coefficientvariableatstage = coefficientvariableatstage[1:-1]

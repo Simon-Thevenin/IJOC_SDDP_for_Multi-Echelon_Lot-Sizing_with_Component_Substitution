@@ -189,7 +189,8 @@ class ScenarioTree(object):
         for n in self.Nodes:
             if n.Time >= 0 and n.Time < self.Instance.NrTimeBucket:
                 n.QuantityToOrder = sol.get_values([n.QuanitityVariable[p]for p in self.Instance.ProductSet])
-                n.Consumption = sol.get_values([n.ConsumptionVariable[c[1]][c[0]] for c in self.Instance.ConsumptionSet])
+                if len(self.Instance.ConsumptionSet) > 0:
+                    n.Consumption = sol.get_values([n.ConsumptionVariable[c[1]][c[0]] for c in self.Instance.ConsumptionSet])
                 if n.Time > 0:
                     n.InventoryLevel = sol.get_values([n.InventoryVariable[p] for p in self.Instance.ProductSet])
                     n.BackOrderLevel = sol.get_values([n.BackOrderVariable[self.Instance.ProductWithExternalDemandIndex[p]]

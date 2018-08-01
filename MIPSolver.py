@@ -343,12 +343,12 @@ class MIPSolver(object):
                                                                      *np.power(self.Instance.Gamma, t)
 
 
-        setupcosts = [ self.GetProductionCefficient(p,t,w)
-                       for t in self.Instance.TimeBucketSet for p in self.Instance.ProductSet]
+        setupcosts = [self.GetProductionCefficient(p,t,w)
+                      for t in self.Instance.TimeBucketSet for p in self.Instance.ProductSet]
 
         # the variable quantity_prod_time_scenario_p_t_w indicated the quantity of product p produced at time t in scneario w
         upperbound = [self.M] * self.NrQuantityVariables
-        if len( self.GivenSetup) > 0 and (self.EvaluateSolution or self.YFixHeuristic):
+        if len(self.GivenSetup) > 0 and (self.EvaluateSolution or self.YFixHeuristic):
             for w in self.ScenarioSet:
                 for t in self.Instance.TimeBucketSet:
                     for p in self.Instance.ProductSet:
@@ -356,7 +356,7 @@ class MIPSolver(object):
                         setup = self.GivenSetup[t][p]
 
                         if (not self.EvaluateSolution) and self.YFixHeuristic:
-                            setup = round( self.GivenSetup[t][p], 2)
+                            setup = round(self.GivenSetup[t][p], 2)
                         upperbound[self.GetIndexQuantityVariable(p,t,w)] = max(setup * self.M, 0.0)
 
 
@@ -398,9 +398,9 @@ class MIPSolver(object):
                       else
                       5 * self.Instance.InventoryCosts[p]
                       for t in self.Instance.TimeBucketSet for p in self.Instance.ProductSet]
-            self.Cplex.variables.add( obj = penalty,
-                                      lb=[0.0] * nrsvariable,
-                                      ub=[self.M] * nrsvariable)
+            self.Cplex.variables.add(obj=penalty,
+                                     lb=[0.0] * nrsvariable,
+                                     ub=[self.M] * nrsvariable)
 
         #Add a variable which represents the known demand:
         if self.DemandKnownUntil >= 0:
@@ -413,9 +413,9 @@ class MIPSolver(object):
                                      ub=value)
         if self.RollingHorizon:
             #starting inventory used in rolling horizon framework.
-            self.Cplex.variables.add(obj=[0.0] * ((len( self.Instance.ProductSet )  * max( self.Instance.MaimumLeadTime, 1) )),
-                                     lb=[0.0] * ((len( self.Instance.ProductSet )  * max( self.Instance.MaimumLeadTime, 1))),
-                                     ub=[0.0] * ((len( self.Instance.ProductSet )  * max( self.Instance.MaimumLeadTime, 1))))
+            self.Cplex.variables.add(obj=[0.0] * ((len(self.Instance.ProductSet)  * max(self.Instance.MaimumLeadTime, 1))),
+                                     lb=[0.0] * ((len(self.Instance.ProductSet)  * max(self.Instance.MaimumLeadTime, 1))),
+                                     ub=[0.0] * ((len(self.Instance.ProductSet)  * max(self.Instance.MaimumLeadTime, 1))))
 
         # Define the variable name.
         # Usefull for debuging purpose. Otherwise, disable it, it is time consuming.
@@ -550,7 +550,7 @@ class MIPSolver(object):
                             self.Cplex.linear_constraints.add(lin_expr=[cplex.SparsePair(vars, coeff)],
                                                               senses=["E"],
                                                               rhs=righthandside,
-                                                              names = [name])
+                                                              names=[name])
                             self.SetupConstraint[w][p][t] = name
 
     def WarmStartGivenSetupConstraints(self):
@@ -795,15 +795,15 @@ class MIPSolver(object):
                     if t + self.Instance.Leadtimes[p] < self.Instance.NrTimeBucket:
                         demand = np.power(self.Instance.Gamma, t + self.Instance.Leadtimes[p] -1)  \
                                 * self.Instance.InventoryCosts[p] \
-                                * sum( self.Scenarios[w].Demands[t + self.Instance.Leadtimes[p] ][p]  * self.Scenarios[w].Probability
-                                      for w in self.ScenarioSet )
+                                * sum(self.Scenarios[w].Demands[t + self.Instance.Leadtimes[p]][p] * self.Scenarios[w].Probability
+                                      for w in self.ScenarioSet)
                     else: demand=0
-                    vars = vars + [  self.GetIndexProductionVariable(p, t , 0)]
+                    vars = vars + [self.GetIndexProductionVariable(p, t , 0)]
                     coeficient = - np.power(self.Instance.Gamma, t) * self.Instance.SetupCosts[p]
                     for w in self.ScenarioSet:
                         if t + self.Instance.Leadtimes[p] < self.Instance.NrTimeBucket:
                             coeficient = coeficient + demand
-                    coeff = coeff + [   (coeficient )   ]
+                    coeff = coeff + [(coeficient)]
                     righthandside[0] = righthandside[0] + demand
 
         self.Cplex.linear_constraints.add(lin_expr=[cplex.SparsePair(vars, coeff)],
@@ -1567,7 +1567,9 @@ class MIPSolver(object):
                  for c in self.Instance.ConsumptionSet
                  for t in timebucketset
                  for w in scenarioset]
-        solconsumptionval = sol.get_values(array)
+
+        if len(array)>0:
+            solconsumptionval = sol.get_values(array)
 
         solconsumption = [[[[ -1 for p in self.Instance.ProductSet]
                          for q in self.Instance.ProductSet]
@@ -1724,7 +1726,7 @@ class MIPSolver(object):
     #This function modify the MIP tosolve the scenario tree given in argument.
     #It is assumed that both the initial scenario tree and the new one have a single scenario
     def ModifyMipForScenario(self, demanduptotime, time):
-        self.DemandScenarioTree = None #not up to date anymore
+       # self.DemandScenarioTree = None #not up to date anymore
         #self.DemandScenarioTree.Owner = self
         #self.NrScenario = len([n for n in self.DemandScenarioTree.Nodes if len(n.Branches) == 0])
         #self.ComputeIndices()
@@ -1827,7 +1829,7 @@ class MIPSolver(object):
 
     def UpdateSetup(self, givensetup):
 
-        setuptuples = [(self.GetIndexProductionVariable(p, t, w), givensetup[t][p])
+        setuptuples = [(self.GetIndexProductionVariable(p, t, w), float(givensetup[t][p]))
                        for p in self.Instance.ProductSet
                        for t in self.Instance.TimeBucketSet
                        for w in self.ScenarioSet]

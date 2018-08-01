@@ -46,7 +46,7 @@ class Constants( object ):
 
     #Running option
     Debug = False
-    PrintSolutionFileToExcel = True
+    PrintSolutionFileToExcel = False
     PrintDetailsExcelFiles = False
     PrintOnlyFirstStageDecision = True
     RunEvaluationInSeparatedJob = False
@@ -88,8 +88,8 @@ class Constants( object ):
     SDDPMinimumNrIterationBetweenTest = 10
     SDDPSaveInExcel = False
 
-    PHIterationLimit = 1000
-    PHConvergenceTolerence = 0.5
+    PHIterationLimit = 300
+    PHConvergenceTolerence = 0.0001
 
     @staticmethod
     def IsDeterministic(s):

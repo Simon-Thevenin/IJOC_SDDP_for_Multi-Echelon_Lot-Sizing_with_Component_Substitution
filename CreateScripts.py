@@ -59,6 +59,17 @@ python scm.py  Solve %s YFix 6400b RQMC -n 5000 -p Fix -m MIP
     return qsub_filename
 
 
+def CreatePHJob(instance):
+    qsub_filename = "./Jobs/job_ph_%s" % (instance)
+    qsub_file = open(qsub_filename, 'w')
+    CreatHeader(qsub_file)
+    qsub_file.write("""
+#$ -o /home/thesim/log/outputjobevaluateph%s%s%s.txt
+ulimit -v 16000000
+python scm.py  Solve %s YFix 6400b RQMC -n 5000 -p Fix -m PH 
+""" % (instance, instance))
+    return qsub_filename
+
 if __name__ == "__main__":
     csvfile = open("./Instances/InstancesToSolve.csv", 'rb')
     data_reader = csv.reader(csvfile, delimiter=",", skipinitialspace=True)
@@ -96,4 +107,17 @@ if __name__ == "__main__":
 
         for instance in InstanceSet:
             jobname = CreateMIPJob(instance)
+            filemip.write("qsub %s \n" % (jobname) )
+
+    if sys.argv[1] == "PH":
+       # Create the sh file for resolution
+        filemipname = "runallph.sh"
+        filemip = open(filemipname, 'w')
+        filemip.write("""
+#!/bin/bash -l
+#
+""")
+
+        for instance in InstanceSet:
+            jobname = CreatePHJob(instance)
             filemip.write("qsub %s \n" % (jobname) )
