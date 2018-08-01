@@ -1421,15 +1421,20 @@ class MIPSolver(object):
         # Our aim is to minimize cost.
 
         self.Cplex.objective.set_sense(self.Cplex.objective.sense.minimize)
+        self.Cplex.set_log_stream(None)
+        self.Cplex.set_results_stream(None)
+        self.Cplex.set_warning_stream(None)
+        self.Cplex.set_error_stream(None)
+
         if  Constants.Debug:
             self.Cplex.write("mrp.lp")
 
         #name = "mrp_log%r_%r_%r" % ( self.Instance.InstanceName, self.Model, self.DemandScenarioTree.Seed )
         #file = open("/tmp/thesim/CPLEXLog/%s.txt" % self.logfilename, 'w')
-        self.Cplex.set_log_stream(Constants.PathCPLEXLog+"/%s.txt" % self.logfilename)
-        self.Cplex.set_results_stream(Constants.PathCPLEXLog+"/%s.txt" % self.logfilename)
-        self.Cplex.set_warning_stream(Constants.PathCPLEXLog+"/%s.txt" % self.logfilename)
-        self.Cplex.set_error_stream(Constants.PathCPLEXLog+"/%s.txt" % self.logfilename)
+            self.Cplex.set_log_stream(Constants.PathCPLEXLog+"/%s.txt" % self.logfilename)
+            self.Cplex.set_results_stream(Constants.PathCPLEXLog+"/%s.txt" % self.logfilename)
+            self.Cplex.set_warning_stream(Constants.PathCPLEXLog+"/%s.txt" % self.logfilename)
+            self.Cplex.set_error_stream(Constants.PathCPLEXLog+"/%s.txt" % self.logfilename)
 
         # tune the paramters
         self.Cplex.parameters.timelimit.set(Constants.AlgorithmTimeLimit)
