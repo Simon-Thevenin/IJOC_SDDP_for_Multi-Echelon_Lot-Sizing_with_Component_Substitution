@@ -88,7 +88,7 @@ class Constants( object ):
     SDDPMinimumNrIterationBetweenTest = 10
     SDDPSaveInExcel = False
 
-    PHIterationLimit = 3
+    PHIterationLimit = 1
     PHConvergenceTolerence = 0.0001
 
     @staticmethod
