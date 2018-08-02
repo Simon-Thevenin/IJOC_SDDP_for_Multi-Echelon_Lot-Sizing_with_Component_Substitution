@@ -34,7 +34,7 @@ class Evaluator( object ):
         result = []
         seeds = [self.TestIdentifier.ScenarioSeed]
         for s in seeds:
-            try:
+            #try:
                 self.TestIdentifier.ScenarioSeed = s
                 filedescription = self.TestIdentifier.GetAsString()
                 solution = Solution()
@@ -42,10 +42,10 @@ class Evaluator( object ):
                 solution.ReadFromFile(filedescription)
                 result.append(solution)
 
-            except IOError:
-                if Constants.Debug:
-                    print(IOError)
-                    print("No solution found for seed %d" % s)
+            #except IOError:
+            #    if Constants.Debug:
+            #        print(IOError)
+            #        print("No solution found for seed %d" % s)
 
         return result
 
