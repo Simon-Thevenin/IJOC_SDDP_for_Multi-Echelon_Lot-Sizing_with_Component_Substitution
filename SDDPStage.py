@@ -480,6 +480,7 @@ class SDDPStage(object):
 
         return righthandside
 
+
     def GetPIFlowFromPreviousStage(self, p, t):
         result = self.SDDPOwner.GetQuantityFixedEarlier(p, t, self.CurrentTrialNr)
         return result
@@ -1235,13 +1236,12 @@ class SDDPStage(object):
         if Constants.SDDPUseEVPI and not self.IsFirstStage() and not self.IsLastStage():
             flowvariabletuples = [(self.GetIndexPIFlowPrevQty(p, t), self.GetPIFlowFromPreviousStage(p, t))
                                   for p in self.Instance.ProductSet
-                                  for t in range (0, self.DecisionStage )]
+                                  for t in range(0, self.DecisionStage)]
             self.Cplex.variables.set_lower_bounds(flowvariabletuples)
             self.Cplex.variables.set_upper_bounds(flowvariabletuples)
 
-        def GetPIFlowFromPreviousStage(self, p, t):
-            result = self.SDDPOwner.GetQuantityFixedEarlier(p, t, self.CurrentTrialNr)
-            return result
+
+
 
 
         for i in range(len(self.IndexFlowConstraint)):
@@ -1283,6 +1283,13 @@ class SDDPStage(object):
                                    for p in self.Instance.ProductSet for t in self.TimePeriodToGo]
                 self.Cplex.variables.set_lower_bounds(productionvalue)
                 self.Cplex.variables.set_upper_bounds(productionvalue)
+
+                flowvariabletuples = [(self.GetIndexPIFlowPrevQty(p, t), self.GetPIFlowFromPreviousStage(p, t))
+                                      for p in self.Instance.ProductSet
+                                      for t in range(0, self.DecisionStage)]
+                self.Cplex.variables.set_lower_bounds(flowvariabletuples)
+                self.Cplex.variables.set_upper_bounds(flowvariabletuples)
+
             else:
                 productionvalue = [(self.GetIndexProductionRHS(p), self.GetProductionConstrainRHS(p, self.GetTimePeriodAssociatedToQuantityVariable(p)))
                                    for p in self.Instance.ProductSet]
