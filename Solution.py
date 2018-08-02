@@ -114,7 +114,7 @@ class Solution(object):
             productiondf.to_pickle(self.GetSolutionPickleFileNameStart(description,  'Production'))
             inventorydf.to_pickle(self.GetSolutionPickleFileNameStart(description,  'InventoryLevel'))
             bbackorderdf.to_pickle(self.GetSolutionPickleFileNameStart(description,  'BackOrder'))
-            consumptiondf.to_pickle(self.GetSolutionPickleFileNameStart(description, 'consumption'))
+            consumptiondf.to_pickle(self.GetSolutionPickleFileNameStart(description, 'Consumption'))
             #svaluedf.to_pickle(self.GetSolutionPickleFileNameStart(description,  'SValue'))
             fixedqvaluesdf.to_pickle(self.GetSolutionPickleFileNameStart(description,  'FixedQvalue'))
 
@@ -309,7 +309,7 @@ class Solution(object):
 
                     for q in self.Instance.ProductSet:
                         if self.Instance.PossibleComponents[p][q] \
-                                and  self.Consumption[w][t][q][p] <> -1:
+                                and self.Consumption[w][t][q][p] <> -1:
 
                             consumptioncost += self.Consumption[w][t][q][p] \
                                                 * self.Instance.AternateCosts[p][q]\
@@ -365,7 +365,7 @@ class Solution(object):
         consumptiondf.index.name = "Product"
 
         #Production variables are decided at stage 1 for the complete horizon
-        iterablesproduction = [range(len(self.Instance.TimeBucketSet)) , range(len(self.Scenarioset) )]
+        iterablesproduction = [range(len(self.Instance.TimeBucketSet)), range(len(self.Scenarioset))]
         multiindexproduction = pd.MultiIndex.from_product(iterablesproduction, names=['time', 'scenario'])
         productiondf = pd.DataFrame(solproduction, index=self.Instance.ProductName, columns=multiindexproduction)
         productiondf.index.name = "Product"
@@ -383,11 +383,11 @@ class Solution(object):
         timebucketset = self.GetConsideredTimeBucket()
         self.ProductionQuantity = [[[prodquantitydf.loc[str(self.Instance.ProductName[p]),(t,s)]
                                      for p in self.Instance.ProductSet] for t in timebucketset] for s in scenarioset]
-        self.InventoryLevel = [[[inventorydf.loc[self.Instance.ProductName[p], (t,s)]
+        self.InventoryLevel = [[[inventorydf.loc[self.Instance.ProductName[p], (t, s)]
                                  for p in self.Instance.ProductSet] for t in timebucketset] for s in scenarioset ]
-        self.Production = [[[productiondf.loc[self.Instance.ProductName[p], (t,s)] for p in self.Instance.ProductSet]
+        self.Production = [[[productiondf.loc[self.Instance.ProductName[p], (t, s)] for p in self.Instance.ProductSet]
                             for t in self.Instance.TimeBucketSet] for s in scenarioset]
-        self.BackOrder = [[[bbackorderdf.loc[self.Instance.ProductName[p], (t,s)]
+        self.BackOrder = [[[bbackorderdf.loc[self.Instance.ProductName[p], (t, s)]
                             for p in self.Instance.ProductWithExternalDemand] for t in timebucketset] for s in scenarioset]
         self.Consumption = [[[bbackorderdf.loc[self.Instance.ProductName[p], (t, s)]
                             for p in self.Instance.ProductWithExternalDemand] for t in timebucketset] for s in
