@@ -46,8 +46,8 @@ class Constants( object ):
 
     #Running option
     Debug = False
-    PrintSolutionFileToExcel = False
-    PrintDetailsExcelFiles = True
+    PrintSolutionFileToExcel = True
+    PrintDetailsExcelFiles = False
     PrintOnlyFirstStageDecision = True
     RunEvaluationInSeparatedJob = False
     PrintScenarios = False

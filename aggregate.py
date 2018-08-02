@@ -4,10 +4,7 @@ import openpyxl as opxl
 import pandas as pd
 import glob as glob
 
-columnname = ["_",
-              "_",
-              "_",
-              "Instance name",
+columnname = ["Instance name",
               "Model",
               "Method",
               "Scenario Generation Method",
@@ -103,6 +100,10 @@ columnname = ["_",
               "Min Average",
               "Max Average",
               "Error",
+              "_",
+              "_",
+              "_",
+              "_",
               "SetupCost",
               "Inventory",
               "Out Sample KPI On Time",
