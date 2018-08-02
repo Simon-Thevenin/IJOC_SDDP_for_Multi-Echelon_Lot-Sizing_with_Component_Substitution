@@ -47,7 +47,7 @@ class Constants( object ):
     #Running option
     Debug = False
     PrintSolutionFileToExcel = False
-    PrintDetailsExcelFiles = False
+    PrintDetailsExcelFiles = True
     PrintOnlyFirstStageDecision = True
     RunEvaluationInSeparatedJob = False
     PrintScenarios = False
@@ -88,7 +88,7 @@ class Constants( object ):
     SDDPMinimumNrIterationBetweenTest = 10
     SDDPSaveInExcel = False
 
-    PHIterationLimit = 300
+    PHIterationLimit = 3
     PHConvergenceTolerence = 0.0001
 
     @staticmethod
