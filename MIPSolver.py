@@ -1431,10 +1431,10 @@ class MIPSolver(object):
 
         #name = "mrp_log%r_%r_%r" % ( self.Instance.InstanceName, self.Model, self.DemandScenarioTree.Seed )
         #file = open("/tmp/thesim/CPLEXLog/%s.txt" % self.logfilename, 'w')
-            self.Cplex.set_log_stream(Constants.PathCPLEXLog+"/%s.txt" % self.logfilename)
-            self.Cplex.set_results_stream(Constants.PathCPLEXLog+"/%s.txt" % self.logfilename)
-            self.Cplex.set_warning_stream(Constants.PathCPLEXLog+"/%s.txt" % self.logfilename)
-            self.Cplex.set_error_stream(Constants.PathCPLEXLog+"/%s.txt" % self.logfilename)
+            self.Cplex.set_log_stream(Constants.GetPathCPLEXLog+"/%s.txt" % self.logfilename)
+            self.Cplex.set_results_stream(Constants.GetPathCPLEXLog+"/%s.txt" % self.logfilename)
+            self.Cplex.set_warning_stream(Constants.GetPathCPLEXLog+"/%s.txt" % self.logfilename)
+            self.Cplex.set_error_stream(Constants.GetPathCPLEXLog+"/%s.txt" % self.logfilename)
 
         # tune the paramters
         self.Cplex.parameters.timelimit.set(Constants.AlgorithmTimeLimit)
@@ -1457,8 +1457,8 @@ class MIPSolver(object):
         self.Cplex.solve()
         nrvariable= -1
         nrconstraints = -1
-        if not self.EvaluateSolution and not self.EVPI:
-            nrvariable, nrconstraints = self.ReadNrVariableConstraint(Constants.PathCPLEXLog+"/%s.txt" % self.logfilename)
+        if False and not self.EvaluateSolution and not self.EVPI:
+            nrvariable, nrconstraints = self.ReadNrVariableConstraint(Constants.GetPathCPLEXLog()+"/%s.txt" % self.logfilename)
 
         buildtime = end_modeling - start_time
         solvetime = time.time() - end_modeling

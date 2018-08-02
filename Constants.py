@@ -46,7 +46,7 @@ class Constants( object ):
 
     #Running option
     Debug = False
-    PrintSolutionFileToExcel = True
+    PrintSolutionFileToExcel = False
     PrintDetailsExcelFiles = False
     PrintOnlyFirstStageDecision = True
     RunEvaluationInSeparatedJob = False
@@ -125,4 +125,11 @@ class Constants( object ):
             return "/tmp/thesim/Evaluations/"
         else:
             return "./Evaluations/"
+
+    @staticmethod
+    def GetPathCPLEXLog():
+        if Constants.PrintSolutionFileInTMP:
+            return "/tmp/thesim/CPLEXLog/"
+        else:
+            return "./CPLEXLog/"
 

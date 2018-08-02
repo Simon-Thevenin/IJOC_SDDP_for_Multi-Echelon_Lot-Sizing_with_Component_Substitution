@@ -181,17 +181,16 @@ class Solution(object):
         inventorydf = pd.read_pickle(self.GetSolutionPickleFileNameStart(description, 'InventoryLevel'))
         bbackorderdf = pd.read_pickle(self.GetSolutionPickleFileNameStart(description, 'BackOrder'))
         consumptiondf = pd.read_pickle(self.GetSolutionPickleFileNameStart(description, 'Consumption'))
-        svaluedf = pd.read_pickle(self.GetSolutionPickleFileNameStart(description, 'SValue'))
+        #svaluedf = pd.read_pickle(self.GetSolutionPickleFileNameStart(description, 'SValue'))
         fixedqvaluesdf = pd.read_pickle(self.GetSolutionPickleFileNameStart(description, 'FixedQvalue'))
         instanceinfo = pd.read_pickle(self.GetSolutionPickleFileNameStart(description, "Generic"))
         scenariotreeinfo = pd.read_pickle(self.GetSolutionPickleFileNameStart(description, "ScenarioTree"))
 
-        return prodquantitydf, productiondf, inventorydf, bbackorderdf, consumptiondf, svaluedf, fixedqvaluesdf, instanceinfo, scenariotreeinfo
+        return prodquantitydf, productiondf, inventorydf, bbackorderdf, consumptiondf, fixedqvaluesdf, instanceinfo, scenariotreeinfo
 
 
     #This function set the attributes of the solution from the excel/binary file
     def ReadFromFile(self, description):
-
         if Constants.PrintSolutionFileToExcel:
             wb2 = opxl.load_workbook(self.GetSolutionFileName(description))
             instanceinfo = Tool.ReadDataFrame(wb2, "Generic")

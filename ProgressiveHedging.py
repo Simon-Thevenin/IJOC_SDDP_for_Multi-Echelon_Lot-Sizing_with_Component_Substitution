@@ -12,9 +12,6 @@ class ProgressiveHedging(object):
 
     def __init__(self, instance, testidentifier, treestructure, scenariotree=None, givensetup=[], fixuntil=-1):
 
-        if Constants.PrintOnlyFirstStageDecision:
-            Constants.PrintOnlyFirstStageDecision = False
-            #raise NameError("Progressive Hedging requires to print the full solution, set Constants.PrintOnlyFirstStageDecision to False")
 
         self.Instance = instance
         self.TestIdentifier = testidentifier
@@ -67,7 +64,7 @@ class ProgressiveHedging(object):
         self.BuildMIPs()
 
     #This function creates the scenario tree
-    def GenerateScenarios(self, scenariotree = None):
+    def GenerateScenarios(self, scenariotree=None):
         #Build the scenario tree
         if Constants.Debug:
             print(self.TreeStructure)
@@ -86,14 +83,16 @@ class ProgressiveHedging(object):
 
     def BuildMIPs(self):
         #Build the mathematicals models (1 per scenarios)
+        mipset = [0]
+        #mipset = self.ScenarioNrSet
         self.MIPSolvers = [MIPSolver(self.Instance, Constants.ModelYFix, self.SplitedScenarioTree[w],
                                      implicitnonanticipativity=True, yfixheuristic=self.SolveWithFixedSetup,
                                      givensetups=self.GivenSetup)
-                           for w in self.ScenarioNrSet]
+                           for w in mipset]
 
         self.SetFixedUntil(self.FixedUntil)
 
-        for w in self.ScenarioNrSet:
+        for w in mipset:
             self.MIPSolvers[w].BuildModel()
 
 
@@ -160,10 +159,13 @@ class ProgressiveHedging(object):
 
             #Update the coeffient in the objective function
             self.UpdateLagrangianCoeff(w)
+            #mip = self.MIPSolvers[w]
+            mip = self.MIPSolvers[0]
+            mip.ModifyMipForScenarioTree(self.SplitedScenarioTree[w])
 
             #Solve the model.
             #self.MIPSolvers[w].Cplex.write("moel.lp")
-            self.CurrentSolution[w] = self.MIPSolvers[w].Solve(True)
+            self.CurrentSolution[w] = mip.Solve(True)
 
             #compute the cost for the penalty update strategy
             self.CurrentSolution[w].ComputeCost()
@@ -297,7 +299,7 @@ class ProgressiveHedging(object):
     def UpdateLagrangianCoeff(self, scenario):
         variables = []
         variablesquad = []
-        mipsolver = self.MIPSolvers[scenario]
+        mipsolver = self.MIPSolvers[0] #self.MIPSolvers[scenario]
         for t in self.Instance.TimeBucketSet:
                 for p in self.Instance.ProductSet:
                     variable = mipsolver.GetIndexQuantityVariable(p, t, 0)
@@ -440,7 +442,7 @@ class ProgressiveHedging(object):
             for t in self.Instance.TimeBucketSet:
                 for p in self.Instance.ProductSet:
                     difference += self.ScenarioSet[w].Probability\
-                                  * math.pow( self.CurrentSolution[w].ProductionQuantity[0][t][p] \
+                                  * math.pow(self.CurrentSolution[w].ProductionQuantity[0][t][p] \
                                            - self.CurrentImplementableSolution.ProductionQuantity[w][t][p], 2)
 
                     difference += self.ScenarioSet[w].Probability\
@@ -514,8 +516,8 @@ class ProgressiveHedging(object):
     def UpdateMultipler(self):
 
 
-        teta = self.GetPrimalConvergenceIndice()
-        delta = self.GetDualConvergenceIndice() + teta
+        teta = self.GetDualConvergenceIndice()
+        delta = self.GetPrimalConvergenceIndice() + teta
         if self.CurrentIteration == 2:
             tau = 1
         else:
@@ -523,7 +525,13 @@ class ProgressiveHedging(object):
 
         self.PrevioudDualConvIndice = delta
         gamma = max(0.1, min( 0.9, tau - 0.6))
-        g = math.sqrt(1.1*gamma)
+
+        if self.CurrentIteration == 2:
+            sigma = 1
+        else:
+            sigma = (1-gamma) * self.PrevioudSigma + gamma * tau
+        self.PrevioudSigma = sigma
+        g = math.sqrt(1.1*sigma)
 
         if self.CurrentIteration == 2:
             alpha = (teta / delta)
@@ -532,10 +540,10 @@ class ProgressiveHedging(object):
 
         self.PreviouAlpha = alpha
 
-        beta = 0.8 * self.PreviouBeta + 0.02 * alpha
+        beta = 0.98 * self.PreviouBeta + 0.02 * alpha
         self.PreviouBeta = beta
         c = max(0.95, (1 - 2 * beta) / (1-beta))
-        h = max(c + ((1-c) / beta) * alpha, 1 + (alpha + beta)/ (1-beta))
+        h = max(c + ((1-c) / beta) * alpha, 1 + (alpha - beta)/ (1-beta))
         q = math.pow(max(g, h), 1 / (1 + 0.01*(self.CurrentIteration - 2)))
 
         self.LagrangianMultiplier = max(0.01, min(100, self.LagrangianMultiplier * q))
@@ -751,12 +759,18 @@ class ProgressiveHedging(object):
         self.CurrentIteration = 0
 
     def SetFixedUntil(self, time):
-        for w in self.ScenarioNrSet:
-            self.MIPSolvers[w].FixSolutionUntil = time
-            self.MIPSolvers[w].DemandKnownUntil = time + 1
+       # for w in self.ScenarioNrSet:
+            self.MIPSolvers[0].FixSolutionUntil = time
+            self.MIPSolvers[0].DemandKnownUntil = time + 1
 
     #This function run the algorithm
     def Run(self):
+
+        self.PrintOnlyFirstStagePreviousValue = Constants.PrintOnlyFirstStageDecision
+        if Constants.PrintOnlyFirstStageDecision:
+            Constants.PrintOnlyFirstStageDecision = False
+            # raise NameError("Progressive Hedging requires to print the full solution, set Constants.PrintOnlyFirstStageDecision to False")
+
         self.InitTrace()
         self.CurrentSolution = [None for w in self.ScenarioNrSet]
 
@@ -773,7 +787,7 @@ class ProgressiveHedging(object):
             self.CurrentIteration += 1
 
             if self.CurrentIteration == 1:
-               self.LagrangianMultiplier = 1
+               self.LagrangianMultiplier = 0.1
 
             if self.CurrentIteration >= 2:
                 self.UpdateMultipler()
@@ -793,4 +807,7 @@ class ProgressiveHedging(object):
         self.CurrentImplementableSolution.ComputeInventory()
         self.CurrentImplementableSolution.ComputeCost()
         self.WriteInTraceFile("Enf of PH algorithm cost: %r"%self.CurrentImplementableSolution.TotalCost)
+
+        Constants.PrintOnlyFirstStageDecision = self.PrintOnlyFirstStagePreviousValue
+
         return self.CurrentImplementableSolution

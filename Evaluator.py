@@ -38,6 +38,7 @@ class Evaluator( object ):
                 self.TestIdentifier.ScenarioSeed = s
                 filedescription = self.TestIdentifier.GetAsString()
                 solution = Solution()
+
                 solution.ReadFromFile(filedescription)
                 result.append(solution)
 

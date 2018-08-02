@@ -294,7 +294,7 @@ class EvaluationSimulator(object):
             self.PHResolveTime[time] = ProgressiveHedging(self.Instance, self.TestIdentificator, treestructure,
                                                           scenariotree, givensetup=givensetup, fixuntil=time-1)
 
-            for w in self.PHResolveTime[time].ScenarioNrSet:
+            for w in [0]:#self.PHResolveTime[time].ScenarioNrSet:
                 self.PHResolveTime[time].MIPSolvers[w].GivenQuantity = givenquantity
                 self.PHResolveTime[time].MIPSolvers[w].CreateCopyGivenQuantityConstraints()
                 self.PHResolveTime[time].MIPSolvers[w].GivenConsumption = givenconsumption
