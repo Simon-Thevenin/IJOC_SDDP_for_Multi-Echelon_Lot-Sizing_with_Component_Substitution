@@ -209,9 +209,15 @@ class SDDP(object):
         #Modify the number of scenario at each stage
         for stage in self.StagesSet:
             #self.BackwardStage[stage].SAAScenarioNrSet(len(self.CurrentSetOfTrialScenarios))
-            self.BackwardStage[stage].FixedScenarioSet = self.SAAScenarioNrSet
-            self.BackwardStage[stage].FixedScenarioPobability = [w.Probability for w in self.SetOfSAAScenario]
-            self.BackwardStage[stage].SAAStageCostPerScenarioWithoutCostoGopertrial = [0 for w in self.TrialScenarioNrSet]
+            if self.BackwardStage[stage].DecisionStage > self.Instance.NrTimeBucketWithoutUncertaintyBefore:
+                self.BackwardStage[stage].FixedScenarioSet = self.SAAScenarioNrSet
+                self.BackwardStage[stage].FixedScenarioPobability = [w.Probability for w in self.SetOfSAAScenario]
+                self.BackwardStage[stage].SAAStageCostPerScenarioWithoutCostoGopertrial = [0 for w in self.TrialScenarioNrSet]
+            else:
+                self.BackwardStage[stage].FixedScenarioSet = [0]
+                self.BackwardStage[stage].FixedScenarioPobability = [1]
+                self.BackwardStage[stage].SAAStageCostPerScenarioWithoutCostoGopertrial = [0 for w in
+                                                                                           self.TrialScenarioNrSet]
            # if not self.BackwardStage[stage].IsFirstStage():
            #     self.BackwardStage[stage].DefineMIP()
 
@@ -327,7 +333,7 @@ class SDDP(object):
                                     c, optimalitygap, convergencecriterion, delta))
 
         if not result and convergencecriterion <= 1 \
-            and ( self.IsIterationWithConvergenceTest \
+            and (self.IsIterationWithConvergenceTest \
                 or ((self.CurrentIteration - self.LastIterationWithTest) > Constants.SDDPMinimumNrIterationBetweenTest)):
 
             if self.IsIterationWithConvergenceTest:
@@ -425,8 +431,8 @@ class SDDP(object):
             self.BackwardPass()
             self.CurrentIteration = self.CurrentIteration + 1
             Stop = self.CheckStoppingCriterion()
-            #if self.CurrentIteration % 50 == 0:
-            #    self.CurrentNrScenario =  self.CurrentNrScenario  * 10
+            if time.time() - self.StartOfAlsorithm >= Constants.SDDPDurationBeforeIncreaseForwardSample:
+                self.CurrentNrScenario = 10
 
             #if self.CurrentIteration % 100 < 5:
             #    solution = self.CreateSolutionOfScenario(0)

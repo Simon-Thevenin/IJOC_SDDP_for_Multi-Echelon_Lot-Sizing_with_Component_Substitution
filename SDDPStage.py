@@ -38,6 +38,8 @@ class SDDPStage(object):
 
         # Set of scenario used to build the MIP
         self.FixedScenarioSet = fixedccenarioset
+        if self.DecisionStage <= self.Instance.NrTimeBucketWithoutUncertaintyBefore:
+            self.FixedScenarioSet = [0]
         self.FixedScenarioPobability = []
 
         #The number of variable of each type in the stage will be set later
@@ -1347,7 +1349,7 @@ class SDDPStage(object):
         if self.MIPDefined:
             self.UpdateMIPForStage()
 
-        if self.IsFirstStage():
+        if self.IsFirstStage() or self.DecisionStage<=self.Instance.NrTimeBucketWithoutUncertaintyBefore:
             consideredscenario = [0]#range( len( self.SDDPOwner.CurrentSetOfScenarios ) )
         else:
             consideredscenario = range(len(self.SDDPOwner.CurrentSetOfTrialScenarios))
@@ -1375,7 +1377,7 @@ class SDDPStage(object):
             if Constants.Debug:
                  print("Solution status:%r"%self.Cplex.solution.get_status())
 
-            if self.IsFirstStage():
+            if self.IsFirstStage() or self.DecisionStage<=self.Instance.NrTimeBucketWithoutUncertaintyBefore:
                 self.CurrentTrialNr = 0
                 self.SaveSolutionForScenario()
                 self.CopyDecisionOfScenario0ToAllScenario()

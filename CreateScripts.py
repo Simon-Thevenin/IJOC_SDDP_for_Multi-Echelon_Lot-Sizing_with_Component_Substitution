@@ -94,10 +94,12 @@ if __name__ == "__main__":
 """)
 
         for instance in InstanceSet:
-            for nrback in [10, 25, 50, 100, 200]:
-                for nrforward in [1, 2, 5, 10, 20, 50]:
-                    jobname = CreateSDDPJob(instance, nrback, nrforward)
-                    filesddp.write("qsub %s \n" % (jobname) )
+           # for nrback in [10, 25, 50, 100, 200]:
+           #     for nrforward in [1, 2, 5, 10, 20, 50]:
+           nrback = 50
+           nrforward = 1
+           jobname = CreateSDDPJob(instance, nrback, nrforward)
+           filesddp.write("qsub %s \n" % (jobname) )
 
 
     if sys.argv[1] == "MIP":
