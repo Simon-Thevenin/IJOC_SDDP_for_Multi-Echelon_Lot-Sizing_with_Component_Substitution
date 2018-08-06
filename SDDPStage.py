@@ -1772,7 +1772,8 @@ class SDDPStage(object):
     # Try to use the corepoint method of papadakos, remove if it doesn't work
     # average current solution with last core point
     def UpdateCorePoint(self):
-        if self.SDDPOwner.CurrentIteration > 1:
+
+        if len(self.CorePointQuantityValues) >= self.SDDPOwner.CurrentForwardSampleSize:
             # Try to use the corepoint method of papadakos, remove if it doesn't work
             if not self.IsLastStage():
                 self.CorePointQuantityValues = [[0.5 * self.QuantityValues[w][p] + 0.5 * self.CorePointQuantityValues[w][p]

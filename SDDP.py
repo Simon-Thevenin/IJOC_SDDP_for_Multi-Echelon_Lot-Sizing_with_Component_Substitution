@@ -71,7 +71,7 @@ class SDDP(object):
         self.CurrentNrScenario = self.TestIdentifier.NrScenarioForward# Constants.SDDPNrScenarioForwardPass
 
         self.SDDPNrScenarioTest = Constants.SDDPInitNrScenarioTest
-
+        self.CurrentForwardSampleSize = self.TestIdentifier.NrScenarioForward
         self.CurrentBigM = []
         self.ScenarioGenerationMethod = self.TestIdentifier.ScenarioSampling
         self.CurrentExpvalueUpperBound = Constants.Infinity
@@ -188,7 +188,7 @@ class SDDP(object):
         if self.IsIterationWithConvergenceTest:
             self.CurrentNrScenario = self.SDDPNrScenarioTest
         else:
-            self.CurrentNrScenario = self.TestIdentifier.NrScenarioForward
+            self.CurrentNrScenario = self.CurrentForwardSampleSize
         self.CurrentSetOfTrialScenarios = self.GenerateScenarios(self.CurrentNrScenario, average=Constants.SDDPDebugSolveAverage)
         self.TrialScenarioNrSet = range(len(self.CurrentSetOfTrialScenarios))
         self.CurrentNrScenario = len(self.CurrentSetOfTrialScenarios)
@@ -431,8 +431,16 @@ class SDDP(object):
             self.BackwardPass()
             self.CurrentIteration = self.CurrentIteration + 1
             Stop = self.CheckStoppingCriterion()
-            if time.time() - self.StartOfAlsorithm >= Constants.SDDPDurationBeforeIncreaseForwardSample:
-                self.CurrentNrScenario = 10
+            duration = time.time() - self.StartOfAlsorithm
+            if self.CurrentForwardSampleSize < 10 and duration >= Constants.SDDPDurationBeforeIncreaseForwardSample:
+                self.CurrentForwardSampleSize = 10
+                self.WriteInTraceFile("set number of scenario in forward to 10 \n")
+            if self.CurrentForwardSampleSize < 50 and duration >= 3*Constants.SDDPDurationBeforeIncreaseForwardSample:
+                self.CurrentForwardSampleSize = 50
+                self.WriteInTraceFile("set number of scenario in forward to 50 \n")
+            #if self.CurrentForwardSampleSize < 100 and duration >= 3*Constants.SDDPDurationBeforeIncreaseForwardSample:
+            #    self.CurrentForwardSampleSize = 100
+            #    self.WriteInTraceFile("set number of scenario in forward to 100 \n")
 
             #if self.CurrentIteration % 100 < 5:
             #    solution = self.CreateSolutionOfScenario(0)
