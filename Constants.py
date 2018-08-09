@@ -63,7 +63,7 @@ class Constants( object ):
     SDDPIterationLimit = 10000
     SDDPPrintDebugLPFiles = False
     PrintSDDPTrace = True
-    GenerateStrongCut = True
+    GenerateStrongCut = False
     SDDPRunSigleTree = False
 
     #SDDPNrScenarioForwardPass = 10

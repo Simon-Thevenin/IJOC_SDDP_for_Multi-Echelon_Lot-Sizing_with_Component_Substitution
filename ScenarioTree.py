@@ -37,7 +37,7 @@ class ScenarioTree(object):
 
         #Generate the demand of YFix, then replicate them in the generation of the scenario tree
         if self.GenerateasYQfix:
-            treestructure = [1,4] + [1] * (instance.NrTimeBucket-1) + [0]
+            treestructure = [1,2] + [1] * (instance.NrTimeBucket-1) + [0]
             YQFixTree = ScenarioTree(instance, treestructure, seed, scenariogenerationmethod=self.ScenarioGenerationMethod)
             YQFixSceanrios = YQFixTree.GetAllScenarios(computeindex=False)
             self.DemandToFollow = [[[YQFixSceanrios[w].Demands[t][p]

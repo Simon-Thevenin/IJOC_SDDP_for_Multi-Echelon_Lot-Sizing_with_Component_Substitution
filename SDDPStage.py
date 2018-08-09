@@ -39,8 +39,7 @@ class SDDPStage(object):
 
         # Set of scenario used to build the MIP
         self.FixedScenarioSet = fixedccenarioset
-        if self.DecisionStage <= self.Instance.NrTimeBucketWithoutUncertaintyBefore:
-            self.FixedScenarioSet = [0]
+
         self.FixedScenarioPobability = []
 
         #The number of variable of each type in the stage will be set later
@@ -1104,8 +1103,8 @@ class SDDPStage(object):
         self.Cplex.variables.add(obj=[math.pow(self.Instance.Gamma, self.GetTimePeriodAssociatedToBackorderVariable(p, t))
                                       * self.FixedScenarioPobability[w]
                                       * self.Instance.BackorderCosts[p]
-                                      if not self.IsLastStage()
-                                      else math.pow(self.Instance.Gamma, self.DecisionStage -1)
+                                      if  self.GetTimePeriodAssociatedToBackorderVariable(p, t) < self.Instance.NrTimeBucket-1
+                                      else math.pow(self.Instance.Gamma, self.GetTimePeriodAssociatedToBackorderVariable(p, t))
                                            * self.Instance.LostSaleCost[p]
                                            * self.FixedScenarioPobability[w]
                                       for t in self.RangePeriodEndItemInv

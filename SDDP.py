@@ -46,12 +46,14 @@ class SDDP(object):
         #list(set().union(self.BackwardStage, self.ForwardStage))
         for stage in stageset:
             stage.ComputeVariablePeriods()
-            stage.ComputeVariableIndices()
             if stage.IsFirstStage():
                 stage.TimeDecisionStage = 0
             else:
                 prevstage = stage.PreviousSDDPStage
                 stage.TimeDecisionStage = prevstage.TimeDecisionStage + len(prevstage.RangePeriodQty)
+            if stage.TimeDecisionStage + len(stage.RangePeriodQty) <= self.Instance.NrTimeBucketWithoutUncertaintyBefore +1:
+                stage.FixedScenarioSet = [0]
+            stage.ComputeVariableIndices()
 
         self.ForwardStageWithBackOrderDec = [None for t in self.Instance.TimeBucketSet]
         for stage in self.ForwardStage:
@@ -224,10 +226,24 @@ class SDDP(object):
 
          #self.CurrentIteration % 25 == 0
 
+        # if not self.IsIterationWithConvergenceTest:
+        #      self.CurrentSetOfTrialScenarios = self.SetOfSAAScenario
+        #      self.CurrentNrScenario = len(self.SetOfSAAScenario)
+        #
+        #      # Generate a scenario tree
+        #      treestructure = [1] + [2] * (self.Instance.NrTimeBucket ) + [0]
+        #
+        #      scenariotree = ScenarioTree(self.Instance, treestructure, 10,  # self.CurrentScenarioSeed,
+        #                                  scenariogenerationmethod=self.ScenarioGenerationMethod,
+        #                                  averagescenariotree=False, model=Constants.ModelYFix, generateasYQfix=True)
+        #
+        #      # Get the set of scenarios
+        #      scenarioset = scenariotree.GetAllScenarios(computeindex=False)
+        # else:
         if self.IsIterationWithConvergenceTest:
-            self.CurrentNrScenario = self.SDDPNrScenarioTest
+               self.CurrentNrScenario = self.SDDPNrScenarioTest
         else:
-            self.CurrentNrScenario = self.CurrentForwardSampleSize
+                self.CurrentNrScenario = self.CurrentForwardSampleSize
         self.CurrentSetOfTrialScenarios = self.GenerateScenarios(self.CurrentNrScenario, average=Constants.SDDPDebugSolveAverage)
         self.TrialScenarioNrSet = range(len(self.CurrentSetOfTrialScenarios))
         self.CurrentNrScenario = len(self.CurrentSetOfTrialScenarios)
@@ -248,7 +264,7 @@ class SDDP(object):
         #Modify the number of scenario at each stage
         for stage in self.StagesSet:
             #self.BackwardStage[stage].SAAScenarioNrSet(len(self.CurrentSetOfTrialScenarios))
-            if self.BackwardStage[stage].DecisionStage > self.Instance.NrTimeBucketWithoutUncertaintyBefore:
+            if self.BackwardStage[stage].TimeDecisionStage + len(self.BackwardStage[stage].RangePeriodQty) > self.Instance.NrTimeBucketWithoutUncertaintyBefore + 1:
                 self.BackwardStage[stage].FixedScenarioSet = self.SAAScenarioNrSet
                 self.BackwardStage[stage].FixedScenarioPobability = [w.Probability for w in self.SetOfSAAScenario]
                 self.BackwardStage[stage].SAAStageCostPerScenarioWithoutCostoGopertrial = [0 for w in self.TrialScenarioNrSet]
