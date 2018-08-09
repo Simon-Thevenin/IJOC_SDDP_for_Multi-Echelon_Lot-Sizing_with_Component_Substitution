@@ -54,7 +54,7 @@ class SDDPLastStage( SDDPStage ):
         return result
 
     #Compute the number of variable of each type (production quantty, setup, inventory, backorder)
-    def ComputeNrVariables(self):
+    def ComputeNrVariables2(self):
         #number of variable at stage 1<t<T
         self.NrQuantityVariable = 0#self.Instance.NrProduct * (self.Instance.NrTimeBucketWithoutUncertainty)
         self.NrStockVariable = len(self.FixedScenarioSet)*sum(self.GetNrStageStock(q) for q in self.Instance.ProductSet)
@@ -68,12 +68,12 @@ class SDDPLastStage( SDDPStage ):
     #    indexp = self.Instance.ProductWithExternalDemandIndex[p]
     #    return self.StartBackOrder + w*self.NrBackOrderVariablePerScenario + indexp * self.GetNrStageStock(p) + self.rescaletimestock(t, p)
 
-    def GetIndexBackorderVariable(self, p,  w):
+    def GetIndexBackorderVariable2(self, p,  w):
         indexp = self.Instance.ProductWithExternalDemandIndex[p]
         return self.StartBackOrder + w * self.NrBackOrderVariablePerScenario + indexp
 
     # Return the index of the variable associated with the quanity of product p decided at the current stage
-    def GetIndexQuantityVariable(self, p, w):
+    def GetIndexQuantityVariable2(self, p, w):
         return self.StartQuantity + w*self.NrQuantityVariable + p * self.Instance.NrTimeBucketWithoutUncertaintyAfter + p #self.rescaletimequantity(t)
 
     # Return the index of the variable associated with the stock of product p decided at the current stage
@@ -82,26 +82,26 @@ class SDDPLastStage( SDDPStage ):
     #    result = self.StartStock + w* self.NrStockVariablePerScenario+ result + self.rescaletimestock(t, p)
     #    return result
 
-    def GetIndexStockVariable(self, p, w):
+    def GetIndexStockVariable2(self, p, w):
         #result = sum(self.GetNrStageStock(q) for q in range(0, p))
         indexp = self.Instance.ProductWithExternalDemandIndex[p]
         result = self.StartStock + w * self.NrStockVariablePerScenario + indexp
         return result
 
     # Return the name of the variable associated with the quanity of product p decided at the current stage
-    def GetNameQuantityVariable(self, p, t):
+    def GetNameQuantityVariable2(self, p, t):
         return "Q_%d_%d"%(p, t)
 
     # Return the name of the variable associated with the stock of product p decided at the current stage
-    def GetNameStockVariable(self, p,  w):
+    def GetNameStockVariable2(self, p,  w):
         return "I_%d_%d"%(p,  w)
 
     # Return the name of the variable associated with the backorder of product p decided at the current stage
-    def GetNameBackorderVariable(self, p,  w):
+    def GetNameBackorderVariable2(self, p,  w):
          return "B_%d_%d" % (p,  w)
 
  #Define the variables
-    def DefineVariables(self):
+    def DefineVariables2(self):
 
         #Variable for the production quanitity
         #self.Cplex.variables.add(obj=[0.0] * self.NrQuantityVariable,
@@ -148,7 +148,10 @@ class SDDPLastStage( SDDPStage ):
     def IsFirstStage(self):
         return False
 
-    def AddVariableName(self):
+    def IsPenultimateStage(self):
+        return False
+
+    def AddVariableName2(self):
         if Constants.Debug:
             print("Add the names of the variable")
         # Define the variable name.
@@ -227,7 +230,7 @@ class SDDPLastStage( SDDPStage ):
                     self.ConcernedScenarioCapacityConstraint.append(w)
 
 
-    def GetVariableValue(self, sol):
+    def GetVariableValue2(self, sol):
 
         #indexarray = [self.GetIndexQuantityVariable(p, t) for t in self.GetLastStageTimeRangeQuantity() for p in self.Instance.ProductSet]
         #self.QuantityValues[self.CurrentScenarioNr] = sol.get_values(indexarray)
@@ -282,7 +285,7 @@ class SDDPLastStage( SDDPStage ):
 
             # Demand and materials requirement: set the value of the invetory level and backorder quantity according to
     #  the quantities produced and the demand
-    def CreateFlowConstraints(self):
+    def CreateFlowConstraints2(self):
         self.FlowConstraintNR = [["" for t in self.Instance.TimeBucketSet] for p in self.Instance.ProductSet]
         for w in self.FixedScenarioSet:
             for p in self.Instance.ProductSet:
@@ -336,11 +339,12 @@ class SDDPLastStage( SDDPStage ):
 
                         self.IndexFlowConstraint.append(self.LastAddedConstraintIndex)
                         self.LastAddedConstraintIndex = self.LastAddedConstraintIndex + 1
-                        self.ConcernedTimeFlowConstraint.append(t)
+
+                        self.ConcernedTimeFlowConstraint.append(self.GetTimePeriodAssociatedToInventoryVariable(p,t))
                         self.ConcernedProductFlowConstraint.append(p)
                         self.ConcernedScenarioFlowConstraint.append(w)
 
-    def IncreaseCutWithFlowDual(self, cut, sol):
+    def IncreaseCutWithFlowDual2(self, cut, sol):
         if Constants.Debug:
             print("Increase cut with flow dual")
         duals = sol.get_dual_values(self.IndexFlowConstraint)

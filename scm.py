@@ -86,8 +86,6 @@ def Solve(instance):
 
     solution = solver.Solve()
 
-
-
     LastFoundSolution = solution
     evaluator = Evaluator(instance, TestIdentifier, EvaluatorIdentifier, solver)
     evaluator.RunEvaluation()

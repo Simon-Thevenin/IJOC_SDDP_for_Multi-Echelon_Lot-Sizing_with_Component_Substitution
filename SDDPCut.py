@@ -19,7 +19,7 @@ class SDDPCut(object):
         self.CoefficientQuantityVariable = [[0 for p in self.Instance.ProductSet] for t in self.Instance.TimeBucketSet]
         self.CoefficientProductionVariable = [[0 for p in self.Instance.ProductSet] for t in self.Instance.TimeBucketSet]
         self.CoefficientStockVariable = [[0 for p in self.Instance.ProductSet] for t in self.Instance.TimeBucketSet]
-        self.CoefficientBackorderyVariable = [[0 for p in self.Instance.ProductWithExternalDemand] for t in self.Instance.TimeBucketSet]
+        self.CoefficientBackorderyVariable = [[0 for p in self.Instance.ProductSet] for t in self.Instance.TimeBucketSet]
 
         #The quantity variable fixed at earlier stages with a non zero coefficient
         self.NonZeroFixedEarlierQuantityVar = set()
@@ -58,13 +58,21 @@ class SDDPCut(object):
     #This function return the variables of the cut in its stage (do ot include the variable fixed at previous stage)
     def GetCutVariablesAtStage(self, stage, w):
         vars = [stage.GetIndexCostToGo(w)] \
-               + [stage.GetIndexQuantityVariable(p, w) for p in self.Instance.ProductSet] \
-               + [stage.GetIndexStockVariable(p, w) for p in stage.GetProductWithStockVariable()]
-        if not self.BackwarStage.IsFirstStage():
-            vars = vars + [stage.GetIndexBackorderVariable(p, w) for p in self.Instance.ProductWithExternalDemand]
+               + [stage.GetIndexQuantityVariable(p, t, w)
+                  for t in self.ForwardStage.RangePeriodQty
+                  for p in self.Instance.ProductSet] \
+               + [stage.GetIndexStockVariable(p, t,  w)
+                  for t in self.ForwardStage.RangePeriodInv
+                  for p in stage.GetProductWithStockVariable(t)]
+
+        vars = vars + [stage.GetIndexBackorderVariable(p, t, w)
+                       for t in self.ForwardStage.RangePeriodEndItemInv
+                       for p in self.ForwardStage.GetProductWithBackOrderVariable(t)]
 
         if self.BackwarStage.DecisionStage == 0:
-            vars = vars + [stage.GetIndexProductionVariable(p, t) for p in self.Instance.ProductSet for t in self.Instance.TimeBucketSet]
+            vars = vars + [stage.GetIndexProductionVariable(p, t)
+                           for p in self.Instance.ProductSet
+                           for t in self.Instance.TimeBucketSet]
 
         vars = vars + [stage.GetIndexCutRHSFromPreviousSatge(self)]
 
@@ -73,21 +81,22 @@ class SDDPCut(object):
     # This function return the coefficient variables of the cut in its stage (do ot include the variable fixed at previous stage)
     def GetCutVariablesCoefficientAtStage(self):
         coeff = [1] \
-                + [self.CoefficientQuantityVariable[self.BackwarStage.GetTimePeriodAssociatedToQuantityVariable(p)][p] for p in
-                   self.Instance.ProductSet] \
-                + [self.CoefficientStockVariable[self.BackwarStage.GetTimePeriodAssociatedToInventoryVariable(p)][p] for p in
-                   self.BackwarStage.GetProductWithStockVariable()]
+                + [self.CoefficientQuantityVariable[self.BackwarStage.GetTimePeriodAssociatedToQuantityVariable(p, t)][p]
+                   for t in self.ForwardStage.RangePeriodQty
+                   for p in self.Instance.ProductSet] \
+                + [self.CoefficientStockVariable[self.BackwarStage.GetTimePeriodAssociatedToInventoryVariable(p, t)][p]
+                   for t in self.ForwardStage.RangePeriodInv
+                   for p in self.ForwardStage.GetProductWithStockVariable(t)]
 
 
-        if not self.BackwarStage.IsFirstStage():
-            coeff = coeff + [
-                self.CoefficientBackorderyVariable[self.BackwarStage.GetTimePeriodAssociatedToBackorderVariable(p)][
-                    self.Instance.ProductWithExternalDemandIndex[p]]
-                for p in self.Instance.ProductWithExternalDemand ]
+        coeff = coeff + [ self.CoefficientBackorderyVariable[self.BackwarStage.GetTimePeriodAssociatedToBackorderVariable(p, t)][p]
+                          for t in self.ForwardStage.RangePeriodEndItemInv
+                          for p in self.BackwarStage.GetProductWithBackOrderVariable(t)]
 
         if self.BackwarStage.DecisionStage == 0:
-            coeff = coeff + [self.CoefficientProductionVariable[t][p] for p in self.Instance.ProductSet for t in
-                             self.Instance.TimeBucketSet]
+            coeff = coeff + [self.CoefficientProductionVariable[t][p]
+                             for p in self.Instance.ProductSet
+                             for t in self.Instance.TimeBucketSet]
 
         coeff = coeff + [-1]
         return coeff
@@ -223,7 +232,7 @@ class SDDPCut(object):
         for p in self.Instance.ProductWithExternalDemand:
                 for t in range(0, self.Stage.GetTimePeriodAssociatedToBackorderVariable(p)):
 
-                    indexp = self.Instance.ProductWithExternalDemandIndex[p]
+                    indexp = p#self.Instance.ProductWithExternalDemandIndex[p]
                     righthandside = righthandside - self.Stage.SDDPOwner.GetBackorderFixedEarlier(p, t, self.Stage.CurrentTrialNr) \
                                                     * self.CoefficientBackorderyVariable[t][indexp]
 
@@ -256,7 +265,7 @@ class SDDPCut(object):
         for tuple in self.NonZeroFixedEarlierBackOrderVar:
             p = tuple[0]
             t = tuple[1]
-            indexp = self.Instance.ProductWithExternalDemandIndex[p]
+            indexp = p#self.Instance.ProductWithExternalDemandIndex[p]
             result = result - self.BackwarStage.SDDPOwner.GetBackorderFixedEarlier(p, t, scenarionr) \
                                             * self.CoefficientBackorderyVariable[t][indexp]
 
@@ -271,7 +280,7 @@ class SDDPCut(object):
     def IncreaseCoefficientQuantity(self, product, time, value):
         self.CoefficientQuantityVariable[time][product] = self.CoefficientQuantityVariable[time][product] + value
 
-        if time < self.BackwarStage.GetTimePeriodAssociatedToQuantityVariable(product):
+        if time < self.BackwarStage.GetTimePeriodAssociatedToQuantityVariable(product, 0):
             self.NonZeroFixedEarlierQuantityVar.add((product, time))
 
 
@@ -286,14 +295,14 @@ class SDDPCut(object):
         #Increase the coefficient of the quantity variable for product and time  by value
     def IncreaseCoefficientInventory(self, product, time, value):
         self.CoefficientStockVariable[time][product] = self.CoefficientStockVariable[time][product] + value
-        if time < self.BackwarStage.GetTimePeriodAssociatedToInventoryVariable(product):
+        if time < self.BackwarStage.GetTimePeriodAssociatedToInventoryVariable(product, 0):
             self.NonZeroFixedEarlierStockVar.add((product, time))
     #Increase the coefficient of the quantity variable for product and time  by value
     def IncreaseCoefficientBackorder(self, product, time, value):
-        indexp = self.Instance.ProductWithExternalDemandIndex[product]
+        indexp = product#self.Instance.ProductWithExternalDemandIndex[product]
         self.CoefficientBackorderyVariable[time][indexp] = self.CoefficientBackorderyVariable[time][indexp] + value
 
-        if time < self.BackwarStage.GetTimePeriodAssociatedToBackorderVariable(product):
+        if time < self.BackwarStage.GetTimePeriodAssociatedToBackorderVariable(product, 0):
             self.NonZeroFixedEarlierBackOrderVar.add((product, time))
 
         # Increase the coefficient of the quantity variable for product and time  by value
@@ -321,15 +330,21 @@ class SDDPCut(object):
         variablofstage = self.GetCutVariablesAtStage(self.ForwardStage, 0)
         # REmove cost to go
         variablofstage = variablofstage[1:]
+
         # coefficient of the variable a
 
-        valueofvariable = [self.ForwardStage.QuantityValues[w][p] for p in self.Instance.ProductSet] \
-                          + [self.ForwardStage.InventoryValue[w][p] for p in self.ForwardStage.GetProductWithStockVariable()]
 
-        if not self.ForwardStage.IsFirstStage():
-            valueofvariable = valueofvariable + [
-                self.ForwardStage.BackorderValue[w][self.Instance.ProductWithExternalDemandIndex[p]]
-                for p in self.Instance.ProductWithExternalDemand]
+
+        valueofvariable = [self.ForwardStage.QuantityValues[w][t][p]
+                           for t in self.ForwardStage.RangePeriodQty
+                           for p in self.Instance.ProductSet] \
+                          + [self.ForwardStage.InventoryValue[w][t][p]
+                             for t in self.ForwardStage.RangePeriodInv
+                             for p in self.ForwardStage.GetProductWithStockVariable(t)]
+
+        valueofvariable = valueofvariable + [self.ForwardStage.BackorderValue[w][t][p]
+                                             for t in self.ForwardStage.RangePeriodEndItemInv
+                                             for p in self.ForwardStage.GetProductWithBackOrderVariable(t)]
 
         if self.BackwarStage.DecisionStage == 0:
             valueofvariable = valueofvariable + [self.ForwardStage.ProductionValue[w][t][p]
@@ -351,12 +366,16 @@ class SDDPCut(object):
         #REmove cost to go
         variablofstage = variablofstage[1:]
         #coefficient of the variable a
-        valueofvariable = [self.ForwardStage.CorePointQuantityValues[w][p] for p in self.Instance.ProductSet] \
-                + [self.ForwardStage.CorePointInventoryValue[w][p] for p in self.ForwardStage.GetProductWithStockVariable()]
+        valueofvariable = [self.ForwardStage.CorePointQuantityValues[w][t][p]
+                           for t in self.ForwardStage.RangePeriodQty
+                           for p in self.Instance.ProductSet] \
+                        + [self.ForwardStage.CorePointInventoryValue[w][t][p]
+                             for t in self.ForwardStage.RangePeriodInv
+                             for p in self.ForwardStage.GetProductWithStockVariable(t)]
 
-        if not self.ForwardStage.IsFirstStage():
-             valueofvariable = valueofvariable + [self.ForwardStage.CorePointBackorderValue[w][self.Instance.ProductWithExternalDemandIndex[p]]
-                                             for p in self.Instance.ProductWithExternalDemand]
+        valueofvariable = valueofvariable + [self.ForwardStage.CorePointBackorderValue[w][t][p]
+                                             for t in self.ForwardStage.RangePeriodEndItemInv
+                                             for p in self.ForwardStage.GetProductWithBackOrderVariable(t)]
 
         if self.ForwardStage.DecisionStage == 0:
             valueofvariable = valueofvariable + [self.ForwardStage.CorePointProductionValue[w][t][p]

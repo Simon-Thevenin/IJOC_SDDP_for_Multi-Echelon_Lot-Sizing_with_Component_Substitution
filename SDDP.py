@@ -40,10 +40,46 @@ class SDDP(object):
                 previousstage.NextSDDPStage = stage
             previousstage = stage
 
+        curenttime = 0
+        stageset = self.BackwardStage
+        stageset = stageset + self.ForwardStage
+        #list(set().union(self.BackwardStage, self.ForwardStage))
+        for stage in stageset:
+            stage.ComputeVariablePeriods()
+            stage.ComputeVariableIndices()
+            if stage.IsFirstStage():
+                stage.TimeDecisionStage = 0
+            else:
+                prevstage = stage.PreviousSDDPStage
+                stage.TimeDecisionStage = prevstage.TimeDecisionStage + len(prevstage.RangePeriodQty)
+
+        self.ForwardStageWithBackOrderDec = [None for t in self.Instance.TimeBucketSet]
+        for stage in self.ForwardStage:
+            for tau in stage.RangePeriodEndItemInv:
+                self.ForwardStageWithBackOrderDec[tau + stage.TimeDecisionStage -1] = stage
+
+        self.ForwardStageWithQuantityDec = [None for t in self.Instance.TimeBucketSet]
+        for stage in self.ForwardStage:
+            for tau in stage.RangePeriodQty:
+                self.ForwardStageWithQuantityDec[tau + stage.TimeDecisionStage] = stage
+
+        self.ForwardStageWithCompInvDec = [None for t in self.Instance.TimeBucketSet]
+        for stage in self.ForwardStage:
+            for tau in stage.RangePeriodComponentInv:
+                self.ForwardStageWithCompInvDec[tau + stage.TimeDecisionStage] = stage
+
+        # curenttime = 0
+        # for stage in self.ForwardStage:
+        #     stage.TimeDecisionStage = curenttime
+        #     stage.ComputeVariablePeriods()
+        #     stage.ComputeVariableIndices()
+        #     curenttime += len(stage.RangePeriodQty)
+
     def __init__(self, instance, testidentifier):
         self.Instance = instance
         self.TestIdentifier = testidentifier
-        nrstage = self.Instance.NrTimeBucket # - self.Instance.NrTimeBucketWithoutUncertainty
+        self.MaxNrStage = 30#self.Instance.NrTimeBucketWithoutUncertainty
+        nrstage = min(self.Instance.NrTimeBucket - self.Instance.NrTimeBucketWithoutUncertainty, self.MaxNrStage-1) #
         self.StagesSet = range(nrstage + 1)
         self.CurrentIteration = 0
         self.CurrentLowerBound = 0
@@ -68,6 +104,8 @@ class SDDP(object):
 
         self.DefineBakwarMip = False
         self.LinkStages()
+
+
         self.CurrentNrScenario = self.TestIdentifier.NrScenarioForward# Constants.SDDPNrScenarioForwardPass
 
         self.SDDPNrScenarioTest = Constants.SDDPInitNrScenarioTest
@@ -131,6 +169,7 @@ class SDDP(object):
         if not self.DefineBakwarMip:
             for stage in self.StagesSet:
                 if not self.BackwardStage[stage].IsFirstStage():
+                    self.BackwardStage[stage].CurrentTrialNr = 0
                     self.BackwardStage[stage].DefineMIP()
             self.DefineBakwarMip = True
 
@@ -227,10 +266,12 @@ class SDDP(object):
 
     #This function return the quanity of product to produce at time which has been decided at an earlier stage
     def GetQuantityFixedEarlier(self, product, time, scenario):
+        forwardstage = self.ForwardStageWithQuantityDec[time]
+        t = forwardstage.GetTimeIndexForQty(product, time)
         if self.UseCorePoint:
-            result = self.ForwardStage[time].CorePointQuantityValues[scenario][product]
+            result = forwardstage.CorePointQuantityValues[scenario][t][product]
         else:
-            result = self.ForwardStage[time].QuantityValues[scenario][product]
+            result = forwardstage.QuantityValues[scenario][t][product]
 
         return result
 
@@ -241,14 +282,15 @@ class SDDP(object):
         else:
             decisiontime = 0
             if self.Instance.HasExternalDemand[product]:
-                decisiontime = time + 1
+                forwardstage = self.ForwardStageWithBackOrderDec[time]
             else:
-                decisiontime = time
+                forwardstage = self.ForwardStageWithCompInvDec[time]
 
+            t = forwardstage.GetTimeIndexForInv(product, time)
             if self.UseCorePoint:
-                result = self.ForwardStage[decisiontime].CorePointInventoryValue[scenario][product]
+                result = forwardstage.CorePointInventoryValue[scenario][t][product]
             else:
-                result = self.ForwardStage[decisiontime].InventoryValue[scenario][product]
+                result = forwardstage.InventoryValue[scenario][t][product]
 
         return result
 
@@ -257,10 +299,12 @@ class SDDP(object):
         if time == -1:
             result = 0
         else:
+            forwardstage = self.ForwardStageWithBackOrderDec[time]
+            t = forwardstage.GetTimeIndexForBackorder(product, time)
             if self.UseCorePoint:
-                result = self.ForwardStage[time + 1].CorePointBackorderValue[scenario][self.Instance.ProductWithExternalDemandIndex[product]]
+                result = forwardstage.CorePointBackorderValue[scenario][t][product]
             else:
-                result = self.ForwardStage[time + 1].BackorderValue[scenario][self.Instance.ProductWithExternalDemandIndex[product]]
+                result = forwardstage.BackorderValue[scenario][t][product]
 
         return result
 
@@ -568,7 +612,7 @@ class SDDP(object):
             k=-1
             for c in self.Instance.ConsumptionSet:
                  k += 1
-                 solconsumption[0][0][c[0]][c[1]] = self.ForwardStage[0].ConsumptionValues[0][k]
+                 solconsumption[0][0][c[0]][c[1]] = self.ForwardStage[0].ConsumptionValues[0][0][k]
 
             emptyscenariotree = ScenarioTree(instance=self.Instance,
                                              branchperlevel=[0,0,0,0,0],

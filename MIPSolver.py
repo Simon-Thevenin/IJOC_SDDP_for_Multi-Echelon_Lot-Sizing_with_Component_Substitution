@@ -1431,10 +1431,10 @@ class MIPSolver(object):
 
         #name = "mrp_log%r_%r_%r" % ( self.Instance.InstanceName, self.Model, self.DemandScenarioTree.Seed )
         #file = open("/tmp/thesim/CPLEXLog/%s.txt" % self.logfilename, 'w')
-            self.Cplex.set_log_stream(Constants.GetPathCPLEXLog+"/%s.txt" % self.logfilename)
-            self.Cplex.set_results_stream(Constants.GetPathCPLEXLog+"/%s.txt" % self.logfilename)
-            self.Cplex.set_warning_stream(Constants.GetPathCPLEXLog+"/%s.txt" % self.logfilename)
-            self.Cplex.set_error_stream(Constants.GetPathCPLEXLog+"/%s.txt" % self.logfilename)
+            self.Cplex.set_log_stream(Constants.GetPathCPLEXLog()+"/%s.txt" % self.logfilename)
+            self.Cplex.set_results_stream(Constants.GetPathCPLEXLog()+"/%s.txt" % self.logfilename)
+            self.Cplex.set_warning_stream(Constants.GetPathCPLEXLog()+"/%s.txt" % self.logfilename)
+            self.Cplex.set_error_stream(Constants.GetPathCPLEXLog()+"/%s.txt" % self.logfilename)
 
         # tune the paramters
         self.Cplex.parameters.timelimit.set(Constants.AlgorithmTimeLimit)
@@ -1465,7 +1465,7 @@ class MIPSolver(object):
 
         # Handle the results
         sol = self.Cplex.solution
-
+        #sol.write("SolutionSol")
         if sol.is_primal_feasible():
             if Constants.Debug:
                 print("CPLEx Solve Time: %r   CPLEX build time %s  feasible %s cost: %s" % (
@@ -1516,17 +1516,18 @@ class MIPSolver(object):
 
         else:
             print("No solution available.")
+            self.Cplex.write("INFEASIBLE.lp")
             self.Cplex.conflict.refine(self.Cplex.conflict.all_constraints())
             conflict = self.Cplex.conflict.get()
             conflicting = [i for i in range(len(conflict)) if conflict[i] == 3]
             groups = self.Cplex.conflict.get_groups(conflicting)
             print("Conflicts: %r"% groups, conflicting)
             for i in groups:
-                (a,((b,c),)) =i
+                (a,((b, c),)) = i
                 print("Constraint %r, %r:"%(c,self.Cplex.linear_constraints.get_names([c])))
 
     #This function print the scenario of the instance in an excel file
-    def PrintScenarioToFile( self ):
+    def PrintScenarioToFile(self):
         writer = pd.ExcelWriter("./Instances/" + self.Instance.InstanceName + "_Scenario.xlsx",
                                         engine='openpyxl')
         for s in self.Scenarios:

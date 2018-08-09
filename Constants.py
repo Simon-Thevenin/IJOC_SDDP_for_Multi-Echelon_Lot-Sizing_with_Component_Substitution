@@ -56,7 +56,7 @@ class Constants( object ):
 
     #Code parameter
     Infinity = 9999999999999
-    AlgorithmTimeLimit = 36000
+    AlgorithmTimeLimit = 14400
 
     #SDDPparameters
     AlgorithmOptimalityTolerence = 0.0005
@@ -82,11 +82,11 @@ class Constants( object ):
 
     SDDPCleanCuts = False
 
-    SDDPUseEVPI = True
+    SDDPUseEVPI = False
     SDDPNrEVPIScenario = 1
     SDDPDebugSolveAverage = False
     SDDPMinimumNrIterationBetweenTest = 10
-    SDDPDurationBeforeIncreaseForwardSample = 7200
+    SDDPDurationBeforeIncreaseForwardSample = 3600
     SDDPSaveInExcel = False
 
     PHIterationLimit = 10000

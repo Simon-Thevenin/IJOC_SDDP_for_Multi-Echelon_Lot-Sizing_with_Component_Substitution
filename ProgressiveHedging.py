@@ -370,9 +370,9 @@ class ProgressiveHedging(object):
                         for w in scenarios:
                             print("qty %r"%self.CurrentSolution[w].ProductionQuantity[0][time])
 
-                    qty = [sum(self.ScenarioSet[w].Probability
+                    qty = [round(sum(self.ScenarioSet[w].Probability
                                 * self.CurrentSolution[w].ProductionQuantity[0][time][p] for w in scenarios) \
-                           / sumprob
+                           / sumprob, 4)
                            for p in self.Instance.ProductSet]
 
                     prod = [sum(self.ScenarioSet[w].Probability
@@ -380,9 +380,9 @@ class ProgressiveHedging(object):
                            / sumprob
                              for p in self.Instance.ProductSet]
 
-                    cons = [[sum(self.ScenarioSet[w].Probability
-                                * self.CurrentSolution[w].Consumption[0][time][q][p] for w in scenarios) \
-                           / sumprob
+                    cons = [[round(sum(self.ScenarioSet[w].Probability
+                                        * self.CurrentSolution[w].Consumption[0][time][q][p] for w in scenarios) \
+                                     / sumprob,4)
                              for p in self.Instance.ProductSet]
                             for q in self.Instance.ProductSet]
 
@@ -706,25 +706,26 @@ class ProgressiveHedging(object):
             for t in range(self.FixedUntil+1):
                 for p in self.Instance.ProductSet:
                     self.ScenarioSet[w].Demands[t][p] = demanduptotimet[t][p]
-
-            self.MIPSolvers[w].ModifyMipForScenario(demanduptotimet, self.FixedUntil+1)
+        #    self.MIPSolvers[w].ModifyMipForScenario(demanduptotimet, self.FixedUntil+1)
+        self.SplitScenrioTree()
 
     def UpdateForSetup(self, givensetup):
         for w in self.ScenarioNrSet:
-            self.MIPSolvers[w].GivenSetup = givensetup
-            self.MIPSolvers[w].UpdateSetup(givensetup)
+            self.MIPSolvers[0].GivenSetup = givensetup
+            self.MIPSolvers[0].UpdateSetup(givensetup)
 
     def UpdateForQuantity(self, givenquantity):
         for w in self.ScenarioNrSet:
-            self.MIPSolvers[w].GivenQuantity = givenquantity
-            self.MIPSolvers[w].ModifyMipForFixQuantity(givenquantity, self.FixedUntil+1)
+            self.MIPSolvers[0].GivenQuantity = givenquantity
+            self.MIPSolvers[0].ModifyMipForFixQuantity(givenquantity, self.FixedUntil+1)
 
     def UpdateForConsumption(self, givenconsumption):
         for w in self.ScenarioNrSet:
-            self.MIPSolvers[w].GivenConsumption = givenconsumption
-            self.MIPSolvers[w].ModifyMipForFixConsumption(givenconsumption, self.FixedUntil+1)
+            self.MIPSolvers[0].GivenConsumption = givenconsumption
+            self.MIPSolvers[0].ModifyMipForFixConsumption(givenconsumption, self.FixedUntil+1)
 
     def ReSetParameter(self):
+        self.StartTime = time.time()
         self.LagrangianMultiplier = 0.0
         self.CurrentImplementableSolution = None
 

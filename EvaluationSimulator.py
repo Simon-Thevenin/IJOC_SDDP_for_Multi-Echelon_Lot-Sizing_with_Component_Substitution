@@ -334,21 +334,20 @@ class EvaluationSimulator(object):
 
         #givenquantty = [[sddp.GetQuantityFixedEarlier(p, t, scenario) for p in self.Instance.ProductSet]
         #              for t in range(self.Instance.NrTimeBucket - self.Instance.NrTimeBucketWithoutUncertainty)]
-        givenquantty = []
-        givenconsumption = []
+        givenquantty = [[0 for p in self.Instance.ProductSet] for t in self.Instance.TimeBucketSet]
+        givenconsumption = [[0 for c in range(len(self.Instance.ConsumptionSet))] for t in self.Instance.TimeBucketSet]
 
         #givenquantty=[]
         #Copy the quantity from the last stage
-        for t in self.Instance.TimeBucketSet:
-            if not sddp.ForwardStage[t].IsLastStage():
-                givenquantty = givenquantty + \
-                                 [[sddp.ForwardStage[t].QuantityValues[scenario][p]
-                                   for p in self.Instance.ProductSet]]
-        for t in sddp.StagesSet:
-            if not sddp.ForwardStage[t].IsLastStage():
-                givenconsumption = givenconsumption + \
-                                    [[sddp.ForwardStage[t].ConsumptionValues[scenario][c]
-                                      for c in range(len(self.Instance.ConsumptionSet))]]
+        for stage in sddp.ForwardStage:
+            for t in stage.RangePeriodQty:
+                time = stage.GetTimePeriodAssociatedToQuantityVariable(0, t)
+
+                for p in self.Instance.ProductSet:
+                    givenquantty[time][p] = stage.QuantityValues[scenario][t][p]
+
+                for c in range(len(self.Instance.ConsumptionSet)):
+                    givenconsumption[time][c] = stage.ConsumptionValues[scenario][t][c]
 
         return givensetup, givenquantty, givenconsumption
 
@@ -363,7 +362,7 @@ class EvaluationSimulator(object):
             if Constants.Debug:
                     print("Generate all the scenarios")
 
-            scenariotree = ScenarioTree(self.Instance, [1]+ [1]*self.Instance.NrTimeBucketWithoutUncertaintyBefore + [8, 8, 8, 8, 0], offset,
+            scenariotree = ScenarioTree(self.Instance, [1] + [1]*self.Instance.NrTimeBucketWithoutUncertaintyBefore + [8, 8, 8, 8, 0], offset,
                                          scenariogenerationmethod=Constants.All,
                                          model=Constants.ModelYFix)
             scenarioset = scenariotree.GetAllScenarios(False)
@@ -410,7 +409,7 @@ class EvaluationSimulator(object):
                                for seed in range(M)
                                for k in range(K))
 
-        variance2 = ((1.0 / K) * sum(  (1.0 / M) * sum(math.pow(Evaluated[k][seed], 2) for seed in range(M)) for k in range(K))) - math.pow(mean,  2)
+        variance2 = ((1.0 / K) * sum((1.0 / M) * sum(math.pow(Evaluated[k][seed], 2) for seed in range(M)) for k in range(K))) - math.pow(mean,  2)
         covariance = 0
 
         for seed in range(M):
