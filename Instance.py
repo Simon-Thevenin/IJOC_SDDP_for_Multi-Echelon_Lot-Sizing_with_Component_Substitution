@@ -169,9 +169,9 @@ class Instance(object):
         self.Distribution = Constants.NonStationary
         self.ProductName = ["P1", "P2a", "P2b"]
         self.NrProduct = 3
-        self.NrTimeBucket = 5
+        self.NrTimeBucket = 4
         self.NrTimeBucketWithoutUncertaintyAfter = 0
-        self.NrTimeBucketWithoutUncertaintyBefore = 0
+        self.NrTimeBucketWithoutUncertaintyBefore = 2
         self.NrResource = 3
         self.Gamma = 1
         self.Requirements = [[0, 1, 0],

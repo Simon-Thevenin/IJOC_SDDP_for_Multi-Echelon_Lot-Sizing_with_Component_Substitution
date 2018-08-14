@@ -258,6 +258,7 @@ class EvaluationSimulator(object):
     #This method run a forward pass of the SDDP algorithm on the considered set of scenarios
     def ForwardPassOnScenarios(self, sddp, scenarios):
         sddp.EvaluationMode = True
+        Constants.SDDPRunSigleTree = False
         # Make a forward pass on the
         #Create the SAA scenario, which are used to compute the EVPI scenario
         sddp.GenerateSAAScenarios()

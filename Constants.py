@@ -57,35 +57,38 @@ class Constants( object ):
     #Code parameter
     Infinity = 9999999999999
     AlgorithmTimeLimit = 14400
+    MIPBasedOnSymetricTree = True
 
     #SDDPparameters
     AlgorithmOptimalityTolerence = 0.0005
-    SDDPIterationLimit = 10000
+    SDDPIterationLimit = 100000
     SDDPPrintDebugLPFiles = False
     PrintSDDPTrace = True
     GenerateStrongCut = False
-    SDDPRunSigleTree = False
+    SDDPRunSigleTree = True
 
     #SDDPNrScenarioForwardPass = 10
     #SDDPNrScenarioBackwardPass = 10
-
+    SDDPForwardPassInSAATree = True
     SDDPIncreaseNrScenarioTest = 100
     SDDPInitNrScenarioTest = 10
 
     SolveRelaxationFirst = True
-    SDDPNrIterationRelax = 10000
+    SDDPNrIterationRelax = 100
     SDDPGapRelax = 0.01
 
     SDDPUseValidInequalities = False
 
-    SDDPGenerateCutWith2Stage = False
+    SDDPGenerateCutWith2Stage = True
+
+
 
     SDDPCleanCuts = False
 
-    SDDPUseEVPI = False
+    SDDPUseEVPI = True
     SDDPNrEVPIScenario = 1
     SDDPDebugSolveAverage = False
-    SDDPMinimumNrIterationBetweenTest = 10
+    SDDPMinimumNrIterationBetweenTest = 100
     SDDPDurationBeforeIncreaseForwardSample = 3600
     SDDPSaveInExcel = False
 

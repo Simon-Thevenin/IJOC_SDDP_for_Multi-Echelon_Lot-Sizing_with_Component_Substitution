@@ -147,7 +147,7 @@ class SDDPCut(object):
 
             stage.ConcernedCutinConstraint.append(self)
 
-    def RemoveCut(self):
+    def RemoveTheCut(self):
         self.RemoveCut(self.ForwardStage, True)
         self.RemoveCut(self.BackwarStage, False)
 
@@ -211,29 +211,29 @@ class SDDPCut(object):
         righthandside = self.GetRHS()
 
         for p in self.Instance.ProductSet:
-                for t in range(0, self.Stage.GetTimePeriodAssociatedToQuantityVariable(p)):
+                for t in range(0, self.ForwardStage.TimeDecisionStage):
                    if self.CoefficientQuantityVariable[t][p] > 0:
-                        righthandside = righthandside - self.Stage.SDDPOwner.GetQuantityFixedEarlier(p, t, self.Stage.CurrentTrialNr) \
+                        righthandside = righthandside - self.ForwardStage.SDDPOwner.GetQuantityFixedEarlier(p, t, self.ForwardStage.CurrentTrialNr) \
                                                           * self.CoefficientQuantityVariable[t][p]
 
         if not self.Stage.IsFirstStage():
             for p in self.Instance.ProductSet:
                     for t in self.Instance.TimeBucketSet:
                         if self.CoefficientProductionVariable[t][p] > 0:
-                            righthandside = righthandside - self.Stage.SDDPOwner.GetSetupFixedEarlier(p, t, self.Stage.CurrentTrialNr)\
+                            righthandside = righthandside - self.Stage.SDDPOwner.GetSetupFixedEarlier(p, t, self.ForwardStage.CurrentTrialNr)\
                                                         * self.CoefficientProductionVariable[t][p]
 
 
         for p in self.Instance.ProductSet:
-                for t in range(0, self.Stage.GetTimePeriodAssociatedToInventoryVariable(p)):
-                    righthandside = righthandside - self.Stage.SDDPOwner.GetInventoryFixedEarlier(p, t, self.Stage.CurrentTrialNr) \
+                for t in range(0, self.ForwardStage.GetTimePeriodAssociatedToInventoryVariable(p, 0)):
+                    righthandside = righthandside - self.ForwardStage.SDDPOwner.GetInventoryFixedEarlier(p, t, self.ForwardStage.CurrentTrialNr) \
                                                     * self.CoefficientStockVariable[t][p]
 
         for p in self.Instance.ProductWithExternalDemand:
-                for t in range(0, self.Stage.GetTimePeriodAssociatedToBackorderVariable(p)):
+                for t in range(0, self.ForwardStage.GetTimePeriodAssociatedToBackorderVariable(p, 0)):
 
                     indexp = p#self.Instance.ProductWithExternalDemandIndex[p]
-                    righthandside = righthandside - self.Stage.SDDPOwner.GetBackorderFixedEarlier(p, t, self.Stage.CurrentTrialNr) \
+                    righthandside = righthandside - self.ForwardStage.SDDPOwner.GetBackorderFixedEarlier(p, t, self.ForwardStage.CurrentTrialNr) \
                                                     * self.CoefficientBackorderyVariable[t][indexp]
 
 
@@ -242,6 +242,7 @@ class SDDPCut(object):
     def ComputeCurrentRightHandSide(self):
 
         righthandside = self.GetRHS()
+        return righthandside
 
 
     def ComputeRHSFromPreviousStage(self, forward):

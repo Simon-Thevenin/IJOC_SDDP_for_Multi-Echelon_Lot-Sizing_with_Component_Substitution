@@ -108,25 +108,25 @@ def GenerateInstances():
     instance = Instance()
     #instance.DefineAsSuperSmallIntance()
     # instance.ReadFromFile("K0011525", "NonStationary", "Normal")
-    instance.ReadFromFile("01", "NonStationary", "Normal")
-    instance.SaveCompleteInstanceInExelFile()
-    instancecreated = instancecreated + [instance.InstanceName]
+    # instance.ReadFromFile("01", "NonStationary", "Normal")
+    # instance.SaveCompleteInstanceInExelFile()
+    # instancecreated = instancecreated + [instance.InstanceName]
+    #
+    # instance.ReadFromFile("02", "NonStationary", "Normal")
+    # instance.SaveCompleteInstanceInExelFile()
+    # instancecreated = instancecreated + [instance.InstanceName]
+    #
+    # instance.ReadFromFile("03", "NonStationary", "Normal")
+    # instance.SaveCompleteInstanceInExelFile()
+    # instancecreated = instancecreated + [instance.InstanceName]
 
-    instance.ReadFromFile("02", "NonStationary", "Normal")
-    instance.SaveCompleteInstanceInExelFile()
-    instancecreated = instancecreated + [instance.InstanceName]
+    for name in ["K0011525", "G0041421", "K0011111", "G0041111","K0017311", "G0041523","K0014432"]:
+        instance.ReadFromFile(name, "NonStationary", "Normal")
+        instance.SaveCompleteInstanceInExelFile()
+        instancecreated = instancecreated + [instance.InstanceName]
 
-    instance.ReadFromFile("03", "NonStationary", "Normal")
-    instance.SaveCompleteInstanceInExelFile()
-    instancecreated = instancecreated + [instance.InstanceName]
 
-    instance.ReadFromFile("K0011525", "NonStationary", "Normal")
-    instance.SaveCompleteInstanceInExelFile()
-    instancecreated = instancecreated + [instance.InstanceName]
 
-    instance.ReadFromFile("G0041421", "NonStationary", "Normal")
-    instance.SaveCompleteInstanceInExelFile()
-    instancecreated = instancecreated + [instance.InstanceName]
 
     csvfile = open("./Instances/InstancesToSolve.csv", 'wb')
     data_rwriter = csv.writer(csvfile, delimiter=",", skipinitialspace=True)
@@ -159,12 +159,16 @@ if __name__ == '__main__':
             Constants.SDDPUseEVPI = False
         if TestIdentifier.MIPSetting == "NoStongCut":
             Constants.GenerateStrongCut = False
+        if TestIdentifier.MIPSetting == "NoSingleTree":
+            Constants.SDDPRunSigleTree = False
 
         instance = Instance()
         #instance.DefineAsSuperSmallIntance()
         #instance.DefineAsTwoItemIntance()
         # instance.ReadFromFile("K0011525", "NonStationary", "Normal")
-        # GenerateInstances()
+
+        #GenerateInstances()
+
         instance.ReadInstanceFromExelFile(TestIdentifier.InstanceName)
         #instance.DrawSupplyChain()
     except KeyError:

@@ -89,18 +89,25 @@ class ScenarioTreeNode(object):
                         self.Owner.ScenarioGenerationMethod == Constants.All and self.Owner.Model == Constants.ModelYQFix):
                     nextdemands, probabilities = self.GetDemandToFollowMultipleScenarios(t - 1, nrbranch,  self.FirstBranchID )
                 # case 4: Sample a set of scenario for the next stage
+                elif self.Owner.IsSymetric:
+                        nextdemands = self.Owner.SymetricDemand[t - 1]
+                        probabilities = self.Owner.SymetricProba[t - 1]
                 else:
                     nextdemands, probabilities = ScenarioTreeNode.CreateDemandNormalDistributiondemand(self.Instance,
                                                                                                        t - 1,
                                                                                                        nrbranch,
                                                                                                        averagescenariotree,
                                                                                                        self.Owner.ScenarioGenerationMethod)
+
+
             #Use the sample to create the new branches
             if len(nextdemands) > 0:
                 nrbranch = len(nextdemands[0])
 
                 self.Owner.NrBranches[t] = nrbranch
                 self.Owner.TreeStructure[t] = nrbranch
+
+
 
             usaverageforbranch = (t >= (self.Instance.NrTimeBucket - self.Instance.NrTimeBucketWithoutUncertaintyAfter)) \
                                  or (t < self.Instance.NrTimeBucketWithoutUncertaintyBefore) \
@@ -138,21 +145,21 @@ class ScenarioTreeNode(object):
                              for i in range(nrdemand)]
                             for p in self.Instance.ProductSet]
 
-        probability = [1 for i in range(nrdemand) ]
+        probability = [1 for i in range(nrdemand)]
 
-        if time  - self.Owner.FollowGivenUntil== 0:
-                probability = [ self.Owner.ProbabilityToFollowMultipleSceario[i]  for i in range(nrdemand)]
+        if time - self.Owner.FollowGivenUntil == 0:
+                probability = [self.Owner.ProbabilityToFollowMultipleSceario[i] for i in range(nrdemand)]
 
         return demandvector, probability
 
 
     #This function is used when the demand to use are the one generated for YQFix, which are stored in an array DemandToFollow
     #Return the demand of time at position nrdemand in array DemandTo follow
-    def GetDemandAsYQFix( self, time, nrdemand ):
+    def GetDemandAsYQFix(self, time, nrdemand):
 
-            demandvector = [ [ self.Owner.DemandToFollow[i][time][p]
-                                 for i in range(nrdemand)]
-                                      for p in self.Instance.ProductSet]
+            demandvector = [[self.Owner.DemandToFollow[i][time][p]
+                             for i in range(nrdemand)]
+                             for p in self.Instance.ProductSet]
 
             return demandvector
 
@@ -161,8 +168,8 @@ class ScenarioTreeNode(object):
     #This function returns the given demand at time
     def GetDemandToFollowFirstPeriods(self, time):
              demandvector = [[self.Owner.GivenFirstPeriod[time][p]
-                                 for i in [0]]
-                                for p in self.Instance.ProductSet]
+                              for i in [0]]
+                              for p in self.Instance.ProductSet]
 
              return demandvector
 
@@ -172,12 +179,12 @@ class ScenarioTreeNode(object):
        # get the set of difflerent value in points
         newpoints = points
 
-        newpoints=map(list, zip(*newpoints))
-        newpoints =  list(set(map(tuple,newpoints)))
+        newpoints = map(list, zip(*newpoints))
+        newpoints = list(set(map(tuple,newpoints)))
 
         newpoints = [list(t) for t in newpoints]
         tpoint = map(list, zip(*points))
-        newprobaba = [ sum( probabilities[i]  for i in range(len( tpoint ) ) if tpoint[i] == newpoints[p] ) for p in range( len( newpoints ) ) ]
+        newprobaba = [sum(probabilities[i] for i in range(len(tpoint)) if tpoint[i] == newpoints[p]) for p in range(len(newpoints))]
 
         newpoints = map(list, zip(*newpoints))
 
@@ -333,7 +340,7 @@ class ScenarioTreeNode(object):
 
 
     #This function compute the indices of the variables associated wiht each node of the tree
-    def ComputeVariableIndex( self ):
+    def ComputeVariableIndex(self):
 
         if self.NodeNumber == 0:
             self.ProductionVariable = [(self.Owner.Owner.StartProductionVariable

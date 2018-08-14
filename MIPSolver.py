@@ -1427,7 +1427,7 @@ class MIPSolver(object):
         self.Cplex.set_error_stream(None)
 
         if  Constants.Debug:
-            self.Cplex.write("mrp.lp")
+            self.Cplex.write("mrp%r.lp"%self.EvaluateSolution)
 
         #name = "mrp_log%r_%r_%r" % ( self.Instance.InstanceName, self.Model, self.DemandScenarioTree.Seed )
         #file = open("/tmp/thesim/CPLEXLog/%s.txt" % self.logfilename, 'w')

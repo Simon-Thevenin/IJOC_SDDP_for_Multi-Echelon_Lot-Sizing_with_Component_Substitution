@@ -40,38 +40,38 @@ cd /home/thesim/stochasticmrp/
 """)
 
 
-def CreateSDDPJob(instance, nrback, nrforward):
-    qsub_filename = "./Jobs/job_sddp_%s_%s_%s" % (instance, nrback, nrforward)
+def CreateSDDPJob(instance, nrback, nrforward, setting):
+    qsub_filename = "./Jobs/job_sddp_%s_%s_%s_%s" % (instance, nrback, nrforward, setting)
     qsub_file = open(qsub_filename, 'w')
     CreatHeader(qsub_file )
     qsub_file.write("""
-#$ -o /home/thesim/log/outputjobevaluate%s%s%s.txt
+#$ -o /home/thesim/log/outputjobevaluate%s%s%s%s.txt
 ulimit -v 16000000
-python scm.py  Solve %s YFix %s RQMC -n 5000 -p Fix -m SDDP --mipsetting Default --nrforward %s
-""" % (instance, nrback, nrforward, instance, nrback, nrforward))
+python scm.py  Solve %s YFix %s RQMC -n 5000 -p Fix -m SDDP --mipsetting %s --nrforward %s
+""" % (instance, nrback, setting, nrforward, instance, nrback, setting, nrforward))
     return qsub_filename
 
-def CreateMIPJob(instance):
-    qsub_filename = "./Jobs/job_mip_%s" % (instance)
+def CreateMIPJob(instance, scenariotree):
+    qsub_filename = "./Jobs/job_mip_%s_%s" % (instance, scenariotree)
     qsub_file = open(qsub_filename, 'w')
     CreatHeader(qsub_file)
     qsub_file.write("""
-#$ -o /home/thesim/log/outputjobevaluate%s.txt
+#$ -o /home/thesim/log/outputjobevaluate%s%s.txt
 ulimit -v 16000000
-python scm.py  Solve %s YFix 6400b RQMC -n 5000 -p Fix -m MIP 
-""" % (instance, instance))
+python scm.py  Solve %s YFix %s RQMC -n 5000 -p Fix -m MIP 
+""" % (instance, scenariotree, instance, scenariotree))
     return qsub_filename
 
 
-def CreatePHJob(instance):
-    qsub_filename = "./Jobs/job_ph_%s" % (instance)
+def CreatePHJob(instance, scenariotree):
+    qsub_filename = "./Jobs/job_ph_%s_%s" % (instance, scenariotree)
     qsub_file = open(qsub_filename, 'w')
     CreatHeader(qsub_file)
     qsub_file.write("""
-#$ -o /home/thesim/log/outputjobevaluateph%s.txt
+#$ -o /home/thesim/log/outputjobevaluateph%s%s.txt
 ulimit -v 16000000
-python scm.py  Solve %s YFix 6400b RQMC -n 5000 -p Fix -m PH 
-""" % (instance, instance))
+python scm.py  Solve %s YFix %s RQMC -n 5000 -p Fix -m PH 
+""" % (instance, scenariotree, instance, scenariotree))
     return qsub_filename
 
 if __name__ == "__main__":
@@ -94,12 +94,12 @@ if __name__ == "__main__":
 """)
 
         for instance in InstanceSet:
-           # for nrback in [10, 25, 50, 100, 200]:
-           #     for nrforward in [1, 2, 5, 10, 20, 50]:
-           nrback = 50
-           nrforward = 1
-           jobname = CreateSDDPJob(instance, nrback, nrforward)
-           filesddp.write("qsub %s \n" % (jobname) )
+           for nrback in [2, 5, 10]:
+                for setting in [ "Default", "NoFirstCuts", "NoEVPI", "NoStongCut", "NoSingleTree" ]:
+
+                    nrforward = 1
+                    jobname = CreateSDDPJob(instance, nrback, nrforward, setting)
+                    filesddp.write("qsub %s \n" % (jobname) )
 
 
     if sys.argv[1] == "MIP":
@@ -112,8 +112,9 @@ if __name__ == "__main__":
 """)
 
         for instance in InstanceSet:
-            jobname = CreateMIPJob(instance)
-            filemip.write("qsub %s \n" % (jobname) )
+            for scenariotree in ["all2", "all5", "all10"]:
+                jobname = CreateMIPJob(instance, scenariotree)
+                filemip.write("qsub %s \n" % (jobname) )
 
     if sys.argv[1] == "PH":
        # Create the sh file for resolution
@@ -125,5 +126,6 @@ if __name__ == "__main__":
 """)
 
         for instance in InstanceSet:
-            jobname = CreatePHJob(instance)
-            filemip.write("qsub %s \n" % (jobname) )
+            for scenariotree in ["all2", "all5", "all10"]:
+                jobname = CreatePHJob(instance, scenariotree)
+                filemip.write("qsub %s \n" % (jobname) )

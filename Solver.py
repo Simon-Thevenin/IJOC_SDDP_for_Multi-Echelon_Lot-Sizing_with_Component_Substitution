@@ -106,7 +106,8 @@ class Solver( object ):
         scenariotree = ScenarioTree(self.Instance, treestructur, self.TestIdentifier.ScenarioSeed,
                                     averagescenariotree=averagescenario,
                                     scenariogenerationmethod=self.ScenarioGeneration,
-                                    model=scenariotreemodel)
+                                    model=scenariotreemodel,
+                                    issymetric=(Constants.MIPBasedOnSymetricTree and scenariotreemodel == Constants.ModelYFix))
 
         scenarioset = scenariotree.GetAllScenarios(computeindex=False)
         print("********************Scenarios SAA*********************")
@@ -233,7 +234,7 @@ class Solver( object ):
             self.Instance.PrintInstance()
 
         methodtemp = self.TestIdentifier.Method
-        if self.TestIdentifier.Method == "MIP":
+        if self.TestIdentifier.Method == "MIP" :
             treestructure = [1, 200] + [1] * (self.Instance.NrTimeBucket - 1) + [0]
             self.TestIdentifier.Model = Constants.ModelYQFix
             chosengeneration = self.TestIdentifier.ScenarioSampling
@@ -243,6 +244,8 @@ class Solver( object ):
             self.ScenarioGeneration = chosengeneration
             self.TestIdentifier.Model = Constants.ModelYFix
             self.TestIdentifier.Method = methodtemp
+
+        if self.TestIdentifier.Method == "MIP":
 
             self.TreeStructure = self.GetTreeStructure()
             solution, mipsolver = self.MRP(self.TreeStructure, averagescenario=False, recordsolveinfo=True, warmstart=True)
@@ -328,8 +331,16 @@ class Solver( object ):
                 if nrtimebucketstochastic == 14:
                                 stochasticparttreestructure = [4, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
 
-            if self.TestIdentifier.NrScenario == "1010":
-                stochasticparttreestructure = [5, 5, 1, 1, 1]
+            if self.TestIdentifier.NrScenario == "all5":
+                stochasticparttreestructure = [5]*nrtimebucketstochastic
+
+
+            if self.TestIdentifier.NrScenario == "all1":
+                stochasticparttreestructure = [1] * nrtimebucketstochastic
+
+            if self.TestIdentifier.NrScenario == "all2":
+                stochasticparttreestructure = [2] * nrtimebucketstochastic
+
             if self.TestIdentifier.NrScenario == "6400b":
                 if nrtimebucketstochastic == 3:
                     stochasticparttreestructure = [50, 32, 4]

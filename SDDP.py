@@ -13,6 +13,7 @@ from SDDPUserCutCallBack import SDDPUserCutCallBack
 import numpy as np
 import math
 import time
+import random
 import copy
 
 # This class contains the attributes and methods allowing to define the SDDP algorithm.
@@ -51,10 +52,15 @@ class SDDP(object):
             else:
                 prevstage = stage.PreviousSDDPStage
                 stage.TimeDecisionStage = prevstage.TimeDecisionStage + len(prevstage.RangePeriodQty)
-            if stage.TimeDecisionStage + len(stage.RangePeriodQty) <= self.Instance.NrTimeBucketWithoutUncertaintyBefore +1:
+
+            if stage.TimeDecisionStage + max(len(stage.RangePeriodQty),1) <= self.Instance.NrTimeBucketWithoutUncertaintyBefore +1:
                 stage.FixedScenarioSet = [0]
             stage.ComputeVariableIndices()
+            stage.ComputeVariablePeriodsInLargeMIP()
 
+        self.AssociateDecisionAndStages()
+
+    def AssociateDecisionAndStages(self):
         self.ForwardStageWithBackOrderDec = [None for t in self.Instance.TimeBucketSet]
         for stage in self.ForwardStage:
             for tau in stage.RangePeriodEndItemInv:
@@ -86,6 +92,7 @@ class SDDP(object):
         self.CurrentIteration = 0
         self.CurrentLowerBound = 0
         self.BestUpperBound = Constants.Infinity
+        self.LastExpectedCostComputedOnAllScenario = Constants.Infinity
         self.CurrentUpperBound = Constants.Infinity
         self.VarianceForwardPass = -1
         self.StartOfAlsorithm = time.time()
@@ -135,7 +142,8 @@ class SDDP(object):
                     and self.CurrentIteration > 0 \
                     and self.CurrentIteration % 100 == 0 \
                     and (t >= 1 or not Constants.SDDPRunSigleTree):
-                        self.Stage[t].CleanCuts()
+                        self.ForwardStage[t].CleanCuts()
+                        self.BackwardStage[t].CleanCuts()
                         print("Clean cut Should not be used")
 
                 #Run the forward pass at each stage t
@@ -207,47 +215,71 @@ class SDDP(object):
 
         #Get the set of scenarios
         scenarioset = scenariotree.GetAllScenarios(computeindex=False)
-
-        #import matplotlib.pyplot as plt
-        #for p in self.Instance.ProductWithExternalDemand:
-        #    for t in self.Instance.TimeBucketSet:
-        #          pts = [s.Demands[t][p] for s in scenarioset]
-        #         print " CONSTRUCTING THE TREE The transformed point at dim %d at time %d : %r  " % (p, time, pts)
-        #          fig = plt.figure()
-        #          ax1 = fig.add_subplot(111)
-        #          plt.title("p:%r, t:%r, avg:%r, std:%r"%(p,t,self.Instance.ForecastedAverageDemand[t][p], self.Instance.ForcastedStandardDeviation[t][p]))
-        #          n, bins, patches = ax1.hist(pts, bins=100, normed=1, facecolor='green')
-        #          plt.show()
-
         return scenarioset
+
+    def GenerateSymetricTree(self, nrscenario, average=False):
+            if Constants.Debug:
+                print("Start generation of new scenarios")
+
+            # Generate a scenario tree
+            treestructure = [1] + [1] * self.Instance.NrTimeBucketWithoutUncertaintyBefore \
+                            + [nrscenario] * (self.Instance.NrTimeBucket - self.Instance.NrTimeBucketWithoutUncertaintyBefore) \
+                            + [0]
+
+            self.SAAScenarioTree = ScenarioTree(self.Instance, treestructure, self.CurrentScenarioSeed,
+                                        scenariogenerationmethod=self.ScenarioGenerationMethod,
+                                        averagescenariotree=average, model=Constants.ModelYFix,
+                                        issymetric=True)
+
+            self.CompleteSetOfSAAScenario = self.SAAScenarioTree.GetAllScenarios(computeindex=False)
+
+            self.NrSAAScenarioInPeriod = [ 1
+                                           if t < self.Instance.NrTimeBucketWithoutUncertaintyBefore
+                                           else
+                                           nrscenario
+                                           for t in self.Instance.TimeBucketSet]
+            self.SAAScenarioNrSetInPeriod = [range(self.NrSAAScenarioInPeriod[t]) for t in self.Instance.TimeBucketSet]
+
+            saascenario = [[[] for w in self.SAAScenarioNrSetInPeriod[t]] for t in self.Instance.TimeBucketSet]
+            saascenarioproba = [[-1 for w in self.SAAScenarioNrSetInPeriod[t]] for t in self.Instance.TimeBucketSet]
+
+            t = 0
+            rootofcurrentsubtree = self.SAAScenarioTree.RootNode.Branches[0]
+            while len(rootofcurrentsubtree.Branches) > 0:
+                for w in range(len(rootofcurrentsubtree.Branches)):
+                    saascenario[t][w] = rootofcurrentsubtree.Branches[w].Demand
+                    saascenarioproba[t][w] = rootofcurrentsubtree.Branches[w].Probability
+                rootofcurrentsubtree = rootofcurrentsubtree.Branches[0]
+                t = t + 1
+
+
+
+            return saascenario, saascenarioproba
 
     #This function generates the scenarios for the current iteration of the algorithm
     def GenerateTrialScenarios(self):
-
-         #self.CurrentIteration % 25 == 0
-
-        # if not self.IsIterationWithConvergenceTest:
-        #      self.CurrentSetOfTrialScenarios = self.SetOfSAAScenario
-        #      self.CurrentNrScenario = len(self.SetOfSAAScenario)
-        #
-        #      # Generate a scenario tree
-        #      treestructure = [1] + [2] * (self.Instance.NrTimeBucket ) + [0]
-        #
-        #      scenariotree = ScenarioTree(self.Instance, treestructure, 10,  # self.CurrentScenarioSeed,
-        #                                  scenariogenerationmethod=self.ScenarioGenerationMethod,
-        #                                  averagescenariotree=False, model=Constants.ModelYFix, generateasYQfix=True)
-        #
-        #      # Get the set of scenarios
-        #      scenarioset = scenariotree.GetAllScenarios(computeindex=False)
-        # else:
-        if self.IsIterationWithConvergenceTest:
-               self.CurrentNrScenario = self.SDDPNrScenarioTest
-        else:
+        if Constants.SDDPForwardPassInSAATree:
+            if self.IsIterationWithConvergenceTest:
+                self.CurrentSetOfTrialScenarios = self.CompleteSetOfSAAScenario
+            else:
                 self.CurrentNrScenario = self.CurrentForwardSampleSize
-        self.CurrentSetOfTrialScenarios = self.GenerateScenarios(self.CurrentNrScenario, average=Constants.SDDPDebugSolveAverage)
-        self.TrialScenarioNrSet = range(len(self.CurrentSetOfTrialScenarios))
-        self.CurrentNrScenario = len(self.CurrentSetOfTrialScenarios)
-        #Modify the number of scenario at each stage
+                self.CurrentSetOfTrialScenarios =[]
+                for w in range(self.CurrentNrScenario):
+                    selected = random.choice(self.CompleteSetOfSAAScenario)
+                    self.CurrentSetOfTrialScenarios.append(selected)
+
+            self.TrialScenarioNrSet = range(len(self.CurrentSetOfTrialScenarios))
+            self.CurrentNrScenario = len(self.CurrentSetOfTrialScenarios)
+            self.SDDPNrScenarioTest = self.CurrentNrScenario
+        else:
+            if self.IsIterationWithConvergenceTest:
+                   self.CurrentNrScenario = self.SDDPNrScenarioTest
+            else:
+                    self.CurrentNrScenario = self.CurrentForwardSampleSize
+            self.CurrentSetOfTrialScenarios = self.GenerateScenarios(self.CurrentNrScenario, average=Constants.SDDPDebugSolveAverage)
+            self.TrialScenarioNrSet = range(len(self.CurrentSetOfTrialScenarios))
+            self.CurrentNrScenario = len(self.CurrentSetOfTrialScenarios)
+            #Modify the number of scenario at each stage
         for stage in self.StagesSet:
             self.ForwardStage[stage].SetNrTrialScenario(self.CurrentNrScenario)
             self.ForwardStage[stage].FixedScenarioPobability = [1]
@@ -258,15 +290,18 @@ class SDDP(object):
     #This function generates the scenarios for the current iteration of the algorithm
     def GenerateSAAScenarios(self):
 
-        self.SetOfSAAScenario = self.GenerateScenarios(self.NrScenarioSAA, average=Constants.SDDPDebugSolveAverage)
-        self.SAAScenarioNrSet = range(len(self.SetOfSAAScenario))
-        self.NrScenarioSAA = len(self.SetOfSAAScenario)
+        #self.SetOfSAAScenario = self.GenerateScenarios(self.NrScenarioSAA, average=Constants.SDDPDebugSolveAverage)
+        self.SetOfSAAScenario, saascnarioproba = self.GenerateSymetricTree(self.NrScenarioSAA, average=Constants.SDDPDebugSolveAverage)
+
+        #self.NrScenarioSAA = len(self.SetOfSAAScenario)
         #Modify the number of scenario at each stage
         for stage in self.StagesSet:
+            time = self.BackwardStage[stage].TimeDecisionStage -1
+
             #self.BackwardStage[stage].SAAScenarioNrSet(len(self.CurrentSetOfTrialScenarios))
-            if self.BackwardStage[stage].TimeDecisionStage + len(self.BackwardStage[stage].RangePeriodQty) > self.Instance.NrTimeBucketWithoutUncertaintyBefore + 1:
-                self.BackwardStage[stage].FixedScenarioSet = self.SAAScenarioNrSet
-                self.BackwardStage[stage].FixedScenarioPobability = [w.Probability for w in self.SetOfSAAScenario]
+            if time + max(len(self.BackwardStage[stage].RangePeriodQty),1) >= self.Instance.NrTimeBucketWithoutUncertaintyBefore + 1:
+                self.BackwardStage[stage].FixedScenarioSet = self.SAAScenarioNrSetInPeriod[time]
+                self.BackwardStage[stage].FixedScenarioPobability = [saascnarioproba[time][w] for w in self.SAAScenarioNrSetInPeriod[time]]
                 self.BackwardStage[stage].SAAStageCostPerScenarioWithoutCostoGopertrial = [0 for w in self.TrialScenarioNrSet]
             else:
                 self.BackwardStage[stage].FixedScenarioSet = [0]
@@ -284,7 +319,7 @@ class SDDP(object):
     def GetQuantityFixedEarlier(self, product, time, scenario):
         forwardstage = self.ForwardStageWithQuantityDec[time]
         t = forwardstage.GetTimeIndexForQty(product, time)
-        if self.UseCorePoint:
+        if self.UseCorePoint and forwardstage.IsFirstStage():
             result = forwardstage.CorePointQuantityValues[scenario][t][product]
         else:
             result = forwardstage.QuantityValues[scenario][t][product]
@@ -303,7 +338,7 @@ class SDDP(object):
                 forwardstage = self.ForwardStageWithCompInvDec[time]
 
             t = forwardstage.GetTimeIndexForInv(product, time)
-            if self.UseCorePoint:
+            if self.UseCorePoint and forwardstage.IsFirstStage():
                 result = forwardstage.CorePointInventoryValue[scenario][t][product]
             else:
                 result = forwardstage.InventoryValue[scenario][t][product]
@@ -317,7 +352,7 @@ class SDDP(object):
         else:
             forwardstage = self.ForwardStageWithBackOrderDec[time]
             t = forwardstage.GetTimeIndexForBackorder(product, time)
-            if self.UseCorePoint:
+            if self.UseCorePoint and forwardstage.IsFirstStage():
                 result = forwardstage.CorePointBackorderValue[scenario][t][product]
             else:
                 result = forwardstage.BackorderValue[scenario][t][product]
@@ -378,9 +413,19 @@ class SDDP(object):
         convergencecriterionreached = convergencecriterion <= 1 \
                                       and delta <= Constants.AlgorithmOptimalityTolerence
 
+
+
         optimalitygapreached = (optimalitygap < Constants.AlgorithmOptimalityTolerence)
         iterationlimitreached = (self.CurrentIteration > Constants.SDDPIterationLimit)
-        result = ( self.IsIterationWithConvergenceTest and convergencecriterionreached) or timalimiteached or iterationlimitreached
+        result = ( self.IsIterationWithConvergenceTest and convergencecriterionreached) \
+                 or timalimiteached \
+                 or iterationlimitreached
+
+        if Constants.SDDPForwardPassInSAATree:
+            result = ( self.IsIterationWithConvergenceTest and optimalitygapreached) \
+                     or timalimiteached \
+                     or iterationlimitreached
+
         if Constants.PrintSDDPTrace:
             if self.IsIterationWithConvergenceTest:
                 self.WriteInTraceFile(
@@ -399,12 +444,17 @@ class SDDP(object):
             if self.IsIterationWithConvergenceTest:
                 self.SDDPNrScenarioTest += Constants.SDDPIncreaseNrScenarioTest
             self.LastIterationWithTest = self.CurrentIteration
-            self.IsIterationWithConvergenceTest = True
+
+            if Constants.SDDPForwardPassInSAATree and self.IsIterationWithConvergenceTest:
+                self.IsIterationWithConvergenceTest = False
+            else:
+                self.IsIterationWithConvergenceTest = True
             result = False
             self.GenerateTrialScenarios()
             self.ForwardPass()
             self.ComputeCost()
             self.UpdateUpperBound()
+            self.LastExpectedCostComputedOnAllScenario = self.CurrentExpvalueUpperBound
             result = self.CheckStoppingCriterion()
         else:
             self.IsIterationWithConvergenceTest = False
@@ -413,11 +463,15 @@ class SDDP(object):
         return result
 
     def CheckStoppingRelaxationCriterion(self, round):
+        duration = time.time() - self.StartOfAlsorithm
 
         optimalitygap = (self.CurrentExpvalueUpperBound - self.CurrentLowerBound)/self.CurrentExpvalueUpperBound
         optimalitygapreached = (optimalitygap < Constants.SDDPGapRelax)
         iterationlimitreached = (self.CurrentIteration > Constants.SDDPNrIterationRelax * round)
-        result = iterationlimitreached or optimalitygapreached
+        result = iterationlimitreached # or optimalitygapreached
+        self.WriteInTraceFile("Iteration: %d, Duration: %d, LB: %r, (exp UB:%r),  Gap: %r \n"
+                              % (self.CurrentIteration, duration, self.CurrentLowerBound, self.CurrentExpvalueUpperBound,
+                              optimalitygap,))
         return result
 
     #This funciton compute the solution of the scenario given in argument (used after to have run the algorithm, and the cost to go approximation are built)
@@ -430,6 +484,33 @@ class SDDP(object):
         self.TraceFile.write(string)
         self.TraceFile.close()
 
+    def SolveTwoStageHeuristic(self):
+
+        subsetofscenario =[]
+        for w in range(200):
+            selected = random.choice(self.CompleteSetOfSAAScenario)
+            subsetofscenario.append(selected)
+
+
+        treestructure = [1, len(subsetofscenario)] + [1] * (self.Instance.NrTimeBucket - 1) + [0]
+
+        scenariotree = ScenarioTree(self.Instance, treestructure, 0,
+                                    CopyscenariofromYFIX=True,
+                                    givenscenarioset=subsetofscenario)
+
+        mipsolver = MIPSolver(self.Instance, Constants.ModelYQFix, scenariotree)
+
+        mipsolver.BuildModel()
+        if Constants.Debug:
+            print("Start to solve instance %s with Cplex" % self.Instance.InstanceName)
+
+        solution = mipsolver.Solve()
+        self.HeuristicSetupValue = [[solution.Production[0][t][p]
+                                     for p in self.Instance.ProductSet]
+                                    for t in self.Instance.TimeBucketSet]
+
+
+
     #This function runs the SDDP algorithm
     def Run(self):
         if Constants.PrintSDDPTrace:
@@ -437,7 +518,8 @@ class SDDP(object):
 
             self.TraceFile.write("Start the SDDP algorithm \n")
             self.TraceFile.write("Use Papadakos method to generate strong cuts: %r \n"%Constants.GenerateStrongCut)
-            self.TraceFile.write("Generate a 10000 cuts with linear relaxation: %r \n"%Constants.SolveRelaxationFirst)
+            self.TraceFile.write("Generate  cuts with linear relaxation: %r \n"%Constants.SolveRelaxationFirst)
+            self.TraceFile.write("Generate  cuts with two-stage solution: %r \n" % Constants.SolveRelaxationFirst)
             self.TraceFile.write("Use valid inequalities: %r \n"%Constants.SDDPUseValidInequalities)
             self.TraceFile.write("Run SDDP in a single tree: %r \n"%Constants.SDDPRunSigleTree)
             self.TraceFile.close()
@@ -445,39 +527,57 @@ class SDDP(object):
        # print("Attention SDDP solve average")
 
         self.GenerateSAAScenarios()
+
+        if Constants.SDDPGenerateCutWith2Stage:
+            self.SolveTwoStageHeuristic()
+
+
+        createpreliminarycuts = Constants.SolveRelaxationFirst or Constants.SDDPGenerateCutWith2Stage
         round = 1
-        createpreliminarycuts = Constants.SolveRelaxationFirst
+        if not Constants.SolveRelaxationFirst:
+            round = 2
         ExitLoop = not createpreliminarycuts and Constants.SDDPRunSigleTree
         Stop = False
         while (not Stop or createpreliminarycuts) and not ExitLoop:
 
             if createpreliminarycuts and (Stop or self.CheckStoppingRelaxationCriterion(round) ):
                 round += 1
-                #if round < 3:
-                #    self.Stage[0].ChangeSetupToValueOfTwoStage()
-                #    self.WriteInTraceFile("Change stage 1 problem to heuristic solution \n")
-                #elif round == 3:
-                #    print("round3")
-                ExitLoop = Constants.SDDPRunSigleTree
-                #    print(ExitLoop)
-                createpreliminarycuts = False
-                self.CurrentUpperBound = Constants.Infinity
-                self.CurrentLowerBound = 0
-                if not ExitLoop:
-                    self.ForwardStage[0].ChangeSetupToBinary()
-                    self.WriteInTraceFile("Change stage 1 problem to integer \n")
+                if round < 3:
+                    self.ForwardStage[0].ChangeSetupToValueOfTwoStage()
+                    self.WriteInTraceFile("Change stage 1 problem to heuristic solution \n")
+                    self.CurrentUpperBound = Constants.Infinity
+                    self.LastExpectedCostComputedOnAllScenario = Constants.Infinity
+                    self.CurrentLowerBound = 0
+                else:
+                    #elif round == 3:
+                    #    print("round3")
+                    ExitLoop = Constants.SDDPRunSigleTree
+                    #    print(ExitLoop)
+                    createpreliminarycuts = False
+                    self.CurrentUpperBound = Constants.Infinity
+                    self.LastExpectedCostComputedOnAllScenario = Constants.Infinity
+                    self.CurrentLowerBound = 0
+                    #Make a convergence test after adding cuts of the two stage
+
+                    if not ExitLoop:
+                        self.ForwardStage[0].ChangeSetupToBinary()
+                        self.WriteInTraceFile("Change stage 1 problem to integer \n")
 
             #print("Attention uncomment")
             self.IsIterationWithConvergenceTest = False
+
             self.GenerateTrialScenarios()
 
             if Constants.Debug:
                 print("********************Scenarios Trial*********************")
                 for s in self.CurrentSetOfTrialScenarios:
                     print("Demands: %r" % s.Demands)
+
                 print("********************Scenarios SAA*********************")
-                for s in self.SetOfSAAScenario:
-                    print("Demands: %r" % s.Demands)
+                for t in self.Instance.TimeBucketSet:
+                    for w in self.SAAScenarioNrSetInPeriod[t]:
+                        print("SAA demand at stage %r in scenario %r: %r" % (t, w, self.SetOfSAAScenario[t][w]))
+
                 print("********************Scenarios EVPI*********************")
                 if Constants.SDDPUseEVPI and self.ForwardStage[0].EVPIScenarioSet is not None:
                     for s in self.ForwardStage[0].EVPIScenarioSet:
@@ -490,7 +590,8 @@ class SDDP(object):
             self.UpdateUpperBound()
             self.BackwardPass()
             self.CurrentIteration = self.CurrentIteration + 1
-            Stop = self.CheckStoppingCriterion()
+            if not createpreliminarycuts:
+                Stop = self.CheckStoppingCriterion()
             duration = time.time() - self.StartOfAlsorithm
             if self.CurrentForwardSampleSize < 10 and duration >= Constants.SDDPDurationBeforeIncreaseForwardSample:
                 self.CurrentForwardSampleSize = 10
@@ -516,41 +617,61 @@ class SDDP(object):
 
     # This function runs the SDDP algorithm
     def RunSingleTreeSDDP(self):
-        print("RunSingleTreeSDDP Should not be used")
 
         if not Constants.SolveRelaxationFirst:
             #run forward pass to create the MIPS
             Constants.SolveRelaxationFirst = True
+            self.GenerateTrialScenarios()
             self.ForwardPass()
             Constants.SolveRelaxationFirst = False
 
-        self.CopyFirstStage = SDDPStage(owner=self, decisionstage=0)
+        self.IsIterationWithConvergenceTest = True
+        self.GenerateTrialScenarios()
+        self.ForwardPass()
+        self.CheckStoppingCriterion()
+        self.BestUpperBound = self.LastExpectedCostComputedOnAllScenario
+
+        self.CopyFirstStage = SDDPStage(owner=self, decisionstage=0, fixedccenarioset=[0], isforward=True)
         self.CopyFirstStage.SetNrTrialScenario(len(self.CurrentSetOfTrialScenarios))
-        for cut in self.Stage[0].SDDPCuts:
-            cut.Stage = None
+        for cut in self.ForwardStage[0].SDDPCuts:
+            cut.ForwardStage = None
+            cut.BackwarStage = None
 
-        self.CopyFirstStage.SDDPCuts = copy.deepcopy(self.Stage[0].SDDPCuts)
+        self.CopyFirstStage.SDDPCuts = copy.deepcopy(self.ForwardStage[0].SDDPCuts)
 
-        for cut in self.Stage[0].SDDPCuts:
-            cut.Stage = self.Stage[0]
-
-        self.CopyFirstStage.DefineMIP(0)
+        for cut in self.ForwardStage[0].SDDPCuts:
+            cut.ForwardStage = self.ForwardStage[0]
+            cut.BackwarStage = self.ForwardStage[0]
 
         for cut in self.CopyFirstStage.SDDPCuts:
-            cut.Stage = self.CopyFirstStage
-            cut.AddCut()
+            cut.ForwardStage = self.CopyFirstStage
+            cut.BackwarStage = self.CopyFirstStage
 
+
+        self.CopyFirstStage.ComputeVariablePeriods()
+        self.CopyFirstStage.TimeDecisionStage = 0
+        self.CopyFirstStage.FixedScenarioSet = [0]
+        self.CopyFirstStage.FixedScenarioPobability = [1]
+        self.CopyFirstStage.ComputeVariableIndices()
+        self.CopyFirstStage.ComputeVariablePeriodsInLargeMIP()
+        self.CopyFirstStage.DefineMIP()
+
+        for cut in self.CopyFirstStage.SDDPCuts:
+            cut.ForwardStage = self.CopyFirstStage
+            cut.AddCut()
 
         self.CopyFirstStage.ChangeSetupToBinary()
 
         model_lazy = self.CopyFirstStage.Cplex.register_callback(SDDPCallBack)
         model_lazy.SDDPOwner = self
         model_lazy.Model = self.CopyFirstStage
+
+
        # model_usercut = self.CopyFirstStage.Cplex.register_callback(SDDPUserCutCallBack)
        # model_usercut.SDDPOwner = self
        # model_usercut.Model = self.CopyFirstStage
-
-        self.CopyFirstStage.Cplex.write("./Temp/MainModel.lp")
+        if Constants.Debug:
+            self.CopyFirstStage.Cplex.write("./Temp/MainModel.lp")
         cplexlogfilename = "./Temp/CPLEXLog_%s_%s.txt"%(self.Instance.InstanceName, self.TestIdentifier.MIPSetting)
         self.CopyFirstStage.Cplex.set_log_stream(cplexlogfilename)
         self.CopyFirstStage.Cplex.set_results_stream(cplexlogfilename)
@@ -559,8 +680,16 @@ class SDDP(object):
         if Constants.Debug:
             print("Start To solve the main tree")
         self.CopyFirstStage.Cplex.solve()
-
         self.WriteInTraceFile("End Solve in one tree cost: %r " % self.CopyFirstStage.Cplex.solution.get_objective_value())
+
+        self.ForwardStage[0] = self.CopyFirstStage
+
+        self.ForwardStage[0].SaveSolutionFromSol(self.ForwardStage[0].Cplex.solution)
+        self.ForwardStage[0].CopyDecisionOfScenario0ToAllScenario()
+        self.ForwardStage[0].Cplex.unregister_callback(SDDPCallBack)
+        self.LinkStages()
+
+
 
     def ComputeCost(self):
         for stage in self.ForwardStage:
@@ -568,7 +697,7 @@ class SDDP(object):
             #stage.PassCost = sum( stage.StageCostPerScenario[w] for w in self.ScenarioNrSet  ) / len(self.ScenarioNrSet)
 
     def SetCurrentBigM(self):
-       self.CurrentBigM =[MIPSolver.GetBigMValue(self.Instance, self.SetOfSAAScenario, p) for p in self.Instance.ProductSet]
+       self.CurrentBigM =[MIPSolver.GetBigMValue(self.Instance, self.CompleteSetOfSAAScenario, p) for p in self.Instance.ProductSet]
 
     def GetFileName(self):
         result ="./Solutions/SDDP_%s_%s_%s_Solution.sddp"%(self.Instance.InstanceName, self.StartingSeed, self.CurrentNrScenario)
@@ -587,7 +716,7 @@ class SDDP(object):
     def RecordSolveInfo(self):
         self.SolveInfo = [self.Instance.InstanceName,
                           "SDDP",
-                          self.CurrentUpperBound,
+                          self.LastExpectedCostComputedOnAllScenario,
                           self.CurrentLowerBound,
                           self.CurrentIteration,
                           time.time() - self.StartOfAlsorithm,
