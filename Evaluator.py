@@ -188,21 +188,7 @@ class Evaluator( object ):
     #This function runs the evaluation for the just completed test :
     def RunEvaluation(self):
         if Constants.LauchEvalAfterSolve:
-            policyset = ["S", "Re-solve"]
-
-            if self.TestIdentifier.NrScenario == "6400b" or self.TestIdentifier.Method == Constants.SDDP or self.TestIdentifier.Method == Constants.ProgressiveHedging:
-                policyset = ["Re-solve"]
-
-            if self.TestIdentifier.NrScenario == "6400c":
-                policyset = ["S"]
-
-            if self.TestIdentifier.Model == Constants.ModelYQFix \
-                    or Constants.IsDeterministic(self.TestIdentifier.Model)\
-                    or Constants.IsRule(self.TestIdentifier.Model):
-                    policyset = ["Fix", "Re-solve"]
-
-            if self.Instance.NrTimeBucket >= 10 and not self.TestIdentifier.Model == Constants.ModelHeuristicYFix:
-                policyset = ["Fix"]
+            policyset = ["Re-solve"]
 
             perfectsenarioset = [0]
             if self.Instance.Distribution == Constants.Binomial:
