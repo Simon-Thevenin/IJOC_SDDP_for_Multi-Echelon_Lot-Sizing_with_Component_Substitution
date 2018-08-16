@@ -109,10 +109,8 @@ class Solver( object ):
                                     model=scenariotreemodel,
                                     issymetric=(Constants.MIPBasedOnSymetricTree and scenariotreemodel == Constants.ModelYFix))
 
-        scenarioset = scenariotree.GetAllScenarios(computeindex=False)
-        print("********************Scenarios SAA*********************")
-        for s in scenarioset:
-            print("Demands: %r" % s.Demands)
+        #scenarioset = scenariotree.GetAllScenarios(computeindex=False)
+
 
         MIPModel = self.TestIdentifier.Model
         if self.TestIdentifier.Model == Constants.Average:
@@ -234,7 +232,7 @@ class Solver( object ):
             self.Instance.PrintInstance()
 
         methodtemp = self.TestIdentifier.Method
-        if self.TestIdentifier.Method == "MIP" :
+        if self.TestIdentifier.Method == "MIP":
             treestructure = [1, 200] + [1] * (self.Instance.NrTimeBucket - 1) + [0]
             self.TestIdentifier.Model = Constants.ModelYQFix
             chosengeneration = self.TestIdentifier.ScenarioSampling
@@ -254,8 +252,10 @@ class Solver( object ):
              self.SDDPSolver = SDDP(self.Instance, self.TestIdentifier)
              self.SDDPSolver.HeuristicSetupValue = self.GivenSetup
              self.SDDPSolver.Run()
-             solution = self.SDDPSolver.CreateSolutionAtFirstStage()
-
+             if Constants.PrintOnlyFirstStageDecision:
+                solution = self.SDDPSolver.CreateSolutionAtFirstStage()
+             else:
+                 solution = self.SDDPSolver.CreateSolutionOfAllInSampleScenario()
              if Constants.SDDPSaveInExcel:
                 self.SDDPSolver.SaveSolver()
 

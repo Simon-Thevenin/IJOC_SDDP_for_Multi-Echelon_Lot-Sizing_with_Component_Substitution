@@ -48,10 +48,10 @@ class Constants( object ):
     Debug = False
     PrintSolutionFileToExcel = False
     PrintDetailsExcelFiles = False
-    PrintOnlyFirstStageDecision = True
+    PrintOnlyFirstStageDecision = False
     RunEvaluationInSeparatedJob = False
     PrintScenarios = False
-    PrintSolutionFileInTMP = True
+    PrintSolutionFileInTMP = False
     LauchEvalAfterSolve = True
 
     #Code parameter

@@ -249,7 +249,7 @@ class ProgressiveHedging(object):
                 #print("Python Cost of the scenario %r, penalties %r " % (self.CurrentSolution[w].TotalCost, penalty))
                 #print("Cost in cplex %r, ignored constant %r " % (self.MIPSolvers[w].Cplex.solution.get_objective_value(), constant))
 
-                costwithconstant = self.MIPSolvers[w].Cplex.solution.get_objective_value() + constant
+                costwithconstant = self.MIPSolvers[0].Cplex.solution.get_objective_value() + constant
                 actualcostwithpenalty = self.CurrentSolution[w].TotalCost + penalty
 
                 print("cost with penalty from python %r / from cplex %r" % (actualcostwithpenalty, costwithconstant))

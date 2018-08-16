@@ -228,6 +228,8 @@ class Solution(object):
         self.IsSDDPSolution = instanceinfo.at['ISSDDPSolution', 0]
         self.CplexCost = instanceinfo.at['CplexCost', 0]
         self.CplexTime = instanceinfo.at['CplexTime', 0]
+        self.PHCost = instanceinfo.at['PH_Cost', 0]
+        self.PHNrIteration = instanceinfo.at['PH_NrIteration', 0]
         self.TotalTime = instanceinfo.at['TotalTime', 0]
         self.CplexGap = instanceinfo.at['CplexGap', 0]
         self.CplexNrConstraints = instanceinfo.at['CplexNrConstraints', 0]

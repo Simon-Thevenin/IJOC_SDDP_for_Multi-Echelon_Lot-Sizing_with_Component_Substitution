@@ -83,6 +83,9 @@ if __name__ == "__main__":
     InstanceSet = instancenameslist[0]
     instancetosolvename = ""
 
+    scenariotreeset = ["all2"]# ["all2", "all5", "allDIX"]
+    sddpnrbackset = [2] #[2, 5, 10]
+
     if sys.argv[1] == "SDDP":
         #settings = ["Default", "NoFirstCuts", "NoEVPI", "NoStongCut"]
         # Create the sh file for resolution
@@ -94,7 +97,7 @@ if __name__ == "__main__":
 """)
 
         for instance in InstanceSet:
-           for nrback in [2, 5, 10]:
+           for nrback in sddpnrbackset:
                 for setting in [ "Default", "NoFirstCuts", "NoEVPI", "NoStongCut", "NoSingleTree" ]:
 
                     nrforward = 1
@@ -112,7 +115,7 @@ if __name__ == "__main__":
 """)
 
         for instance in InstanceSet:
-            for scenariotree in ["all2", "all5", "all10"]:
+            for scenariotree in scenariotreeset:
                 jobname = CreateMIPJob(instance, scenariotree)
                 filemip.write("qsub %s \n" % (jobname) )
 
@@ -126,6 +129,6 @@ if __name__ == "__main__":
 """)
 
         for instance in InstanceSet:
-            for scenariotree in ["all2", "all5", "all10"]:
+            for scenariotree in scenariotreeset:
                 jobname = CreatePHJob(instance, scenariotree)
                 filemip.write("qsub %s \n" % (jobname) )

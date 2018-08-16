@@ -163,8 +163,8 @@ class Evaluator( object ):
             KPIStat = [sum(e) / len(e) for e in zip(*KPIStats)]
 
             self.OutOfSampleTestResult = evaluator.ComputeStatistic(EvaluationTab, ProbabilitiesTab, KPIStat, -1)
-            if self.TestIdentifier.Method == Constants.MIP and not self.TestIdentifier.EVPI:
-                self.InSampleTestResult = self.ComputeInSampleStatistis()
+            #if self.TestIdentifier.Method == Constants.MIP and not self.TestIdentifier.EVPI:
+            #    self.InSampleTestResult = self.ComputeInSampleStatistis()
             self.InSampleTestResult = self.ComputeInSampleStatistis()
             self.PrintFinalResult()
 

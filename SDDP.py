@@ -683,12 +683,16 @@ class SDDP(object):
         self.WriteInTraceFile("End Solve in one tree cost: %r " % self.CopyFirstStage.Cplex.solution.get_objective_value())
 
         self.ForwardStage[0] = self.CopyFirstStage
-
+        self.CurrentLowerBound = self.ForwardStage[0].Cplex.solution.get_objective_value()
         self.ForwardStage[0].SaveSolutionFromSol(self.ForwardStage[0].Cplex.solution)
         self.ForwardStage[0].CopyDecisionOfScenario0ToAllScenario()
         self.ForwardStage[0].Cplex.unregister_callback(SDDPCallBack)
-        self.LinkStages()
 
+        self.LinkStages()
+        #Make a last forward pass to find the optimal insample solution
+        self.IsIterationWithConvergenceTest = True
+        self.GenerateTrialScenarios()
+        self.ForwardPass()
 
 
     def ComputeCost(self):
@@ -770,8 +774,9 @@ class SDDP(object):
             solution.IsSDDPSolution = True
             solution.FixedQuantity = [[-1 for p in self.Instance.ProductSet] for t in self.Instance.TimeBucketSet]
 
+
             solution.SDDPLB = self.CurrentLowerBound
-            solution.SDDPExpUB = self.CurrentExpvalueUpperBound
+            solution.SDDPExpUB = self.LastExpectedCostComputedOnAllScenario
             solution.SDDPNrIteration = self.CurrentIteration
 
             return solution
@@ -814,6 +819,50 @@ class SDDP(object):
             solution.FixedQuantity = [[-1 for p in self.Instance.ProductSet] for t in self.Instance.TimeBucketSet]
 
             return solution
+
+    def CreateSolutionOfAllInSampleScenario(self):
+
+        completescenarioset = range(len(self.CompleteSetOfSAAScenario))
+        # Get the setup quantitities associated with the solultion
+        solproduction = [[[self.GetSetupFixedEarlier(p, t, scenario) for p in self.Instance.ProductSet]
+                          for t in self.Instance.TimeBucketSet] for scenario in completescenarioset]
+
+        solquantity = [[[self.GetQuantityFixedEarlier(p, t, scenario) for p in self.Instance.ProductSet] for t in
+                        self.Instance.TimeBucketSet] for scenario in completescenarioset]
+
+        solinventory = [[[self.GetInventoryFixedEarlier(p, t, scenario)
+
+                          for p in self.Instance.ProductSet]
+                         for t in self.Instance.TimeBucketSet] for scenario in completescenarioset]
+
+        solbackorder = [[[self.GetBackorderFixedEarlier(p, t, scenario)
+
+                          for p in self.Instance.ProductSet]
+                         for t in self.Instance.TimeBucketSet] for scenario in completescenarioset]
+
+        solconsumption = [[[[-1 for p in self.Instance.ProductSet] for q in self.Instance.ProductSet] for t in
+                           self.Instance.TimeBucketSet] for scenario in completescenarioset]
+        for scenario in completescenarioset:
+            for t in self.Instance.TimeBucketSet:
+                k = -1
+                for c in self.Instance.ConsumptionSet:
+                    k += 1
+
+                    stage = self.ForwardStageWithQuantityDec[t]
+                    tindex = stage.GetTimeIndexForQty(c[0], t)
+                    solconsumption[scenario][t][c[0]][c[1]] = stage.ConsumptionValues[scenario][tindex][k]
+
+        #emptyscenariotree = ScenarioTree(instance=self.Instance,
+        #                                 branchperlevel=[0, 0, 0, 0, 0],
+        #                                 seed=self.TestIdentifier.ScenarioSeed)  # instance = None, branchperlevel = [], seed = -1, mipsolver = None, evaluationscenario = False, averagescenariotree = False,  givenfirstperiod = [], scenariogenerationmethod = "MC", generateasYQfix = False, model = "YFix", CopyscenariofromYFIX=False ):
+
+        solution = Solution(self.Instance, solquantity, solproduction, solinventory, solbackorder, solconsumption,
+                            self.CompleteSetOfSAAScenario, self.SAAScenarioTree, partialsolution=False)
+
+        solution.IsSDDPSolution = False
+        solution.FixedQuantity = [[-1 for p in self.Instance.ProductSet] for t in self.Instance.TimeBucketSet]
+
+        return solution
 
     def GetSaveFileName(self):
         if Constants.PrintSolutionFileInTMP:
