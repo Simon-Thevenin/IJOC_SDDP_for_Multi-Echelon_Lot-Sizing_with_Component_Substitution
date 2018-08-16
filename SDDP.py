@@ -682,17 +682,23 @@ class SDDP(object):
         self.CopyFirstStage.Cplex.solve()
         self.WriteInTraceFile("End Solve in one tree cost: %r " % self.CopyFirstStage.Cplex.solution.get_objective_value())
 
-        self.ForwardStage[0] = self.CopyFirstStage
-        self.CurrentLowerBound = self.ForwardStage[0].Cplex.solution.get_objective_value()
-        self.ForwardStage[0].SaveSolutionFromSol(self.ForwardStage[0].Cplex.solution)
-        self.ForwardStage[0].CopyDecisionOfScenario0ToAllScenario()
-        self.ForwardStage[0].Cplex.unregister_callback(SDDPCallBack)
-
-        self.LinkStages()
-        #Make a last forward pass to find the optimal insample solution
+        for cut in self.CopyFirstStage.SDDPCuts:
+            self.ForwardStage[0].SDDPCuts.append(cut)
+            cut.ForwardStage = self.ForwardStage[0]
+            cut.AddCut()
         self.IsIterationWithConvergenceTest = True
         self.GenerateTrialScenarios()
         self.ForwardPass()
+
+        #self.ForwardStage[0] = self.CopyFirstStage
+        self.CurrentLowerBound = self.ForwardStage[0].Cplex.solution.get_objective_value()
+        self.ForwardStage[0].SaveSolutionFromSol(self.ForwardStage[0].Cplex.solution)
+        self.ForwardStage[0].CopyDecisionOfScenario0ToAllScenario()
+        #self.ForwardStage[0].Cplex.unregister_callback(SDDPCallBack)
+
+        #self.LinkStages()
+        #Make a last forward pass to find the optimal insample solution
+
 
 
     def ComputeCost(self):
@@ -861,6 +867,10 @@ class SDDP(object):
 
         solution.IsSDDPSolution = False
         solution.FixedQuantity = [[-1 for p in self.Instance.ProductSet] for t in self.Instance.TimeBucketSet]
+
+        solution.SDDPLB = self.CurrentLowerBound
+        solution.SDDPExpUB = self.LastExpectedCostComputedOnAllScenario
+        solution.SDDPNrIteration = self.CurrentIteration
 
         return solution
 

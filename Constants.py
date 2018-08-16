@@ -51,7 +51,7 @@ class Constants( object ):
     PrintOnlyFirstStageDecision = False
     RunEvaluationInSeparatedJob = False
     PrintScenarios = False
-    PrintSolutionFileInTMP = True
+    PrintSolutionFileInTMP = False
     LauchEvalAfterSolve = True
 
     #Code parameter
