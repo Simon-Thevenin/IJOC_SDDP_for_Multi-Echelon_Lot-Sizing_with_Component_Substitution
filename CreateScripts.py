@@ -152,7 +152,7 @@ if __name__ == "__main__":
 
         for instance in ["G0041111_NonStationary_b2_fe25_en_rk50_ll0_l20_HTrue6_c2",
                           "K0017311_NonStationary_b2_fe25_en_rk50_ll0_l20_HTrue6_c2"]:
-            for nrback in [5]:
+            for nrback in [4]:
                 for setting in ["Default"]:
                     nrforward = 1
                     jobname = CreateSDDPJob(instance, nrback, nrforward, setting)
@@ -167,7 +167,7 @@ if __name__ == "__main__":
 
         for instance in ["G0041111_NonStationary_b2_fe25_en_rk50_ll0_l20_HTrue6_c2",
                           "K0017311_NonStationary_b2_fe25_en_rk50_ll0_l20_HTrue6_c2"]:
-            for scenariotree in ["all5"]:
+            for scenariotree in ["all4"]:
                 jobname = CreateMIPJob(instance, scenariotree)
                 filemip.write("qsub %s \n" % (jobname))
 

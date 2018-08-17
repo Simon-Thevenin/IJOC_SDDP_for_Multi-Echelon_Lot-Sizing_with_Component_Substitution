@@ -340,6 +340,8 @@ class Solver( object ):
             if self.TestIdentifier.NrScenario == "all5":
                 stochasticparttreestructure = [5]*nrtimebucketstochastic
 
+            if self.TestIdentifier.NrScenario == "all4":
+                stochasticparttreestructure = [4] * nrtimebucketstochastic
 
             if self.TestIdentifier.NrScenario == "all1":
                 stochasticparttreestructure = [1] * nrtimebucketstochastic
