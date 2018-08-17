@@ -15,6 +15,7 @@ import math
 import time
 import random
 import copy
+import cplex
 
 # This class contains the attributes and methods allowing to define the SDDP algorithm.
 class SDDP(object):
@@ -136,6 +137,8 @@ class SDDP(object):
         self.TimeForwardNonTest = 0
 
         self.NrIterationWithoutLBImprovment = 0
+
+
 
     #This function make the forward pass of SDDP
     def ForwardPass(self, ignorefirststage = False):
@@ -395,6 +398,8 @@ class SDDP(object):
 
         if result <= self.CurrentLowerBound:
             self.NrIterationWithoutLBImprovment += 1
+        else:
+            NrIterationWithoutLBImprovment = 0
         self.CurrentLowerBound = result
 
     #This funciton update the upper bound based on the last forward pass
@@ -560,6 +565,7 @@ class SDDP(object):
             self.SolveTwoStageHeuristic()
 
 
+
         createpreliminarycuts = Constants.SolveRelaxationFirst or Constants.SDDPGenerateCutWith2Stage
         round = 1
         if not Constants.SolveRelaxationFirst:
@@ -584,7 +590,7 @@ class SDDP(object):
                     #    print(ExitLoop)
                     createpreliminarycuts = False
                     self.CurrentUpperBound = Constants.Infinity
-                    self.LastExpectedCostComputedOnAllScenario = Constants.Infinity
+                    #self.LastExpectedCostComputedOnAllScenario = Constants.Infinity
                     self.CurrentLowerBound = 0
                     self.NrIterationWithoutLBImprovment = 0
                     #Make a convergence test after adding cuts of the two stage
@@ -692,6 +698,16 @@ class SDDP(object):
 
         self.CopyFirstStage.ChangeSetupToBinary()
 
+        vars = []
+        righthandside = []
+        # Setup equal to the given ones
+        for p in self.Instance.ProductSet:
+            for t in self.Instance.TimeBucketSet:
+                    vars = vars + [self.CopyFirstStage.GetIndexProductionVariable(p,t)]
+                    righthandside = righthandside + [round(self.HeuristicSetupValue[t][p], 0)]
+        self.CopyFirstStage.Cplex.MIP_starts.add(cplex.SparsePair(vars, righthandside),
+                                                 self.CopyFirstStage.Cplex.MIP_starts.effort_level.solve_fixed)
+
         model_lazy = self.CopyFirstStage.Cplex.register_callback(SDDPCallBack)
         model_lazy.SDDPOwner = self
         model_lazy.Model = self.CopyFirstStage
@@ -707,6 +723,7 @@ class SDDP(object):
         self.CopyFirstStage.Cplex.set_results_stream(cplexlogfilename)
         self.CopyFirstStage.Cplex.set_warning_stream(cplexlogfilename)
         self.CopyFirstStage.Cplex.set_error_stream(cplexlogfilename)
+        self.CopyFirstStage.Cplex.parameters.mip.interval.set(1)
         if Constants.Debug:
             print("Start To solve the main tree")
         self.CopyFirstStage.Cplex.parameters.timelimit.set(Constants.AlgorithmTimeLimit)
@@ -736,6 +753,7 @@ class SDDP(object):
 
         #self.LinkStages()
         #Make a last forward pass to find the optimal insample solution
+
 
 
 

@@ -571,6 +571,7 @@ class MIPSolver(object):
          self.Cplex.MIP_starts.add(cplex.SparsePair(vars, righthandside), self.Cplex.MIP_starts.effort_level.solve_fixed )
 
 
+
     # Demand and materials requirement: set the value of the invetory level and backorder quantity according to
     #  the quantities produced and the demand
     def CreateFlowConstraints(self):

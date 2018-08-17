@@ -10,9 +10,15 @@ class SDDPCallBack(LazyConstraintCallback):
     def __call__(self):
         if Constants.Debug:
             print("Enter in the call back")
+        self.SDDPOwner.NrIterationWithoutLBImprovment = 0
         self.LastIterationWithTest = self.SDDPOwner.CurrentIteration
         self.UpdateSolutionOfFirstStage()
 
+        newsetup = [[self.Model.ProductionValue[0][t][p]
+                      for p in self.Model.Instance.ProductSet]
+                     for t in self.Model.Instance.TimeBucketSet]
+
+        samesetupasprevious = newsetup == self.SDDPOwner.HeuristicSetupValue
 
         self.SDDPOwner.HeuristicSetupValue = [[self.Model.ProductionValue[0][t][p]
                                                for p in self.Model.Instance.ProductSet]
@@ -21,8 +27,9 @@ class SDDPCallBack(LazyConstraintCallback):
 
         if Constants.PrintSDDPTrace:
             self.SDDPOwner.WriteInTraceFile("considered integer:%r \n"%self.Model.ProductionValue[0])
-            self.SDDPOwner.WriteInTraceFile("considered integer:%r \n"%self.Model.QuantityValues[0])
-
+            self.SDDPOwner.WriteInTraceFile("considered quantity:%r \n"%self.Model.QuantityValues[0])
+            self.SDDPOwner.WriteInTraceFile("Same setup as previous %r \n"%samesetupasprevious)
+            self.SDDPOwner.WriteInTraceFile("Current Cost in B&B %r \n" % self.get_objective_value())
         ShouldStop = False
         AddedCut = []
         AvgCostSubProb = []
@@ -52,7 +59,7 @@ class SDDPCallBack(LazyConstraintCallback):
              #self.SDDPOwner.CheckStoppingRelaxationCriterion(100000) # \
                         # or self.SDDPOwner.CurrentLowerBound > self.SDDPOwner.BestUpperBound
 
-            ShouldStop = UBequalLB or self.SDDPOwner.CurrentLowerBound > self.SDDPOwner.BestUpperBound
+            ShouldStop = UBequalLB or (self.SDDPOwner.CurrentLowerBound > self.SDDPOwner.BestUpperBound and not samesetupasprevious)
             #if Constants.PrintSDDPTrace:
             #    optimalitygap = (self.SDDPOwner.CurrentUpperBound - self.SDDPOwner.CurrentLowerBound)
             #    duration = time.time() - self.SDDPOwner.StartOfAlsorithm
