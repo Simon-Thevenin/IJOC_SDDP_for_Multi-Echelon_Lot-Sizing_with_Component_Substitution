@@ -195,8 +195,7 @@ if __name__ == "__main__":
            #
            """)
 
-        for instance in ["G0041111_NonStationary_b2_fe25_en_rk50_ll0_l20_HTrue6_c2",
-                         "K0017311_NonStationary_b2_fe25_en_rk50_ll0_l20_HFalse10_c2"]:
+        for instance in ["K0011111_NonStationary_b2_fe25_en_rk50_ll0_l20_HFalse_c2"]:
             for scenariotree in ["all15"]:
                 jobname = CreateMIPJob(instance, scenariotree)
                 filemip.write("qsub %s \n" % (jobname))
