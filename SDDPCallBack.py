@@ -21,6 +21,7 @@ class SDDPCallBack(LazyConstraintCallback):
 
         if Constants.PrintSDDPTrace:
             self.SDDPOwner.WriteInTraceFile("considered integer:%r \n"%self.Model.ProductionValue[0])
+            self.SDDPOwner.WriteInTraceFile("considered integer:%r \n"%self.Model.QuantityValues[0])
 
         ShouldStop = False
         AddedCut = []
@@ -46,7 +47,8 @@ class SDDPCallBack(LazyConstraintCallback):
 
             if self.SDDPOwner.LastExpectedCostComputedOnAllScenario < self.SDDPOwner.BestUpperBound:
                 self.SDDPOwner.BestUpperBound = self.SDDPOwner.LastExpectedCostComputedOnAllScenario
-                self.CurrentBestSetups = self.SDDPOwner.HeuristicSetupValue
+                self.SDDPOwner.CurrentBestSetups = self.SDDPOwner.HeuristicSetupValue
+                self.SDDPOwner.WriteInTraceFile("New Best Upper Bound!!!! :%r \n" % self.SDDPOwner.BestUpperBound)
              #self.SDDPOwner.CheckStoppingRelaxationCriterion(100000) # \
                         # or self.SDDPOwner.CurrentLowerBound > self.SDDPOwner.BestUpperBound
 

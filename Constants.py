@@ -89,6 +89,7 @@ class Constants( object ):
     SDDPNrEVPIScenario = 1
     SDDPDebugSolveAverage = False
     SDDPMinimumNrIterationBetweenTest = 100
+    SDDPNrItNoImproveLBBeforeTest = 10
     SDDPDurationBeforeIncreaseForwardSample = 3600
     SDDPSaveInExcel = False
 

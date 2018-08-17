@@ -557,14 +557,14 @@ class Instance(object):
     #       print "file %r not found" %(filepath)
 
     # This function read the instance from the file in folder ./Instances/
-    def ReadFromFile(self, instancename, distribution,  alternatestructure="Normal", longtimehoizon=False):
+    def ReadFromFile(self, instancename, distribution,  alternatestructure="Normal", longtimehoizon=False, longtimehorizonperiod = 10):
         if instancename[0] == "0":
             reader = InstanceReaderGrave(self)
         elif instancename[0] == "l":
             reader = InstanceReaderJDA(self)
         else:
             reader = InstanceReaderTemplemeier(self)
-        reader.ReadFromFile(instancename, distribution, longtimehoizon, alternatestructure)
+        reader.ReadFromFile(instancename, distribution, longtimehoizon, largetimehorizonperiod=longtimehorizonperiod, alternatetype=alternatestructure)
 
 
     # Save the scenario tree in a file

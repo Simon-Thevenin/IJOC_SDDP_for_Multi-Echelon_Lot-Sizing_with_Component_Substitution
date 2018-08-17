@@ -22,7 +22,7 @@ class InstanceReader(object):
     # b and lostsale are the cost structure (backlog cost are b*instentory costs, lost sale costs are lostsale*instentory costs
     # is the echelon inventory cost (n: normal, l: large increase at each echelon)
     # forecasterror and rateknown are parameter used to build the NonStationary distribution
-    def ReadFromFile(self, instancename, distribution="NonStationary", longtimehoizon=False, alternatetype = "Normal"):
+    def ReadFromFile(self, instancename, distribution="NonStationary", longtimehoizon=False, largetimehorizonperiod = 10, alternatetype = "Normal"):
             backlogcostmultiplier = 2
             forcasterror = 25
             e = "n"
@@ -31,10 +31,10 @@ class InstanceReader(object):
             lostsalecostmultiplier = 20
             capacityfactor = 2
 
-            self.Instance.InstanceName = "%s_%s_b%s_fe%s_e%s_rk%s_ll%s_l%s_H%s_c%s" % (
+            self.Instance.InstanceName = "%s_%s_b%s_fe%s_e%s_rk%s_ll%s_l%s_H%s%s_c%s" % (
                                                     instancename, distribution, backlogcostmultiplier, forcasterror,
                                                     e, rateknown, leadtimestructure, lostsalecostmultiplier,
-                                                    longtimehoizon, capacityfactor)
+                                                    longtimehoizon, largetimehorizonperiod, capacityfactor)
             self.Instance.Distribution = distribution
             self.Filename = instancename
             # Open the file, and read the product, requirement, and resources

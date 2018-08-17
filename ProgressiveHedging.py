@@ -87,7 +87,7 @@ class ProgressiveHedging(object):
         #mipset = self.ScenarioNrSet
         self.MIPSolvers = [MIPSolver(self.Instance, Constants.ModelYFix, self.SplitedScenarioTree[w],
                                      implicitnonanticipativity=True, yfixheuristic=self.SolveWithFixedSetup,
-                                     givensetups=self.GivenSetup)
+                                     givensetups=self.GivenSetup, logfile="NO")
                            for w in mipset]
 
         self.SetFixedUntil(self.FixedUntil)

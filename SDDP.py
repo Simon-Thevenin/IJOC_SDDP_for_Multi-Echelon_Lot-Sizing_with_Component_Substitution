@@ -131,9 +131,15 @@ class SDDP(object):
         self.HeuristicSetupValue = []
         self.LastIterationWithTest = 0
 
+        self.TimeBackward = 0
+        self.TimeForwardTest = 0
+        self.TimeForwardNonTest = 0
+
+        self.NrIterationWithoutLBImprovment = 0
 
     #This function make the forward pass of SDDP
     def ForwardPass(self, ignorefirststage = False):
+        start = time.time()
         if Constants.Debug:
             print("Start forward pass")
         for t in self.StagesSet:
@@ -153,11 +159,17 @@ class SDDP(object):
 
                 #try to use core point method, remove if it does not work
                 #if self.Stage[t].IsFirstStage()
+        end =  start = time.time()
+        duration = end-start
 
-
+        if self.IsIterationWithConvergenceTest:
+            self.TimeForwardNonTest += duration
+        else:
+            self.TimeForwardTest += duration
 
     #This function make the backward pass of SDDP
     def BackwardPass(self, returnfirststagecut=False):
+        start = time.time()
         if Constants.Debug:
             print("Start Backward pass")
 
@@ -196,6 +208,9 @@ class SDDP(object):
             firststagecuts, avgsubprobcosts = self.BackwardStage[t].GernerateCut(returncutinsteadofadd)
 
         self.UseCorePoint = False
+
+        end = start = time.time()
+        self.TimeBackward += (end - start)
 
         if returnfirststagecut:
             return firststagecuts, avgsubprobcosts
@@ -377,6 +392,9 @@ class SDDP(object):
     #This funciton update the lower bound based on the last forward pass
     def UpdateLowerBound(self):
         result = self.ForwardStage[0].PassCostWithAproxCosttoGo
+
+        if result <= self.CurrentLowerBound:
+            self.NrIterationWithoutLBImprovment += 1
         self.CurrentLowerBound = result
 
     #This funciton update the upper bound based on the last forward pass
@@ -392,9 +410,10 @@ class SDDP(object):
 
     #This function check if the stopping criterion of the algorithm is met
     def CheckStoppingCriterion(self):
+
         duration = time.time() - self.StartOfAlsorithm
         timalimiteached = (duration > Constants.AlgorithmTimeLimit)
-        optimalitygap = (self.CurrentUpperBound - self.CurrentLowerBound)/self.CurrentUpperBound
+        optimalitygap = (self.CurrentExpvalueUpperBound - self.CurrentLowerBound)/self.CurrentExpvalueUpperBound
         convergencecriterion = Constants.Infinity
         c = Constants.Infinity
         if self.CurrentLowerBound > 0:
@@ -440,7 +459,11 @@ class SDDP(object):
 
         if not result and convergencecriterion <= 1 \
             and (self.IsIterationWithConvergenceTest \
-                or ((self.CurrentIteration - self.LastIterationWithTest) > Constants.SDDPMinimumNrIterationBetweenTest)):
+                or ((not Constants.SDDPForwardPassInSAATree)
+                     and ((self.CurrentIteration - self.LastIterationWithTest) > Constants.SDDPMinimumNrIterationBetweenTest))
+
+                 or (Constants.SDDPForwardPassInSAATree
+                         and (self.NrIterationWithoutLBImprovment) > Constants.SDDPNrItNoImproveLBBeforeTest)):
 
             if self.IsIterationWithConvergenceTest:
                 self.SDDPNrScenarioTest += Constants.SDDPIncreaseNrScenarioTest
@@ -460,6 +483,8 @@ class SDDP(object):
         else:
             self.IsIterationWithConvergenceTest = False
             #self.SDDPNrScenarioTest = Constants.SDDPInitNrScenarioTest
+
+        duration = time.time() - self.StartOfAlsorithm
 
         return result
 
@@ -551,6 +576,7 @@ class SDDP(object):
                     self.CurrentUpperBound = Constants.Infinity
                     self.LastExpectedCostComputedOnAllScenario = Constants.Infinity
                     self.CurrentLowerBound = 0
+                    self.NrIterationWithoutLBImprovment = 0
                 else:
                     #elif round == 3:
                     #    print("round3")
@@ -560,6 +586,7 @@ class SDDP(object):
                     self.CurrentUpperBound = Constants.Infinity
                     self.LastExpectedCostComputedOnAllScenario = Constants.Infinity
                     self.CurrentLowerBound = 0
+                    self.NrIterationWithoutLBImprovment = 0
                     #Make a convergence test after adding cuts of the two stage
 
                     if not ExitLoop:
@@ -682,6 +709,9 @@ class SDDP(object):
         self.CopyFirstStage.Cplex.set_error_stream(cplexlogfilename)
         if Constants.Debug:
             print("Start To solve the main tree")
+        self.CopyFirstStage.Cplex.parameters.timelimit.set(Constants.AlgorithmTimeLimit)
+        self.CopyFirstStage.Cplex.parameters.mip.limits.treememory.set(700000000.0)
+        self.CopyFirstStage.Cplex.parameters.threads.set(1)
         self.CopyFirstStage.Cplex.solve()
         self.WriteInTraceFile("End Solve in one tree cost: %r " % self.CopyFirstStage.Cplex.solution.get_objective_value())
 
@@ -697,6 +727,7 @@ class SDDP(object):
         self.ComputeCost()
         #self.ForwardStage[0] = self.CopyFirstStage
         self.CurrentLowerBound = self.ForwardStage[0].Cplex.solution.get_objective_value()
+        self.NrIterationWithoutLBImprovment = 0
         self.UpdateUpperBound()
         self.LastExpectedCostComputedOnAllScenario = self.CurrentExpvalueUpperBound
         self.ForwardStage[0].SaveSolutionFromSol(self.ForwardStage[0].Cplex.solution)
@@ -792,6 +823,11 @@ class SDDP(object):
             solution.SDDPExpUB = self.LastExpectedCostComputedOnAllScenario
             solution.SDDPNrIteration = self.CurrentIteration
 
+            solution.SDDPTimeBackward = self.TimeBackward
+            solution.SDDPTimeForwardNoTest = self.TimeForwardNonTest
+            solution.SDDPTimeForwardTest = self.TimeForwardTest
+
+
             return solution
 
 
@@ -850,7 +886,7 @@ class SDDP(object):
 
         solbackorder = [[[self.GetBackorderFixedEarlier(p, t, scenario)
 
-                          for p in self.Instance.ProductSet]
+                          for p in self.Instance.ProductWithExternalDemand]
                          for t in self.Instance.TimeBucketSet] for scenario in completescenarioset]
 
         solconsumption = [[[[-1 for p in self.Instance.ProductSet] for q in self.Instance.ProductSet] for t in
@@ -878,7 +914,10 @@ class SDDP(object):
         solution.SDDPLB = self.CurrentLowerBound
         solution.SDDPExpUB = self.LastExpectedCostComputedOnAllScenario
         solution.SDDPNrIteration = self.CurrentIteration
-
+        solution.SDDPTimeBackward = self.TimeBackward
+        solution.SDDPTimeForwardNoTest = self.TimeForwardNonTest
+        solution.SDDPTimeForwardTest = self.TimeForwardTest
+        
         return solution
 
     def GetSaveFileName(self):

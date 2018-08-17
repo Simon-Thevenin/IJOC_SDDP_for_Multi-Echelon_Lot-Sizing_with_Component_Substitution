@@ -1457,7 +1457,7 @@ class MIPSolver(object):
         self.Cplex.solve()
         nrvariable= -1
         nrconstraints = -1
-        if  not self.EvaluateSolution and not self.EVPI:
+        if  not self.EvaluateSolution and not self.EVPI and self.logfilename <> "NO":
             nrvariable, nrconstraints = self.ReadNrVariableConstraint(Constants.GetPathCPLEXLog()+"/%s.txt" % self.logfilename)
 
         buildtime = end_modeling - start_time

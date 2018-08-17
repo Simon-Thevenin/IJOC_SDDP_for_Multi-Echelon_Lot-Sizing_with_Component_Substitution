@@ -4,6 +4,7 @@ from InstanceReader import InstanceReader
 from Constants import Constants
 import csv
 import math
+import numpy as np
 
 
 class InstanceReaderTemplemeier(InstanceReader):
@@ -145,7 +146,7 @@ class InstanceReaderTemplemeier(InstanceReader):
 
 
 
-    def GenerateTimeHorizon(self, largetimehorizon = False):
+    def GenerateTimeHorizon(self, largetimehorizon = False, largetimehorizonperiod=10):
         self.Instance.ComputeLevel()
         self.Instance.ComputeMaxLeadTime()
         self.Instance.ComputeIndices()
@@ -156,7 +157,7 @@ class InstanceReaderTemplemeier(InstanceReader):
 
         # Consider a time horizon of 20 days plus the total lead time
         if largetimehorizon:
-            self.Instance.NrTimeBucket = self.Instance.NrTimeBucketWithoutUncertaintyBefore + self.Instance.NrTimeBucketWithoutUncertaintyAfter + 10
+            self.Instance.NrTimeBucket = self.Instance.NrTimeBucketWithoutUncertaintyBefore + self.Instance.NrTimeBucketWithoutUncertaintyAfter + largetimehorizonperiod
 
         self.Instance.ComputeIndices()
 
@@ -190,7 +191,7 @@ class InstanceReaderTemplemeier(InstanceReader):
                     coefficientofvariation = float(self.Filename[3])/10.0
 
                     #generate the demand following a normal distribution and the coefficient of variation
-                    self.Instance.ForecastedAverageDemand = [[ np.floor( np.random.normal(self.Instance.YearlyAverageDemand[p],
+                    self.Instance.ForecastedAverageDemand = [[np.floor(np.random.normal(self.Instance.YearlyAverageDemand[p],
                                                                                          coefficientofvariation * self.Instance.YearlyAverageDemand[p], 1).clip( min=0.0)).tolist()[0]
                                                               if self.Instance.YearlyAverageDemand[p] > 0 and t >= self.Instance.NrTimeBucketWithoutUncertaintyBefore
                                                               else 0

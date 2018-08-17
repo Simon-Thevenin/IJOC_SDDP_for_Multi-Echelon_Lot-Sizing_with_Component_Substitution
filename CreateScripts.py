@@ -86,6 +86,8 @@ if __name__ == "__main__":
     scenariotreeset = ["all2", "all5", "allDIX"]
     sddpnrbackset = [2, 5, 10]
 
+
+
     if sys.argv[1] == "SDDP":
         #settings = ["Default", "NoFirstCuts", "NoEVPI", "NoStongCut"]
         # Create the sh file for resolution
@@ -104,6 +106,100 @@ if __name__ == "__main__":
                     jobname = CreateSDDPJob(instance, nrback, nrforward, setting)
                     filesddp.write("qsub %s \n" % (jobname) )
 
+    if sys.argv[1] == "NST":
+        # settings = ["Default", "NoFirstCuts", "NoEVPI", "NoStongCut"]
+        # Create the sh file for resolution
+        filesddpname = "runallsddp.sh"
+        filesddp = open(filesddpname, 'w')
+        filesddp.write("""
+    #!/bin/bash -l
+    #
+    """)
+
+        for instance in InstanceSet:
+            for nrback in sddpnrbackset:
+                for setting in [ "NoSingleTree"]:
+                    nrforward = 1
+                    jobname = CreateSDDPJob(instance, nrback, nrforward, setting)
+                    filesddp.write("qsub %s \n" % (jobname))
+
+    if sys.argv[1] == "0102":
+        # settings = ["Default", "NoFirstCuts", "NoEVPI", "NoStongCut"]
+        # Create the sh file for resolution
+        filesddpname = "runallsddp.sh"
+        filesddp = open(filesddpname, 'w')
+        filesddp.write("""
+      #!/bin/bash -l
+      #
+      """)
+
+        for instance in ["01_NonStationary_b2_fe25_en_rk50_ll0_l20_HFalse_c2", "02_NonStationary_b2_fe25_en_rk50_ll0_l20_HFalse_c2"]:
+            for nrback in sddpnrbackset:
+                for setting in [ "Default", "NoFirstCuts", "NoEVPI", "NoStongCut", "NoSingleTree" ]:
+                    nrforward = 1
+                    jobname = CreateSDDPJob(instance, nrback, nrforward, setting)
+                    filesddp.write("qsub %s \n" % (jobname))
+
+    if sys.argv[1] == "LT":
+        # settings = ["Default", "NoFirstCuts", "NoEVPI", "NoStongCut"]
+        # Create the sh file for resolution
+        filesddpname = "runallsddp.sh"
+        filesddp = open(filesddpname, 'w')
+        filesddp.write("""
+        #!/bin/bash -l
+        #
+        """)
+
+        for instance in ["G0041111_NonStationary_b2_fe25_en_rk50_ll0_l20_HTrue6_c2",
+                          "K0017311_NonStationary_b2_fe25_en_rk50_ll0_l20_HTrue6_c2"]:
+            for nrback in [5]:
+                for setting in ["Default"]:
+                    nrforward = 1
+                    jobname = CreateSDDPJob(instance, nrback, nrforward, setting)
+                    filesddp.write("qsub %s \n" % (jobname))
+
+        filemipname = "runallmip.sh"
+        filemip = open(filemipname, 'w')
+        filemip.write("""
+        #!/bin/bash -l
+        #
+        """)
+
+        for instance in ["G0041111_NonStationary_b2_fe25_en_rk50_ll0_l20_HTrue6_c2",
+                          "K0017311_NonStationary_b2_fe25_en_rk50_ll0_l20_HTrue6_c2"]:
+            for scenariotree in ["all5"]:
+                jobname = CreateMIPJob(instance, scenariotree)
+                filemip.write("qsub %s \n" % (jobname))
+
+    if sys.argv[1] == "15":
+        # settings = ["Default", "NoFirstCuts", "NoEVPI", "NoStongCut"]
+        # Create the sh file for resolution
+        filesddpname = "runallsddp.sh"
+        filesddp = open(filesddpname, 'w')
+        filesddp.write("""
+           #!/bin/bash -l
+           #
+           """)
+
+        for instance in ["K0011111_NonStationary_b2_fe25_en_rk50_ll0_l20_HFalse_c2"]:
+            for nrback in [15]:
+                for setting in ["Default"]:
+                    nrforward = 1
+                    jobname = CreateSDDPJob(instance, nrback, nrforward, setting)
+                    filesddp.write("qsub %s \n" % (jobname))
+
+        filemipname = "runallmip.sh"
+        filemip = open(filemipname, 'w')
+        filemip.write("""
+           #!/bin/bash -l
+           #
+           """)
+
+        for instance in ["G0041111_NonStationary_b2_fe25_en_rk50_ll0_l20_HTrue6_c2",
+                         "K0017311_NonStationary_b2_fe25_en_rk50_ll0_l20_HFalse10_c2"]:
+            for scenariotree in ["all15"]:
+                jobname = CreateMIPJob(instance, scenariotree)
+                filemip.write("qsub %s \n" % (jobname))
 
     if sys.argv[1] == "MIP":
        # Create the sh file for resolution

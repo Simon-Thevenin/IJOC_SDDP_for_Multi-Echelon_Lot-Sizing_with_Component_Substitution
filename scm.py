@@ -125,7 +125,9 @@ def GenerateInstances():
         instance.SaveCompleteInstanceInExelFile()
         instancecreated = instancecreated + [instance.InstanceName]
 
-
+        instance.ReadFromFile(name, "NonStationary", "Normal", longtimehoizon=True, longtimehorizonperiod = 6)
+        instance.SaveCompleteInstanceInExelFile()
+        instancecreated = instancecreated + [instance.InstanceName]
 
 
     csvfile = open("./Instances/InstancesToSolve.csv", 'wb')
