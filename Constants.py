@@ -51,7 +51,7 @@ class Constants( object ):
     PrintOnlyFirstStageDecision = False
     RunEvaluationInSeparatedJob = False
     PrintScenarios = False
-    PrintSolutionFileInTMP = False
+    PrintSolutionFileInTMP = True
     LauchEvalAfterSolve = True
 
     #Code parameter
@@ -64,7 +64,7 @@ class Constants( object ):
     SDDPIterationLimit = 100000
     SDDPPrintDebugLPFiles = False
     PrintSDDPTrace = True
-    GenerateStrongCut = False
+    GenerateStrongCut = True
     SDDPRunSigleTree = True
 
     #SDDPNrScenarioForwardPass = 10

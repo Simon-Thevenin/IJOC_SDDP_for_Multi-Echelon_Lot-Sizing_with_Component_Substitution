@@ -93,6 +93,7 @@ class SDDP(object):
         self.CurrentLowerBound = 0
         self.BestUpperBound = Constants.Infinity
         self.LastExpectedCostComputedOnAllScenario = Constants.Infinity
+        self.CurrentBestSetups = []
         self.CurrentUpperBound = Constants.Infinity
         self.VarianceForwardPass = -1
         self.StartOfAlsorithm = time.time()
@@ -509,6 +510,8 @@ class SDDP(object):
                                      for p in self.Instance.ProductSet]
                                     for t in self.Instance.TimeBucketSet]
 
+        self.CurrentBestSetups = self.HeuristicSetupValue
+
 
 
     #This function runs the SDDP algorithm
@@ -682,18 +685,22 @@ class SDDP(object):
         self.CopyFirstStage.Cplex.solve()
         self.WriteInTraceFile("End Solve in one tree cost: %r " % self.CopyFirstStage.Cplex.solution.get_objective_value())
 
-        for cut in self.CopyFirstStage.SDDPCuts:
-            self.ForwardStage[0].SDDPCuts.append(cut)
-            cut.ForwardStage = self.ForwardStage[0]
-            cut.AddCut()
+        #for cut in self.CopyFirstStage.SDDPCuts:
+        #    self.ForwardStage[0].SDDPCuts.append(cut)
+        #    cut.ForwardStage = self.ForwardStage[0]
+        #    cut.AddCut()
         self.IsIterationWithConvergenceTest = True
         self.GenerateTrialScenarios()
+        self.HeuristicSetupValue = self.CurrentBestSetups
+        self.ForwardStage[0].ChangeSetupToValueOfTwoStage()
         self.ForwardPass()
-
+        self.ComputeCost()
         #self.ForwardStage[0] = self.CopyFirstStage
         self.CurrentLowerBound = self.ForwardStage[0].Cplex.solution.get_objective_value()
+        self.UpdateUpperBound()
+        self.LastExpectedCostComputedOnAllScenario = self.CurrentExpvalueUpperBound
         self.ForwardStage[0].SaveSolutionFromSol(self.ForwardStage[0].Cplex.solution)
-        self.ForwardStage[0].CopyDecisionOfScenario0ToAllScenario()
+        #self.ForwardStage[0].CopyDecisionOfScenario0ToAllScenario()
         #self.ForwardStage[0].Cplex.unregister_callback(SDDPCallBack)
 
         #self.LinkStages()

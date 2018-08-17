@@ -83,8 +83,8 @@ if __name__ == "__main__":
     InstanceSet = instancenameslist[0]
     instancetosolvename = ""
 
-    scenariotreeset = ["all2"]# ["all2", "all5", "allDIX"]
-    sddpnrbackset = [2] #[2, 5, 10]
+    scenariotreeset = ["all2", "all5", "allDIX"]
+    sddpnrbackset = [2, 5, 10]
 
     if sys.argv[1] == "SDDP":
         #settings = ["Default", "NoFirstCuts", "NoEVPI", "NoStongCut"]

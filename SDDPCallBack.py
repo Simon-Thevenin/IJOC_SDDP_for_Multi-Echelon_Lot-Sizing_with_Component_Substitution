@@ -46,6 +46,7 @@ class SDDPCallBack(LazyConstraintCallback):
 
             if self.SDDPOwner.LastExpectedCostComputedOnAllScenario < self.SDDPOwner.BestUpperBound:
                 self.SDDPOwner.BestUpperBound = self.SDDPOwner.LastExpectedCostComputedOnAllScenario
+                self.CurrentBestSetups = self.SDDPOwner.HeuristicSetupValue
              #self.SDDPOwner.CheckStoppingRelaxationCriterion(100000) # \
                         # or self.SDDPOwner.CurrentLowerBound > self.SDDPOwner.BestUpperBound
 

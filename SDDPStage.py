@@ -178,11 +178,15 @@ class SDDPStage(object):
 
     #Compute the cost of the stage at the current iteration
     def ComputePassCost(self):
-        self.PassCost = sum(self.PartialCostPerScenario[w] for w in self.TrialScenarioNrSet) \
-                        / self.NrTrialScenario
+        totalproba = sum(self.SDDPOwner.CurrentSetOfTrialScenarios[w].Probability
+                            for w in self.TrialScenarioNrSet)
+        self.PassCost = sum(self.PartialCostPerScenario[w] * self.SDDPOwner.CurrentSetOfTrialScenarios[w].Probability
+                            for w in self.TrialScenarioNrSet) / totalproba
+
 
         self.PassCostWithAproxCosttoGo = sum(self.StageCostPerScenarioWithCostoGo[w]
-                                             for w in self.TrialScenarioNrSet) / self.NrTrialScenario
+                                             * self.SDDPOwner.CurrentSetOfTrialScenarios[w].Probability
+                                             for w in self.TrialScenarioNrSet) / totalproba
 
     #This function modify the number of scenario in the stage
     def SetNrTrialScenario(self, nrscenario):
@@ -1089,16 +1093,17 @@ class SDDPStage(object):
             if Constants.SolveRelaxationFirst:
                 self.Cplex.variables.add(obj=[math.pow(self.Instance.Gamma, t)
                                                        * self.Instance.SetupCosts[p]
-                                              for t in self.Instance.TimeBucketSet
-                                              for p in self.Instance.ProductSet],
+
+                                              for p in self.Instance.ProductSet
+                                              for t in self.Instance.TimeBucketSet],
                                          lb=[0.0] * self.NrProductionVariable,
                                          ub=[1.0] * self.NrProductionVariable)
                                                     #types=['B'] * self.NrProductionVariable)
             else:
                 self.Cplex.variables.add(obj=[math.pow(self.Instance.Gamma, t)
                                               * self.Instance.SetupCosts[p]
-                                              for t in self.Instance.TimeBucketSet
-                                              for p in self.Instance.ProductSet],
+                                              for p in self.Instance.ProductSet
+                                              for t in self.Instance.TimeBucketSet],
                                          types=['B'] * self.NrProductionVariable)
 
 
@@ -1127,10 +1132,6 @@ class SDDPStage(object):
         self.Cplex.variables.add(obj=[math.pow(self.Instance.Gamma, self.GetTimePeriodAssociatedToInventoryVariable(p,t))
                                       * self.FixedScenarioPobability[w]
                                       * self.Instance.InventoryCosts[p]
-                                     if self.Instance.HasExternalDemand[p]
-                                     else math.pow(self.Instance.Gamma, self.DecisionStage)
-                                           * self.Instance.InventoryCosts[p]
-                                           * self.FixedScenarioPobability[w]
                                       for t in self.RangePeriodInv
                                       for w in self.FixedScenarioSet
                                       for p in self.GetProductWithStockVariable(t)],
