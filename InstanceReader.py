@@ -49,7 +49,7 @@ class InstanceReader(object):
             self.CreateLeadTime(leadtimestructure)
             self.GenerateHoldingCostCost(e)
             self.Instance.ComputeMaxLeadTime()
-            self.GenerateTimeHorizon(longtimehoizon)
+            self.GenerateTimeHorizon(longtimehoizon, largetimehorizonperiod=largetimehorizonperiod)
             self.GenerateDistribution(float(forcasterror / 100.0), float(rateknown / 100.0),
                                       longtimehorizon=longtimehoizon)
             self.ComputeAverageDependentDemand()

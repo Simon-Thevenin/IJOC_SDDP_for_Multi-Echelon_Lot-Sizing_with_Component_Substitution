@@ -83,8 +83,8 @@ if __name__ == "__main__":
     InstanceSet = instancenameslist[0]
     instancetosolvename = ""
 
-    scenariotreeset = ["all2", "all5", "allDIX"]
-    sddpnrbackset = [2, 5, 10]
+    scenariotreeset = ["all2"]#, "all5", "allDIX", "all20"]
+    sddpnrbackset = [2]#, 5, 10, 20]
 
 
 
@@ -100,7 +100,7 @@ if __name__ == "__main__":
 
         for instance in InstanceSet:
            for nrback in sddpnrbackset:
-                for setting in [ "Default", "NoFirstCuts", "NoEVPI", "NoStongCut", "NoSingleTree" ]:
+                for setting in [ "Default", "NoFirstCuts", "NoEVPI", "NoStongCut", "NoSingleTree", "WithLPTree", "WithFixedSetups" ]:
 
                     nrforward = 1
                     jobname = CreateSDDPJob(instance, nrback, nrforward, setting)

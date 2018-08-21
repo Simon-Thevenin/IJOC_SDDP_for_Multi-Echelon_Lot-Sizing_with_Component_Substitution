@@ -4,6 +4,9 @@ from cplex.callbacks import LazyConstraintCallback
 #from cplex.callbacks import UserCutCallback
 import copy
 import time
+from ScenarioTree import ScenarioTree
+from MIPSolver import MIPSolver
+import random
 
 class SDDPCallBack(LazyConstraintCallback):
 #class SDDPCallBack(UserCutCallback):
@@ -31,26 +34,35 @@ class SDDPCallBack(LazyConstraintCallback):
             self.SDDPOwner.WriteInTraceFile("Same setup as previous %r \n"%samesetupasprevious)
             self.SDDPOwner.WriteInTraceFile("Current Cost in B&B %r \n" % self.get_objective_value())
         ShouldStop = False
+        firstiteration =True
         AddedCut = []
         AvgCostSubProb = []
         while not ShouldStop:
             #print("attention uncoment")
 
-            self.SDDPOwner.GenerateTrialScenarios()
-            self.SDDPOwner.ForwardPass(ignorefirststage=False)
+
+            if firstiteration and Constants.SDDPFirstForwardWithEVPI:
+                solution = self.SolveForwardAsEVPI()
+            else:
+                self.SDDPOwner.CurrentForwardSampleSize = 1
+                self.SDDPOwner.GenerateTrialScenarios()
+                self.SDDPOwner.ForwardPass(ignorefirststage=False)
             FirstStageCuts, avgsubprobcosts = self.SDDPOwner.BackwardPass(returnfirststagecut=True)
-
-
             AddedCut = AddedCut + FirstStageCuts
             avgsubprobcosts = AvgCostSubProb + avgsubprobcosts
 
             self.SDDPOwner.CurrentIteration += 1
-
             self.SDDPOwner.ComputeCost()
             self.SDDPOwner.UpdateLowerBound()
             self.SDDPOwner.UpdateUpperBound()
 
-            UBequalLB = self.SDDPOwner.CheckStoppingCriterion()
+            if not firstiteration:
+                UBequalLB = self.SDDPOwner.CheckStoppingCriterion()
+            else:
+                UBequalLB = Constants.SDDPFirstForwardWithEVPI
+                self.SDDPOwner.WriteInTraceFile(
+                    "Iteration With EVPI Forward: %d,  LB: %r, (exp UB:%r) \n"
+                    % (self.SDDPOwner.CurrentIteration, self.SDDPOwner.CurrentLowerBound, solution.TotalCost))
 
             if self.SDDPOwner.LastExpectedCostComputedOnAllScenario < self.SDDPOwner.BestUpperBound:
                 self.SDDPOwner.BestUpperBound = self.SDDPOwner.LastExpectedCostComputedOnAllScenario
@@ -60,6 +72,7 @@ class SDDPCallBack(LazyConstraintCallback):
                         # or self.SDDPOwner.CurrentLowerBound > self.SDDPOwner.BestUpperBound
 
             ShouldStop = UBequalLB or (self.SDDPOwner.CurrentLowerBound > self.SDDPOwner.BestUpperBound and not samesetupasprevious)
+            firstiteration = False
             #if Constants.PrintSDDPTrace:
             #    optimalitygap = (self.SDDPOwner.CurrentUpperBound - self.SDDPOwner.CurrentLowerBound)
             #    duration = time.time() - self.SDDPOwner.StartOfAlsorithm
@@ -100,7 +113,6 @@ class SDDPCallBack(LazyConstraintCallback):
                     print("THERE IS NO CHECK!!!!!!!!!!!!!!")
                     #self.Model.checknewcut(FirstStageCutForModel, avgcostsubproblem, self, None, withcorpoint=False)
                 FirstStageCutForModel.AddCut(False)
-
                 vars = FirstStageCutForModel.GetCutVariablesAtStage(self.Model, 0)
                 vars = vars[0:-1]
                 coeff = FirstStageCutForModel.GetCutVariablesCoefficientAtStage()
@@ -136,3 +148,127 @@ class SDDPCallBack(LazyConstraintCallback):
         sol = self
         self.Model.SaveSolutionFromSol(sol)
         self.Model.CopyDecisionOfScenario0ToAllScenario()
+
+
+
+
+    def SolveForwardAsEVPI(self):
+        if Constants.Debug:
+            print("Build the MIP with fix setups and single scenario")
+
+        #self.SDDPOwner.GenerateTrialScenarios()
+        #scenario = self.SDDPOwner.CurrentSetOfTrialScenarios
+        #treestructure = [1, len(scenario)] + [1] * (self.SDDPOwner.Instance.NrTimeBucket - 1) + [0]
+
+
+        #scenariotree = ScenarioTree(self.SDDPOwner.Instance, treestructure, 0,
+        #                            CopyscenariofromYFIX=True,
+        #                            givenscenarioset=scenario)
+
+        givenquantity = self.Model.QuantityValues[0]
+
+        if  not self.Model.FullTreeSolverDefine:
+            self.Model.FullTreeSolver = MIPSolver(self.SDDPOwner.Instance, Constants.ModelYFix,
+                                              self.SDDPOwner.SAAScenarioTree, yfixheuristic=True,
+                                              implicitnonanticipativity=True,
+                                              givensetups=self.SDDPOwner.HeuristicSetupValue,
+                                              givenquantities= givenquantity,
+                                              givenconsumption= self.Model.ConsumptionValues[0],
+                                              evaluatesolution=True,
+                                              fixsolutionuntil=self.Model.TimeDecisionStage + len(self.Model.RangePeriodQty) -1)
+
+            self.Model.FullTreeSolver.BuildModel()
+            self.Model.FullTreeSolverDefine = True
+        else:
+            self.Model.FullTreeSolver.ModifyMIPForSetup(self.SDDPOwner.HeuristicSetupValue)
+            self.Model.FullTreeSolver.ModifyMipForFixConsumption(self.Model.ConsumptionValues[0], self.Model.TimeDecisionStage + len(self.Model.RangePeriodQty)  )
+            self.Model.FullTreeSolver.ModifyMipForFixQuantity(self.Model.QuantityValues[0], self.Model.TimeDecisionStage + len(self.Model.RangePeriodQty) )
+
+        if Constants.Debug:
+            print("Start to solve instance %s with Cplex" % self.SDDPOwner.Instance.InstanceName)
+
+        solution = self.Model.FullTreeSolver.Solve()
+
+
+        if Constants.Debug:
+            print("copy the decision in the right table")
+
+        self.SDDPOwner.CurrentNrScenario = len(self.SDDPOwner.CompleteSetOfSAAScenario)
+
+        self.SDDPOwner.CurrentSetOfTrialScenarios = []
+        scenarionr = []
+        for w in range(self.SDDPOwner.CurrentNrScenario):
+             # random.randint(0, len(self.SDDPOwner.CompleteSetOfSAAScenario)-1)
+             scenarionr.append(w)
+
+             selected = self.SDDPOwner.CompleteSetOfSAAScenario[w]
+             self.SDDPOwner.CurrentSetOfTrialScenarios.append(selected)
+
+
+        self.SDDPOwner.TrialScenarioNrSet = range(len(self.SDDPOwner.CurrentSetOfTrialScenarios))
+        self.SDDPOwner.CurrentNrScenario = len(self.SDDPOwner.CurrentSetOfTrialScenarios)
+        self.SDDPOwner.SDDPNrScenarioTest = self.SDDPOwner.CurrentNrScenario
+        for stage in self.SDDPOwner.StagesSet:
+            self.SDDPOwner.ForwardStage[stage].SetNrTrialScenario(self.SDDPOwner.CurrentNrScenario)
+            self.SDDPOwner.ForwardStage[stage].FixedScenarioPobability = [1]
+            self.SDDPOwner.BackwardStage[stage].SAAStageCostPerScenarioWithoutCostoGopertrial = [0 for w in
+                                                                                       self.SDDPOwner.TrialScenarioNrSet]
+
+        stages = self.SDDPOwner.ForwardStage + [self.Model]
+        # print("Scenario is 0, because this should only be used in forward pass")
+        for i in self.SDDPOwner.TrialScenarioNrSet:
+            w = scenarionr[i]
+
+            for stage in stages:
+
+                if len(stage.RangePeriodQty) > 0:
+                    stage.QuantityValues[i] = [[solution.ProductionQuantity[w][stage.PeriodsInGlobalMIPQty[t]][p]
+                                                                 for p in stage.Instance.ProductSet]
+                                                                for t in stage.RangePeriodQty]
+
+                    stage.ConsumptionValues[i] = [[solution.Consumption[w][stage.PeriodsInGlobalMIPQty[t]][c[0]][c[1]]
+                                                   for c in stage.Instance.ConsumptionSet]
+                                                   for t in stage.RangePeriodQty]
+
+                if stage.IsFirstStage():
+                    stage.ProductionValue[i] = [[solution.Production[w][t][p]
+                                                                  for p in stage.Instance.ProductSet]
+                                                                 for t in stage.Instance.TimeBucketSet]
+
+                stage.InventoryValue[i] = [['nan' for p in stage.Instance.ProductSet]
+                                                   for t in stage.RangePeriodInv]
+
+                stage.BackorderValue[i] = [['nan' for p in stage.Instance.ProductSet]
+                                                             for t in stage.RangePeriodInv]
+
+                for t in stage.RangePeriodInv:
+                    for p in stage.GetProductWithStockVariable(t):
+                        if stage.Instance.HasExternalDemand[p]:
+                            time = stage.GetTimePeriodAssociatedToInventoryVariable(p,t)
+                            stage.InventoryValue[i][t][p] = solution.InventoryLevel[w][time][p]
+                            stage.BackorderValue[i][t][p] = solution.BackOrder[w][time][p]
+
+                        else:
+                            time = stage.GetTimePeriodAssociatedToInventoryVariable( p,t)
+
+
+                            stage.InventoryValue[i][t][p] = solution.InventoryLevel[w][time][p]
+
+
+        return solution
+
+            # for stage in self.SDDPOwner.ForwardStage:
+            #     print(stage.QuantityValues[0])
+            #
+            # for stage in self.SDDPOwner.ForwardStage:
+            #     print(stage.ConsumptionValues[0])
+            #
+            # for stage in self.SDDPOwner.ForwardStage:
+            #     print(stage.ProductionValue[0])
+            #
+            # for stage in self.SDDPOwner.ForwardStage:
+            #     print(stage.InventoryValue[0])
+            #
+            # for stage in self.SDDPOwner.ForwardStage:
+            #     print(stage.BackorderValue[0])
+

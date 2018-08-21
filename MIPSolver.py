@@ -485,6 +485,7 @@ class MIPSolver(object):
                 for w in self.ScenarioSet:
                     indexvariable = self.GetIndexQuantityVariable(p, t, w)
                     if not AlreadyAdded[indexvariable] and (t <= self.FixSolutionUntil):
+
                         vars = [indexvariable]
                         AlreadyAdded[indexvariable] = True
                         coeff = [1.0]
@@ -546,7 +547,7 @@ class MIPSolver(object):
                             coeff = [1.0]
                             righthandside = [round(self.GivenSetup[t][p], 2)]
                             # PrintConstraint( vars, coeff, righthandside )
-                            name =  "Setup%da%da%d" % (p, t, w)
+                            name = "Setup%da%da%d" % (p, t, w)
                             self.Cplex.linear_constraints.add(lin_expr=[cplex.SparsePair(vars, coeff)],
                                                               senses=["E"],
                                                               rhs=righthandside,

@@ -220,3 +220,8 @@ class Evaluator( object ):
                                                                             perfectset)
 
                         self.EvaluateSingleSol()
+
+        else:
+
+            self.InSampleTestResult = self.ComputeInSampleStatistis()
+            self.PrintFinalResult()

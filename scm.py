@@ -89,7 +89,10 @@ def Solve(instance):
     LastFoundSolution = solution
     evaluator = Evaluator(instance, TestIdentifier, EvaluatorIdentifier, solver)
     evaluator.RunEvaluation()
-    evaluator.GatherEvaluation()
+    if Constants.LauchEvalAfterSolve:
+        evaluator.GatherEvaluation()
+
+
 
 def Evaluate():
     solver = Solver(instance, TestIdentifier, mipsetting="", evaluatesol=EvaluateSolution)
@@ -120,14 +123,15 @@ def GenerateInstances():
     # instance.SaveCompleteInstanceInExelFile()
     # instancecreated = instancecreated + [instance.InstanceName]
 
-    for name in ["K0011525", "G0041421", "K0011111", "G0041111","K0017311", "G0041523","K0014432"]:
-        instance.ReadFromFile(name, "NonStationary", "Normal")
-        instance.SaveCompleteInstanceInExelFile()
-        instancecreated = instancecreated + [instance.InstanceName]
+    for name in [ "G0041111","K0017311"]: #["K0011525", "G0041421", "K0011111", "G0041111","K0017311", "G0041523","K0014432"]:
+        for distribution in [ "Lumpy", "NonStationary" ]:
+            instance.ReadFromFile(name, distribution, "Normal")
+            instance.SaveCompleteInstanceInExelFile()
+            instancecreated = instancecreated + [instance.InstanceName]
 
-        instance.ReadFromFile(name, "NonStationary", "Normal", longtimehoizon=True, longtimehorizonperiod = 6)
-        instance.SaveCompleteInstanceInExelFile()
-        instancecreated = instancecreated + [instance.InstanceName]
+            instance.ReadFromFile(name, distribution, "Normal", longtimehoizon=True, longtimehorizonperiod = 6)
+            instance.SaveCompleteInstanceInExelFile()
+            instancecreated = instancecreated + [instance.InstanceName]
 
 
     csvfile = open("./Instances/InstancesToSolve.csv", 'wb')
@@ -163,7 +167,13 @@ if __name__ == '__main__':
             Constants.GenerateStrongCut = False
         if TestIdentifier.MIPSetting == "NoSingleTree":
             Constants.SDDPRunSigleTree = False
+        if TestIdentifier.MIPSetting == "WithLPTree":
+            Constants.SDDPFirstForwardWithEVPI = True
+            GenerateStrongCut = False
 
+        if TestIdentifier.MIPSetting == "WithFixedSetups":
+            Constants.SDDPFixSetupStrategy = True
+            SDDPRunSigleTree = False
         instance = Instance()
         #instance.DefineAsSuperSmallIntance()
         #instance.DefineAsTwoItemIntance()

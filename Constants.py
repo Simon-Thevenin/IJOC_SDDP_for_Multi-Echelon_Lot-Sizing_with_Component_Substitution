@@ -18,6 +18,7 @@ class Constants( object ):
     #Demand distributions:
     Lumpy = "Lumpy"
     SlowMoving = "SlowMoving"
+    Uniform = "Uniform"
     Binomial = "Binomial"
     NonStationary = "NonStationary"
 
@@ -41,7 +42,7 @@ class Constants( object ):
     Resolve = "Re-solve"
 
     #The set of seeds used for random number generator
-    SeedArray = [2934, 875, 3545, 765, 546, 768, 242, 375, 142, 236, 788]
+    SeedArray = [788]#[2934, 875, 3545, 765, 546, 768, 242, 375, 142, 236, 788]
     EvaluationScenarioSeed = 2934
 
     #Running option
@@ -52,7 +53,7 @@ class Constants( object ):
     RunEvaluationInSeparatedJob = False
     PrintScenarios = False
     PrintSolutionFileInTMP = True
-    LauchEvalAfterSolve = True
+    LauchEvalAfterSolve = False
 
     #Code parameter
     Infinity = 9999999999999
@@ -88,10 +89,12 @@ class Constants( object ):
     SDDPUseEVPI = True
     SDDPNrEVPIScenario = 1
     SDDPDebugSolveAverage = False
-    SDDPMinimumNrIterationBetweenTest = 100
+    SDDPMinimumNrIterationBetweenTest = 30
     SDDPNrItNoImproveLBBeforeTest = 10
     SDDPDurationBeforeIncreaseForwardSample = 3600
     SDDPSaveInExcel = False
+    SDDPFixSetupStrategy = False
+    SDDPFirstForwardWithEVPI = False
 
     PHIterationLimit = 10000
     PHConvergenceTolerence = 0.0001

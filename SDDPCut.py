@@ -108,7 +108,6 @@ class SDDPCut(object):
 
         #multiply by -1 because the variable goes on the left hand side
         righthandside = [self.ComputeCurrentRightHandSide()]
-
         if addtomodel:
             self.ActualyAddToModel(self.ForwardStage,   righthandside, True)
             if not self.BackwarStage.IsFirstStage() and self.BackwarStage.MIPDefined:
@@ -116,9 +115,11 @@ class SDDPCut(object):
 
 
 
+
     def ActualyAddToModel(self, stage,  righthandside, forward):
 
         RHSFromPreviousCuts = self.ComputeRHSFromPreviousStage(forward)
+
         stage.Cplex.variables.add(obj=[0.0],
                             lb=[RHSFromPreviousCuts],
                             ub=[RHSFromPreviousCuts])
@@ -127,6 +128,7 @@ class SDDPCut(object):
 
         righthandside = [self.GetRHS()]
         for w in stage.FixedScenarioSet:
+
             vars = self.GetCutVariablesAtStage(stage, w)
             stage.Cplex.linear_constraints.add(lin_expr=[cplex.SparsePair(vars, coeff)],
                                                         senses=["G"],

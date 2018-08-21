@@ -137,7 +137,11 @@ class SDDP(object):
         self.TimeForwardNonTest = 0
 
         self.NrIterationWithoutLBImprovment = 0
+        self.SingleTreeCplexGap = -1
 
+        self.CurrentSetups = []
+        self.HasFixedSetup = False
+        self.IterationSetupFixed = 0
 
 
     #This function make the forward pass of SDDP
@@ -303,6 +307,7 @@ class SDDP(object):
             self.ForwardStage[stage].SetNrTrialScenario(self.CurrentNrScenario)
             self.ForwardStage[stage].FixedScenarioPobability = [1]
             self.BackwardStage[stage].SAAStageCostPerScenarioWithoutCostoGopertrial = [0 for w in self.TrialScenarioNrSet]
+            self.BackwardStage[stage].CurrentTrialNr = 0
         self.CurrentScenarioSeed = self.CurrentScenarioSeed + 1
 
 
@@ -454,13 +459,13 @@ class SDDP(object):
         if Constants.PrintSDDPTrace:
             if self.IsIterationWithConvergenceTest:
                 self.WriteInTraceFile(
-                    "Convergence Test, Nr Scenario: %r, Duration: %d, LB: %r, (exp UB:%r), c: %r Gap: %r, conv: %r, delta : %r \n"
+                    "Convergence Test, Nr Scenario: %r, Duration: %d, LB: %r, (exp UB:%r), c: %r Gap: %r, conv: %r, delta : %r Fixed Y: %r \n"
                     % (self.SDDPNrScenarioTest, duration, self.CurrentLowerBound, self.CurrentExpvalueUpperBound,
-                       c, optimalitygap, convergencecriterion, delta))
+                       c, optimalitygap, convergencecriterion, delta,  self.HasFixedSetup))
             else:
-                self.WriteInTraceFile("Iteration: %d, Duration: %d, LB: %r, (exp UB:%r), c: %r Gap: %r, conv: %r, delta : %r \n"
+                self.WriteInTraceFile("Iteration: %d, Duration: %d, LB: %r, (exp UB:%r), c: %r Gap: %r, conv: %r, delta : %r Fixed Y: %r  \n"
                                   %(self.CurrentIteration, duration, self.CurrentLowerBound, self.CurrentExpvalueUpperBound,
-                                    c, optimalitygap, convergencecriterion, delta))
+                                    c, optimalitygap, convergencecriterion, delta,  self.HasFixedSetup))
 
         if not result and convergencecriterion <= 1 \
             and (self.IsIterationWithConvergenceTest \
@@ -493,12 +498,12 @@ class SDDP(object):
 
         return result
 
-    def CheckStoppingRelaxationCriterion(self, round):
+    def CheckStoppingRelaxationCriterion(self, phase):
         duration = time.time() - self.StartOfAlsorithm
 
         optimalitygap = (self.CurrentExpvalueUpperBound - self.CurrentLowerBound)/self.CurrentExpvalueUpperBound
         optimalitygapreached = (optimalitygap < Constants.SDDPGapRelax)
-        iterationlimitreached = (self.CurrentIteration > Constants.SDDPNrIterationRelax * round)
+        iterationlimitreached = (self.CurrentIteration > Constants.SDDPNrIterationRelax * phase)
         result = iterationlimitreached # or optimalitygapreached
         self.WriteInTraceFile("Iteration: %d, Duration: %d, LB: %r, (exp UB:%r),  Gap: %r \n"
                               % (self.CurrentIteration, duration, self.CurrentLowerBound, self.CurrentExpvalueUpperBound,
@@ -567,16 +572,16 @@ class SDDP(object):
 
 
         createpreliminarycuts = Constants.SolveRelaxationFirst or Constants.SDDPGenerateCutWith2Stage
-        round = 1
+        phase = 1
         if not Constants.SolveRelaxationFirst:
-            round = 2
+            phase = 2
         ExitLoop = not createpreliminarycuts and Constants.SDDPRunSigleTree
         Stop = False
         while (not Stop or createpreliminarycuts) and not ExitLoop:
 
-            if createpreliminarycuts and (Stop or self.CheckStoppingRelaxationCriterion(round) ):
-                round += 1
-                if round < 3:
+            if createpreliminarycuts and (Stop or self.CheckStoppingRelaxationCriterion(phase) ):
+                phase += 1
+                if phase < 3:
                     self.ForwardStage[0].ChangeSetupToValueOfTwoStage()
                     self.WriteInTraceFile("Change stage 1 problem to heuristic solution \n")
                     self.CurrentUpperBound = Constants.Infinity
@@ -621,20 +626,42 @@ class SDDP(object):
                 print("****************************************************")
 
             self.ForwardPass()
+
+
             self.ComputeCost()
             self.UpdateLowerBound()
             self.UpdateUpperBound()
             self.BackwardPass()
             self.CurrentIteration = self.CurrentIteration + 1
-            if not createpreliminarycuts:
+            if not createpreliminarycuts and not self.HasFixedSetup:
                 Stop = self.CheckStoppingCriterion()
+            if self.HasFixedSetup:
+                self.WriteInTraceFile("Iteration With Fixed Setup  LB: % r, (exp UB: % r) \n"% ( self.CurrentLowerBound, self.CurrentExpvalueUpperBound))
             duration = time.time() - self.StartOfAlsorithm
+
             if self.CurrentForwardSampleSize < 10 and duration >= Constants.SDDPDurationBeforeIncreaseForwardSample:
                 self.CurrentForwardSampleSize = 10
                 self.WriteInTraceFile("set number of scenario in forward to 10 \n")
             if self.CurrentForwardSampleSize < 50 and duration >= 3*Constants.SDDPDurationBeforeIncreaseForwardSample:
                 self.CurrentForwardSampleSize = 50
                 self.WriteInTraceFile("set number of scenario in forward to 50 \n")
+
+            newsetup = [[ round(self.ForwardStage[0].ProductionValue[0][t][p], 0)
+                         for p in self.Instance.ProductSet]
+                        for t in self.Instance.TimeBucketSet]
+
+
+            if not createpreliminarycuts and self.CurrentSetups == newsetup and Constants.SDDPFixSetupStrategy and not self.HasFixedSetup:
+                self.HeuristicSetupValue = newsetup
+                self.ForwardStage[0].ChangeSetupToValueOfTwoStage()
+                self.IterationSetupFixed = self.CurrentIteration
+                self.HasFixedSetup = True
+
+            if self.HasFixedSetup and self.IterationSetupFixed < self.CurrentIteration - 10:
+                self.ForwardStage[0].ChangeSetupToBinary()
+                self.HasFixedSetup = False
+
+            self.CurrentSetups = newsetup
             #if self.CurrentForwardSampleSize < 100 and duration >= 3*Constants.SDDPDurationBeforeIncreaseForwardSample:
             #    self.CurrentForwardSampleSize = 100
             #    self.WriteInTraceFile("set number of scenario in forward to 100 \n")
@@ -708,6 +735,13 @@ class SDDP(object):
         self.CopyFirstStage.Cplex.MIP_starts.add(cplex.SparsePair(vars, righthandside),
                                                  self.CopyFirstStage.Cplex.MIP_starts.effort_level.solve_fixed)
 
+
+        #print("ATTENTION USE CORRIDOR")
+        #nrsetups = sum(round(self.HeuristicSetupValue[t][p], 0)
+        #                for p in self.Instance.ProductSet
+        #                for t in self.Instance.TimeBucketSet)
+        #self.CopyFirstStage.CreateCoridorConstraints(nrsetups)
+
         model_lazy = self.CopyFirstStage.Cplex.register_callback(SDDPCallBack)
         model_lazy.SDDPOwner = self
         model_lazy.Model = self.CopyFirstStage
@@ -732,6 +766,7 @@ class SDDP(object):
         self.CopyFirstStage.Cplex.solve()
         self.WriteInTraceFile("End Solve in one tree cost: %r " % self.CopyFirstStage.Cplex.solution.get_objective_value())
 
+        self.SingleTreeCplexGap = self.CopyFirstStage.Cplex.solution.MIP.get_mip_relative_gap()
         #for cut in self.CopyFirstStage.SDDPCuts:
         #    self.ForwardStage[0].SDDPCuts.append(cut)
         #    cut.ForwardStage = self.ForwardStage[0]
@@ -845,6 +880,7 @@ class SDDP(object):
             solution.SDDPTimeForwardNoTest = self.TimeForwardNonTest
             solution.SDDPTimeForwardTest = self.TimeForwardTest
 
+            solution.CplexGap = self.SingleTreeCplexGap
 
             return solution
 
@@ -935,7 +971,9 @@ class SDDP(object):
         solution.SDDPTimeBackward = self.TimeBackward
         solution.SDDPTimeForwardNoTest = self.TimeForwardNonTest
         solution.SDDPTimeForwardTest = self.TimeForwardTest
-        
+
+        solution.CplexGap = self.SingleTreeCplexGap
+
         return solution
 
     def GetSaveFileName(self):

@@ -149,6 +149,9 @@ class SDDPStage(object):
 
         self.StockIndexArray = []
 
+        self.FullTreeSolverDefine = False
+        self.FullTreeSolver = None
+
     def ComputeVariableIndices(self):
         self.TimePeriodToGoQty = range(self.TimeDecisionStage + len(self.RangePeriodQty), self.Instance.NrTimeBucket)
         self.TimePeriodToGoEndItInv = range(self.TimeDecisionStage + len(self.RangePeriodQty) -1, self.Instance.NrTimeBucket)
@@ -809,6 +812,7 @@ class SDDPStage(object):
         if self.IsFirstStage() and t == 0:
             result = self.Instance.ProductWithoutExternalDemand
         #At the last stage only the finish product have inventory variable
+
         if self.IsLastStage() and t == len(self.RangePeriodEndItemInv)-1:
             result = self.Instance.ProductWithExternalDemand
         return result
@@ -1764,6 +1768,7 @@ class SDDPStage(object):
             cutsets = []
             avgcostssubprob = []
             for trial in self.SDDPOwner.ConsideredTrialForBackward:#:
+
                     self.SAAStageCostPerScenarioWithoutCostoGopertrial[trial] = 0
                     self.CurrentTrialNr = trial
                     # Create a cute for the previous stage problem
@@ -1810,13 +1815,15 @@ class SDDPStage(object):
                     #Average by the number of scenario
                     cut.UpdateRHS()
                     if Constants.Debug:
-                       print("THERE IS NO CHECK That cuts are well generated!!!!!!!!!!!!!!")
-                       #self.checknewcut(cut, averagecostofthesubproblem,  self.PreviousSDDPStage.Cplex.solution, trial)
+                       #print("THERE IS NO CHECK That cuts are well generated!!!!!!!!!!!!!!")
+                       self.checknewcut(cut, averagecostofthesubproblem,  self.PreviousSDDPStage.Cplex.solution, trial)
                     cut.AddCut()
+
                     if Constants.SDDPPrintDebugLPFiles:
                         self.PreviousSDDPStage.Cplex.write("./Temp/PreviousstageWithCut_stage_%d_iter_%d.lp" % (self.DecisionStage, self.SDDPOwner.CurrentIteration))
                     cutsets.append(cut)
                     avgcostssubprob.append(averagecostofthesubproblem)
+
 
             return cutsets, avgcostssubprob
             #print("cut added")
@@ -2067,3 +2074,21 @@ class SDDPStage(object):
         for cut in self.ConcernedCutinConstraint:
             if cut.LastIterationWithDual < self.SDDPOwner.CurrentIteration - 50:
                 cut.RemoveTheCut()
+
+    # This function creates the  indicator constraint to se the production variable to 1 when a positive quantity is produce
+    def CreateCoridorConstraints(self, NrSetups):
+             righthandside = [NrSetups]
+             vars = [self.GetIndexProductionVariable(p, t)
+                     for t in self.Instance.TimeBucketSet
+                     for p in self.Instance.ProductSet]
+             coeff = [1.0
+                      for t in self.Instance.TimeBucketSet
+                      for p in self.Instance.ProductSet]
+
+             # PrintConstraint( vars, coeff, righthandside )
+             self.Cplex.linear_constraints.add(lin_expr=[cplex.SparsePair(vars, coeff)],
+                                               senses=["E"],
+                                               rhs=righthandside)
+
+             self.IndexProductionQuantityConstraint.append(self.LastAddedConstraintIndex)
+             self.LastAddedConstraintIndex = self.LastAddedConstraintIndex + 1
