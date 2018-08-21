@@ -566,8 +566,8 @@ class SDDP(object):
 
         self.GenerateSAAScenarios()
 
-        if Constants.SDDPGenerateCutWith2Stage:
-            self.SolveTwoStageHeuristic()
+        #if Constants.SDDPGenerateCutWith2Stage:
+        self.SolveTwoStageHeuristic()
 
 
 
@@ -728,6 +728,7 @@ class SDDP(object):
         vars = []
         righthandside = []
         # Setup equal to the given ones
+
         for p in self.Instance.ProductSet:
             for t in self.Instance.TimeBucketSet:
                     vars = vars + [self.CopyFirstStage.GetIndexProductionVariable(p,t)]
