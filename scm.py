@@ -169,11 +169,15 @@ if __name__ == '__main__':
             Constants.SDDPRunSigleTree = False
         if TestIdentifier.MIPSetting == "WithLPTree":
             Constants.SDDPFirstForwardWithEVPI = True
-            GenerateStrongCut = False
+            Constants.GenerateStrongCut = False
+
+        if TestIdentifier.MIPSetting == "WithFixedSetupsNoScenarioTree":
+            Constants.SDDPFixSetupStrategy = True
+            SDDPRunSigleTree = False
 
         if TestIdentifier.MIPSetting == "WithFixedSetups":
             Constants.SDDPFixSetupStrategy = True
-            SDDPRunSigleTree = False
+
         instance = Instance()
         #instance.DefineAsSuperSmallIntance()
         #instance.DefineAsTwoItemIntance()

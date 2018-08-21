@@ -21,7 +21,7 @@ class SDDPCallBack(LazyConstraintCallback):
                       for p in self.Model.Instance.ProductSet]
                      for t in self.Model.Instance.TimeBucketSet]
 
-        samesetupasprevious = newsetup == self.SDDPOwner.HeuristicSetupValue
+        samesetupasprevious = (newsetup == self.SDDPOwner.HeuristicSetupValue) and Constants.SDDPFixSetupStrategy
 
         self.SDDPOwner.HeuristicSetupValue = [[self.Model.ProductionValue[0][t][p]
                                                for p in self.Model.Instance.ProductSet]
@@ -56,7 +56,7 @@ class SDDPCallBack(LazyConstraintCallback):
             self.SDDPOwner.UpdateLowerBound()
             self.SDDPOwner.UpdateUpperBound()
 
-            if not firstiteration:
+            if not firstiteration or not Constants.SDDPFirstForwardWithEVPI:
                 UBequalLB = self.SDDPOwner.CheckStoppingCriterion()
             else:
                 UBequalLB = Constants.SDDPFirstForwardWithEVPI

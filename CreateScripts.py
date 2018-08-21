@@ -100,7 +100,7 @@ if __name__ == "__main__":
 
         for instance in InstanceSet:
            for nrback in sddpnrbackset:
-                for setting in [ "Default", "NoFirstCuts", "NoEVPI", "NoStongCut", "NoSingleTree", "WithLPTree", "WithFixedSetups" ]:
+                for setting in [ "Default", "NoFirstCuts", "NoEVPI", "NoStongCut", "NoSingleTree", "WithLPTree", "WithFixedSetups", "WithFixedSetupsNoScenarioTree" ]:
 
                     nrforward = 1
                     jobname = CreateSDDPJob(instance, nrback, nrforward, setting)
