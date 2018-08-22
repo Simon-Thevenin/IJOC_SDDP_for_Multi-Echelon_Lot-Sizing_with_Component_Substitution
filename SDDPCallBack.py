@@ -26,7 +26,7 @@ class SDDPCallBack(LazyConstraintCallback):
         self.SDDPOwner.HeuristicSetupValue = [[self.Model.ProductionValue[0][t][p]
                                                for p in self.Model.Instance.ProductSet]
                                               for t in self.Model.Instance.TimeBucketSet]
-        self.SDDPOwner.ForwardStage[0].ChangeSetupToValueOfTwoStage()
+        self.SDDPOwner.ForwardStage[0].ChangeSetupToValueOfTwoStage(makecontinuous=False)
 
         if Constants.PrintSDDPTrace:
             self.SDDPOwner.WriteInTraceFile("considered integer:%r \n"%self.Model.ProductionValue[0])

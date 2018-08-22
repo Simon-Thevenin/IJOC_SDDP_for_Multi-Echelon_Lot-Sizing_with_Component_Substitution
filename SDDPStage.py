@@ -2069,7 +2069,7 @@ class SDDPStage(object):
         self.Cplex.variables.set_lower_bounds(zip(indexarray, [0.0] * len(indexarray)))
         self.Cplex.variables.set_upper_bounds(zip(indexarray, [0.0] * len(indexarray)))
 
-    def ChangeSetupToValueOfTwoStage(self):
+    def ChangeSetupToValueOfTwoStage(self, makecontinuous = True):
         lbtuple=[]
         ubtuples=[]
 
@@ -2081,7 +2081,8 @@ class SDDPStage(object):
                 lbtuple.append((self.GetIndexProductionVariable(p, t), self.SDDPOwner.HeuristicSetupValue[t][p]))
                 ubtuples.append((self.GetIndexProductionVariable(p, t), self.SDDPOwner.HeuristicSetupValue[t][p]))
 
-        self.Cplex.variables.set_types(zip(indexarray, ["C"] * len(indexarray)))
+        if makecontinuous:
+            self.Cplex.variables.set_types(zip(indexarray, ["C"] * len(indexarray)))
         self.Cplex.variables.set_lower_bounds(lbtuple)
         self.Cplex.variables.set_upper_bounds(ubtuples)
 
