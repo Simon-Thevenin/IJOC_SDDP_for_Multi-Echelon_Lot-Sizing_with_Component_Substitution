@@ -1349,6 +1349,8 @@ class SDDPStage(object):
         if Constants.Debug:
             print("Define the MIP of stage %d" % self.DecisionStage)
         self.DefineVariables()
+        if self.SDDPOwner.TestIdentifier.Model == Constants.ModelHeuristicYFix and self.IsFirstStage():
+            self.ChangeSetupToValueOfTwoStage()
 
         if not self.IsLastStage():
             self.CreateProductionConstraints()

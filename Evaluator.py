@@ -60,7 +60,7 @@ class Evaluator( object ):
             if not Constants.PrintOnlyFirstStageDecision:
                 solution.ComputeStatistics()
             insamplekpisstate = solution.PrintStatistics(self.TestIdentifier,
-                                                         "InSample",-1, 0, -1, True,
+                                                         "InSample", -1, 0, -1, True,
                                                          self.TestIdentifier.ScenarioSampling)
             lengthinsamplekpi = len(insamplekpisstate)
             InSampleKPIStat = [0] * lengthinsamplekpi

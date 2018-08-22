@@ -212,12 +212,35 @@ class Solver( object ):
             self.Instance.PrintInstance()
 
         self.ScenarioGeneration = chosengeneration
-        self.TestIdentifier.Model = Constants.ModelYFix
 
-        solution, mipsolver = self.MRP(self.TreeStructure,
-                                  averagescenario=False,
-                                  recordsolveinfo=True,
-                                  yfixheuristic=True)
+        if self.TestIdentifier.Method == "MIP":
+            self.TestIdentifier.Model = Constants.ModelYFix
+            solution, mipsolver = self.MRP(self.TreeStructure,
+                                      averagescenario=False,
+                                      recordsolveinfo=True,
+                                      yfixheuristic=True)
+
+        if self.TestIdentifier.Method == Constants.SDDP:
+             self.TestIdentifier.Model = Constants.ModelHeuristicYFix
+             self.SDDPSolver = SDDP(self.Instance, self.TestIdentifier)
+             self.SDDPSolver.HeuristicSetupValue = self.GivenSetup
+             self.SDDPSolver.Run()
+             if Constants.PrintOnlyFirstStageDecision:
+                solution = self.SDDPSolver.CreateSolutionAtFirstStage()
+             else:
+                 solution = self.SDDPSolver.CreateSolutionOfAllInSampleScenario()
+             if Constants.SDDPSaveInExcel:
+                self.SDDPSolver.SaveSolver()
+
+        if self.TestIdentifier.Method == Constants.ProgressiveHedging:
+            self.TestIdentifier.Model = Constants.ModelHeuristicYFix
+
+            self.TreeStructure = self.GetTreeStructure()
+
+            self.ProgressiveHedging = ProgressiveHedging(self.Instance, self.TestIdentifier, self.TreeStructure, givensetup=self.GivenSetup)
+            solution = self.ProgressiveHedging.Run()
+
+
 
         end = time.time()
         solution.TotalTime = end - start

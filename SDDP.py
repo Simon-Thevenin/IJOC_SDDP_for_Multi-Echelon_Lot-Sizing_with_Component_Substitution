@@ -166,13 +166,13 @@ class SDDP(object):
 
                 #try to use core point method, remove if it does not work
                 #if self.Stage[t].IsFirstStage()
-        end =  start = time.time()
+        end = time.time()
         duration = end-start
 
         if self.IsIterationWithConvergenceTest:
-            self.TimeForwardNonTest += duration
-        else:
             self.TimeForwardTest += duration
+        else:
+            self.TimeForwardNonTest += duration
 
     #This function make the backward pass of SDDP
     def BackwardPass(self, returnfirststagecut=False):
@@ -216,7 +216,7 @@ class SDDP(object):
 
         self.UseCorePoint = False
 
-        end = start = time.time()
+        end = time.time()
         self.TimeBackward += (end - start)
 
         if returnfirststagecut:
@@ -452,7 +452,7 @@ class SDDP(object):
                  or iterationlimitreached
 
         if Constants.SDDPForwardPassInSAATree:
-            result = ( self.IsIterationWithConvergenceTest and optimalitygapreached) \
+            result = (self.IsIterationWithConvergenceTest and optimalitygapreached) \
                      or timalimiteached \
                      or iterationlimitreached
 
@@ -567,9 +567,15 @@ class SDDP(object):
         self.GenerateSAAScenarios()
 
         #if Constants.SDDPGenerateCutWith2Stage:
-        self.SolveTwoStageHeuristic()
 
 
+        if self.TestIdentifier.Model == Constants.ModelHeuristicYFix:
+            Constants.SDDPGenerateCutWith2Stage = False
+            Constants.SolveRelaxationFirst = False
+            Constants.SDDPRunSigleTree = False
+
+        else:
+            self.SolveTwoStageHeuristic()
 
         createpreliminarycuts = Constants.SolveRelaxationFirst or Constants.SDDPGenerateCutWith2Stage
         phase = 1
@@ -579,7 +585,7 @@ class SDDP(object):
         Stop = False
         while (not Stop or createpreliminarycuts) and not ExitLoop:
 
-            if createpreliminarycuts and (Stop or self.CheckStoppingRelaxationCriterion(phase) ):
+            if createpreliminarycuts and (Stop or self.CheckStoppingRelaxationCriterion(phase)):
                 phase += 1
                 if phase < 3:
                     self.ForwardStage[0].ChangeSetupToValueOfTwoStage()

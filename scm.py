@@ -123,8 +123,8 @@ def GenerateInstances():
     # instance.SaveCompleteInstanceInExelFile()
     # instancecreated = instancecreated + [instance.InstanceName]
 
-    for name in [ "G0041111","K0017311"]: #["K0011525", "G0041421", "K0011111", "G0041111","K0017311", "G0041523","K0014432"]:
-        for distribution in [ "Lumpy", "NonStationary" ]:
+    for name in ["G0041111","K0017311"]: #["K0011525", "G0041421", "K0011111", "G0041111","K0017311", "G0041523","K0014432"]:
+        for distribution in ["Lumpy", "NonStationary"]:
             instance.ReadFromFile(name, distribution, "Normal")
             instance.SaveCompleteInstanceInExelFile()
             instancecreated = instancecreated + [instance.InstanceName]
