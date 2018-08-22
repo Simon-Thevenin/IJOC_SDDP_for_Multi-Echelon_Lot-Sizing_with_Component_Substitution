@@ -49,7 +49,7 @@ class Constants( object ):
     Debug = False
     PrintSolutionFileToExcel = False
     PrintDetailsExcelFiles = False
-    PrintOnlyFirstStageDecision = False
+    PrintOnlyFirstStageDecision = True
     RunEvaluationInSeparatedJob = False
     PrintScenarios = False
     PrintSolutionFileInTMP = True
@@ -75,7 +75,7 @@ class Constants( object ):
     SDDPInitNrScenarioTest = 10
 
     SolveRelaxationFirst = True
-    SDDPNrIterationRelax = 100
+    SDDPNrIterationRelax = 500
     SDDPGapRelax = 0.01
 
     SDDPUseValidInequalities = False

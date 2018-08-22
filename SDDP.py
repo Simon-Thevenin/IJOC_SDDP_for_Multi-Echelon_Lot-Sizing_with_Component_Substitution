@@ -588,7 +588,9 @@ class SDDP(object):
                     self.LastExpectedCostComputedOnAllScenario = Constants.Infinity
                     self.CurrentLowerBound = 0
                     self.NrIterationWithoutLBImprovment = 0
+
                 else:
+
                     #elif round == 3:
                     #    print("round3")
                     ExitLoop = Constants.SDDPRunSigleTree
@@ -603,6 +605,7 @@ class SDDP(object):
                     if not ExitLoop:
                         self.ForwardStage[0].ChangeSetupToBinary()
                         self.WriteInTraceFile("Change stage 1 problem to integer \n")
+
 
             #print("Attention uncomment")
             self.IsIterationWithConvergenceTest = False
