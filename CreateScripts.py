@@ -41,7 +41,7 @@ cd /home/thesim/stochasticmrp/
 
 
 def CreateSDDPJob(instance, nrback, nrforward, setting, model = "YFix"):
-    qsub_filename = "./Jobs/job_sddp_%s_%s_%s_%s_%s" % (instance, nrback, nrforward, setting. model)
+    qsub_filename = "./Jobs/job_sddp_%s_%s_%s_%s_%s" % (instance, nrback, nrforward, setting, model)
     qsub_file = open(qsub_filename, 'w')
     CreatHeader(qsub_file )
     qsub_file.write("""
