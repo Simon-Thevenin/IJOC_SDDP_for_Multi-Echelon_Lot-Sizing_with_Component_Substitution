@@ -703,11 +703,13 @@ class SDDP(object):
         self.CheckStoppingCriterion()
         self.BestUpperBound = self.LastExpectedCostComputedOnAllScenario
 
+        #Make a copy to be able to solve the first stage with contiunous variable in the call backs
         self.CopyFirstStage = SDDPStage(owner=self, decisionstage=0, fixedccenarioset=[0], isforward=True)
         self.CopyFirstStage.SetNrTrialScenario(len(self.CurrentSetOfTrialScenarios))
         for cut in self.ForwardStage[0].SDDPCuts:
             cut.ForwardStage = None
             cut.BackwarStage = None
+
 
         self.CopyFirstStage.SDDPCuts = copy.deepcopy(self.ForwardStage[0].SDDPCuts)
 

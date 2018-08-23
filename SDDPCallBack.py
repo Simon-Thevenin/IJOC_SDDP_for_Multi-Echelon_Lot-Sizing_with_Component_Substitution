@@ -26,7 +26,7 @@ class SDDPCallBack(LazyConstraintCallback):
         self.SDDPOwner.HeuristicSetupValue = [[self.Model.ProductionValue[0][t][p]
                                                for p in self.Model.Instance.ProductSet]
                                               for t in self.Model.Instance.TimeBucketSet]
-        self.SDDPOwner.ForwardStage[0].ChangeSetupToValueOfTwoStage(makecontinuous=False)
+        self.SDDPOwner.ForwardStage[0].ChangeSetupToValueOfTwoStage(makecontinuous=True)
 
         if Constants.PrintSDDPTrace:
             self.SDDPOwner.WriteInTraceFile("considered integer:%r \n"%self.Model.ProductionValue[0])
@@ -83,56 +83,56 @@ class SDDPCallBack(LazyConstraintCallback):
             print("Actually add the cuts")
             print ("added cuts %r"%AddedCut)
         addedcutindex = [cut.Id for cut in AddedCut]
-        self.SDDPOwner.ForwardStage[0].Cplex.solve()
-        sol = self.SDDPOwner.ForwardStage[0].Cplex.solution
-        AddedCutDuals = sol.get_dual_values(addedcutindex)
+        #self.SDDPOwner.ForwardStage[0].Cplex.solve()
+        #sol = self.SDDPOwner.ForwardStage[0].Cplex.solution
+        #AddedCutDuals = sol.get_dual_values(addedcutindex)
        # sol.write("./Temp/solinlazycut_%s.sol" % (self.SDDPOwner.CurrentIteration))
 
         for c in range(len(AddedCut)):
             cut = AddedCut[c]
             #avgcostsubproblem = avgsubprobcosts[c]
-            dual = AddedCutDuals[c]
+         #   dual = AddedCutDuals[c]
 
-            if False and dual == 0:
-                cut.RemoveCut()
-            else:
-                cut.ForwardStage = None
-                backcut = cut.BackwarStage
-                cut.BackwarStage = None
-                FirstStageCutForModel = copy.deepcopy(cut)
-                cut.ForwardStage = self.SDDPOwner.ForwardStage[0]
-                cut.BackwarStage = self.SDDPOwner.ForwardStage[0]
-                FirstStageCutForModel.ForwardStage = self.Model
-                FirstStageCutForModel.BackwarStage = self.Model#self.SDDPOwner.BackwardStage[0]
+          #  if False and dual == 0:
+           #     cut.RemoveCut()
+            #else:
+            cut.ForwardStage = None
+            backcut = cut.BackwarStage
+            cut.BackwarStage = None
+            FirstStageCutForModel = copy.deepcopy(cut)
+            cut.ForwardStage = self.SDDPOwner.ForwardStage[0]
+            cut.BackwarStage = self.SDDPOwner.ForwardStage[0]
+            FirstStageCutForModel.ForwardStage = self.Model
+            FirstStageCutForModel.BackwarStage = self.Model#self.SDDPOwner.BackwardStage[0]
 
-                self.Model.CorePointQuantityValues = self.SDDPOwner.ForwardStage[0].CorePointQuantityValues
-                self.Model.CorePointProductionValue = self.SDDPOwner.ForwardStage[0].CorePointProductionValue
-                self.Model.CorePointInventoryValue = self.SDDPOwner.ForwardStage[0].CorePointInventoryValue
-                self.Model.CorePointBackorderValue = self.SDDPOwner.ForwardStage[0].CorePointBackorderValue
-                if Constants.Debug:
+            self.Model.CorePointQuantityValues = self.SDDPOwner.ForwardStage[0].CorePointQuantityValues
+            self.Model.CorePointProductionValue = self.SDDPOwner.ForwardStage[0].CorePointProductionValue
+            self.Model.CorePointInventoryValue = self.SDDPOwner.ForwardStage[0].CorePointInventoryValue
+            self.Model.CorePointBackorderValue = self.SDDPOwner.ForwardStage[0].CorePointBackorderValue
+            if Constants.Debug:
                     print("THERE IS NO CHECK!!!!!!!!!!!!!!")
                     #self.Model.checknewcut(FirstStageCutForModel, avgcostsubproblem, self, None, withcorpoint=False)
-                FirstStageCutForModel.AddCut(False)
-                vars = FirstStageCutForModel.GetCutVariablesAtStage(self.Model, 0)
-                vars = vars[0:-1]
-                coeff = FirstStageCutForModel.GetCutVariablesCoefficientAtStage()
-                coeff = coeff[0:-1]
-                righthandside = [FirstStageCutForModel.ComputeCurrentRightHandSide()]
+            FirstStageCutForModel.AddCut(False)
+            vars = FirstStageCutForModel.GetCutVariablesAtStage(self.Model, 0)
+            vars = vars[0:-1]
+            coeff = FirstStageCutForModel.GetCutVariablesCoefficientAtStage()
+            coeff = coeff[0:-1]
+            righthandside = [FirstStageCutForModel.ComputeCurrentRightHandSide()]
 
-                if Constants.Debug:
+            if Constants.Debug:
                     print("Add the constraint with var: %r" % vars)
                     print(" coeff: %r" % coeff)
                     print("rhs: %r" % righthandside)
                 # vars = [0]
                 # coeff = [1]
                 # righthandside = [0.0]
-                self.add(constraint=cplex.SparsePair(vars, coeff),
+            self.add(constraint=cplex.SparsePair(vars, coeff),
                          # cut=cplex.SparsePair(vars, coeff),
                          sense="G",
                          rhs=righthandside[0])
 
-                if Constants.Debug:
-                    print("Constraint added")
+            if Constants.Debug:
+                print("Constraint added")
         if Constants.Debug:
              self.Model.Cplex.write("./Temp/yyoyoyo.lp")
 
@@ -230,6 +230,7 @@ class SDDPCallBack(LazyConstraintCallback):
                                                    for c in stage.Instance.ConsumptionSet]
                                                    for t in stage.RangePeriodQty]
 
+
                 if stage.IsFirstStage():
                     stage.ProductionValue[i] = [[solution.Production[w][t][p]
                                                                   for p in stage.Instance.ProductSet]
@@ -241,12 +242,14 @@ class SDDPCallBack(LazyConstraintCallback):
                 stage.BackorderValue[i] = [['nan' for p in stage.Instance.ProductSet]
                                                              for t in stage.RangePeriodInv]
 
+
                 for t in stage.RangePeriodInv:
                     for p in stage.GetProductWithStockVariable(t):
                         if stage.Instance.HasExternalDemand[p]:
+                            indexp = self.SDDPOwner.Instance.ProductWithExternalDemandIndex[p]
                             time = stage.GetTimePeriodAssociatedToInventoryVariable(p,t)
                             stage.InventoryValue[i][t][p] = solution.InventoryLevel[w][time][p]
-                            stage.BackorderValue[i][t][p] = solution.BackOrder[w][time][p]
+                            stage.BackorderValue[i][t][p] = solution.BackOrder[w][time][indexp]
 
                         else:
                             time = stage.GetTimePeriodAssociatedToInventoryVariable( p,t)
@@ -254,7 +257,8 @@ class SDDPCallBack(LazyConstraintCallback):
 
                             stage.InventoryValue[i][t][p] = solution.InventoryLevel[w][time][p]
 
-
+        if Constants.Debug:
+            print("out of solve LP with tree")
         return solution
 
             # for stage in self.SDDPOwner.ForwardStage:

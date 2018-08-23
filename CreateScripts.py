@@ -83,8 +83,8 @@ if __name__ == "__main__":
     InstanceSet = instancenameslist[0]
     instancetosolvename = ""
 
-    scenariotreeset = ["all2", "all5", "allDIX", "all20"]
-    sddpnrbackset = [2, 5, 10, 20]
+    scenariotreeset = ["all2", "all5"]#, "allDIX", "all20"]
+    sddpnrbackset = [2, 5]#, 10, 20]
 
     if sys.argv[1] == "H":
         fileheurname = "runallheur.sh"
