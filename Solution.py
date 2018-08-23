@@ -986,10 +986,12 @@ class Solution(object):
                     if currentinventory[p] >= -0.0001:
                         self.InventoryLevel[w][t][p] = currentinventory[p]
                         if self.Instance.HasExternalDemand[p]:
-                            self.BackOrder[w][t][p] = 0.0
+                            indexp = self.Instance.ProductWithExternalDemandIndex[p]
+                            self.BackOrder[w][t][indexp] = 0.0
                     else:
                         if self.Instance.HasExternalDemand[p]:
-                            self.BackOrder[w][t][p] = -currentinventory[p]
+                            indexp = self.Instance.ProductWithExternalDemandIndex[p]
+                            self.BackOrder[w][t][indexp] = -currentinventory[p]
                             self.InventoryLevel[w][t][p] = 0.0
                         else:
                             self.InventoryLevel[w][t][p] = currentinventory[p]

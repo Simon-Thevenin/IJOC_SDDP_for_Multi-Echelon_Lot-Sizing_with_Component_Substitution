@@ -10,7 +10,7 @@ import math
 
 class ProgressiveHedging(object):
 
-    def __init__(self, instance, testidentifier, treestructure, scenariotree=None, givensetup=[], fixuntil=-1):
+    def __init__(self, instance, testidentifier, treestructure, scenariotree=None, givensetup=[], fixuntil=-2):
 
 
         self.Instance = instance
@@ -71,6 +71,7 @@ class ProgressiveHedging(object):
         if scenariotree is None:
             self.ScenarioTree = ScenarioTree(self.Instance, self.TreeStructure, self.TestIdentifier.ScenarioSeed,
                                              scenariogenerationmethod=self.TestIdentifier.ScenarioSampling,
+                                             issymetric=Constants.MIPBasedOnSymetricTree,
                                              model=Constants.ModelYFix)
         else:
             self.ScenarioTree = scenariotree
@@ -349,7 +350,7 @@ class ProgressiveHedging(object):
                         for t in self.Instance.TimeBucketSet]
                        for w in self.ScenarioNrSet]
 
-        solbackorder = [[[-1 for p in self.Instance.ProductSet]
+        solbackorder = [[[-1 for p in self.Instance.ProductWithExternalDemand]
                         for t in self.Instance.TimeBucketSet]
                        for w in self.ScenarioNrSet]
 
@@ -375,6 +376,16 @@ class ProgressiveHedging(object):
                            / sumprob, 4)
                            for p in self.Instance.ProductSet]
 
+                    inv = [round(sum(self.ScenarioSet[w].Probability
+                                     * self.CurrentSolution[w].InventoryLevel[0][time][p] for w in scenarios) \
+                                 / sumprob, 4)
+                           for p in self.Instance.ProductSet]
+
+                    back = [round(sum(self.ScenarioSet[w].Probability
+                                     * self.CurrentSolution[w].BackOrder[0][time][self.Instance.ProductWithExternalDemandIndex[p]] for w in scenarios) \
+                                 / sumprob, 4)
+                           for p in self.Instance.ProductWithExternalDemand]
+
                     prod = [sum(self.ScenarioSet[w].Probability
                                 * self.CurrentSolution[w].Production[0][time][p] for w in scenarios)\
                            / sumprob
@@ -390,6 +401,10 @@ class ProgressiveHedging(object):
                         for p in self.Instance.ProductSet:
                             solproduction[w][time][p] = prod[p]# int(round(prod[p]))
                             solquantity[w][time][p] = qty[p]
+                            solinventory[w][time][p] = inv[p]
+                            if self.Instance.HasExternalDemand[p]:
+                                indexp = self.Instance.ProductWithExternalDemandIndex[p]
+                                solbackorder[w][time][indexp] = back[indexp]
                             for q in self.Instance.ProductSet:
                                 solconsumption[w][time][q][p] = cons[q][p]
 
@@ -788,9 +803,9 @@ class ProgressiveHedging(object):
             self.CurrentIteration += 1
 
             if self.CurrentIteration == 1:
-               self.LagrangianMultiplier = 0.1
+               self.LagrangianMultiplier = 0.01
 
-            if self.CurrentIteration >= 2:
+            if False and self.CurrentIteration >= 2:
                 self.UpdateMultipler()
             #self.LagrangianMultiplier *= 1.3
             #if self.LagrangianMultiplier < 1:

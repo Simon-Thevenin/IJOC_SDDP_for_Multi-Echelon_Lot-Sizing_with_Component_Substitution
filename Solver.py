@@ -202,7 +202,7 @@ class Solver( object ):
     def SolveYFixHeuristic(self):
 
         start = time.time()
-        treestructure = [1, 500] + [1] * (self.Instance.NrTimeBucket - 1) + [0]
+        treestructure = [1, 100] + [1] * (self.Instance.NrTimeBucket - 1) + [0]
         self.TestIdentifier.Model = Constants.ModelYQFix
         chosengeneration = self.ScenarioGeneration
         self.ScenarioGeneration = Constants.RQMC
@@ -219,6 +219,7 @@ class Solver( object ):
                                       averagescenario=False,
                                       recordsolveinfo=True,
                                       yfixheuristic=True)
+            self.TestIdentifier.Model = Constants.ModelHeuristicYFix
 
         if self.TestIdentifier.Method == Constants.SDDP:
              self.TestIdentifier.Model = Constants.ModelHeuristicYFix

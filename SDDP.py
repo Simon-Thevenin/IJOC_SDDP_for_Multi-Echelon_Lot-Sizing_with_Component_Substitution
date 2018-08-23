@@ -404,7 +404,7 @@ class SDDP(object):
         if result <= self.CurrentLowerBound:
             self.NrIterationWithoutLBImprovment += 1
         else:
-            NrIterationWithoutLBImprovment = 0
+            self.NrIterationWithoutLBImprovment = 0
         self.CurrentLowerBound = result
 
     #This funciton update the upper bound based on the last forward pass
