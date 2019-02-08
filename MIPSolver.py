@@ -68,8 +68,8 @@ class MIPSolver(object):
         #The set of scenarios used to solve the instance
         self.DemandScenarioTree = scenariotree
         self.DemandScenarioTree.Owner = self
-        self.NrScenario = len( [ n for n in self.DemandScenarioTree.Nodes if len( n.Branches ) == 0 ] )
-        # DemandKnownUntil is used fgor the YQFix model, when the first period are considered known.
+        self.NrScenario = len([n for n in self.DemandScenarioTree.Nodes if len(n.Branches) == 0])
+        # DemandKnownUntil is used for the YQFix model, when the first period are considered known.
         self.DemandKnownUntil = demandknownuntil
         self.YFixHeuristic= yfixheuristic
         self.UseSafetyStock = usesafetystock
@@ -94,10 +94,10 @@ class MIPSolver(object):
 
         #This list will contain the set of constraint number for each flow constraint
         self.FlowConstraintNR = []
-        self.BigMConstraintNR =[]
+        self.BigMConstraintNR = []
 
         self.QuantityConstraintNR = []
-        self.SetupConstraint= []
+        self.SetupConstraint = []
         self.RollingHorizon = rollinghorizon
         self.GivenSSGrave = givenSGrave
 
@@ -182,7 +182,7 @@ class MIPSolver(object):
         return "Big_S_%d_%d"%(p, t)
 
     # the function GetIndexQuantityVariable returns the index of the variable Q_{p, t}. Quantity of product p produced at time t
-    def GetIndexQuantityVariable( self, p, t, w ):
+    def GetIndexQuantityVariable(self, p, t, w):
         #Defined in the subclasses
         if self.Model == Constants.ModelYQFix:
             return self.GetStartQuantityVariable() + t * self.Instance.NrProduct + p

@@ -8,10 +8,11 @@ import csv
 import datetime
 #from DecentralizedMRP import DecentralizedMRP
 
-class Solver( object ):
+
+class Solver(object):
 
     # Constructor
-    def __init__( self, instance, testidentifier, mipsetting, evaluatesol ):
+    def __init__(self, instance, testidentifier, mipsetting, evaluatesol):
         self.Instance = instance
         self.TestIdentifier = testidentifier
         self.ScenarioGeneration = self.TestIdentifier.ScenarioSampling
@@ -25,7 +26,7 @@ class Solver( object ):
         self.SDDPSolver = None
 
 
-    #return true if the considered model is a two-stage formulation or reduction
+    # return true if the considered model is a two-stage formulation or reduction
     def UseYQFix(self):
         useyqfix = self.TestIdentifier.Model == Constants.ModelYQFix \
                 or self.TestIdentifier.Model == Constants.Average \
@@ -34,7 +35,7 @@ class Solver( object ):
 
         return useyqfix
 
-    #This method call the right method
+    # This method call the right method
     def Solve(self):
         solution = None
         if self.UseYQFix():
@@ -46,8 +47,6 @@ class Solver( object ):
         if self.TestIdentifier.Model == Constants.ModelHeuristicYFix:
             solution = self.SolveYFixHeuristic()
 
-
-    #    self.PrintTestResult()
         self.PrintSolutionToFile(solution)
 
         return solution
@@ -155,7 +154,7 @@ class Solver( object ):
         return solution, mipsolver
 
     #Solve the two-stage version of the problem
-    def SolveYQFix( self ):
+    def SolveYQFix(self):
         tmpmodel = self.TestIdentifier.Model
         start = time.time()
 
@@ -164,7 +163,7 @@ class Solver( object ):
 
         average = False
         nrscenario = int(self.TestIdentifier.NrScenario)
-        if Constants.IsDeterministic( self.TestIdentifier.Model ):
+        if Constants.IsDeterministic(self.TestIdentifier.Model):
             average = True
             nrscenario = 1
 
