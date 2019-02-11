@@ -60,7 +60,7 @@ class Solution(object):
         else:
             self.FixedQuantity = []
         # The objecie value as outputed by CPLEx,
-        self.CplexCost =-1
+        self.CplexCost = -1
         self.CplexGap = -1
         self.CplexTime = 0
         self.TotalTime = 0
@@ -71,7 +71,7 @@ class Solution(object):
 
         self.SDDPLB = -1
         self.SDDPExpUB = -1
-        self.SDDPNrIteration =-1
+        self.SDDPNrIteration = -1
 
         self.SDDPTimeBackward = -1
         self.SDDPTimeForwardNoTest = -1

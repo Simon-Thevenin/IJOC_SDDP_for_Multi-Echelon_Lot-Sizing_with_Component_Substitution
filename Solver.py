@@ -5,6 +5,7 @@ import time
 from MIPSolver import MIPSolver
 from SDDP import SDDP
 from ProgressiveHedging import ProgressiveHedging
+from Hybrid_PH_SDDP import Hybrid_PH_SDDP
 import csv
 import datetime
 #from DecentralizedMRP import DecentralizedMRP
@@ -12,7 +13,7 @@ import datetime
 class Solver( object ):
 
     # Constructor
-    def __init__( self, instance, testidentifier, mipsetting, evaluatesol ):
+    def __init__(self, instance, testidentifier, mipsetting, evaluatesol):
         self.Instance = instance
         self.TestIdentifier = testidentifier
         self.ScenarioGeneration = self.TestIdentifier.ScenarioSampling
@@ -47,13 +48,9 @@ class Solver( object ):
         if self.TestIdentifier.Model == Constants.ModelHeuristicYFix:
             solution = self.SolveYFixHeuristic()
 
-
-    #    self.PrintTestResult()
         self.PrintSolutionToFile(solution)
 
         return solution
-
-
 
 
     def PrintTestResult():
@@ -80,8 +77,6 @@ class Solver( object ):
         myfile.close()
 
 
-
-
     def PrintSolutionToFile(self, solution):
         testdescription = self.TestIdentifier.GetAsString()
         if Constants.PrintSolutionFileToExcel:
@@ -99,7 +94,8 @@ class Solver( object ):
     #    wr.writerow(data)
     #    myfile.close()
     #This function creates the CPLEX model and solves it.
-    def MRP( self, treestructur=[1, 8, 8, 4, 2, 1, 0], averagescenario=False, recordsolveinfo=False, yfixheuristic=False, warmstart=False):
+
+    def MRP(self, treestructur=[1, 8, 8, 4, 2, 1, 0], averagescenario=False, recordsolveinfo=False, yfixheuristic=False, warmstart=False):
 
         scenariotreemodel = self.TestIdentifier.Model
 
@@ -179,7 +175,7 @@ class Solver( object ):
                  self.UseSSGrave = True
             self.TestIdentifier.Model = Constants.Average
 
-        treestructure = [1, nrscenario] + [1] * (self.Instance.NrTimeBucket - 1 ) +[ 0 ]
+        treestructure = [1, nrscenario] + [1] * (self.Instance.NrTimeBucket - 1) +[ 0 ]
         solution, mipsolver = self.MRP(treestructure, average, recordsolveinfo=True )
 
         end = time.time()
@@ -242,7 +238,6 @@ class Solver( object ):
             solution = self.ProgressiveHedging.Run()
 
 
-
         end = time.time()
         solution.TotalTime = end - start
         return solution
@@ -288,6 +283,14 @@ class Solver( object ):
 
             self.ProgressiveHedging = ProgressiveHedging(self.Instance, self.TestIdentifier, self.TreeStructure)
             solution = self.ProgressiveHedging.Run()
+
+
+        if self.TestIdentifier.Method == Constants.Hybrid:
+            self.TreeStructure = self.GetTreeStructure()
+
+            self.Hybrid = Hybrid_PH_SDDP(self.Instance, self.TestIdentifier, self.TreeStructure, self)
+            solution = self.Hybrid.Run()
+
 
         #self.SDDPSolver = SDDP(self.Instance, self.TestIdentifier)
              #self.SDDPSolver.LoadCuts()

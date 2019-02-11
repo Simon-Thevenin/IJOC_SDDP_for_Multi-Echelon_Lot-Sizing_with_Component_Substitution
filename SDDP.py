@@ -141,6 +141,7 @@ class SDDP(object):
 
         self.CurrentSetups = []
         self.HasFixedSetup = False
+
         self.IterationSetupFixed = 0
 
 
@@ -428,7 +429,7 @@ class SDDP(object):
         c = Constants.Infinity
         if self.CurrentLowerBound > 0:
             convergencecriterion = float(self.CurrentUpperBound) / float(self.CurrentLowerBound) \
-                                   - (1.96 * math.sqrt(float(self.VarianceForwardPass)  \
+                                   - (1.96 * math.sqrt(float(self.VarianceForwardPass) \
                                                      / float(self.CurrentNrScenario)) \
                                          / float(self.CurrentLowerBound))
 
@@ -569,13 +570,13 @@ class SDDP(object):
         #if Constants.SDDPGenerateCutWith2Stage:
 
 
-        if self.TestIdentifier.Model == Constants.ModelHeuristicYFix:
+        if self.TestIdentifier.Model == Constants.ModelHeuristicYFix or self.TestIdentifier.Method == Constants.Hybrid:
             Constants.SDDPGenerateCutWith2Stage = False
             Constants.SolveRelaxationFirst = False
             Constants.SDDPRunSigleTree = False
-
         else:
             self.SolveTwoStageHeuristic()
+
 
         createpreliminarycuts = Constants.SolveRelaxationFirst or Constants.SDDPGenerateCutWith2Stage
         phase = 1
@@ -645,7 +646,7 @@ class SDDP(object):
             if not createpreliminarycuts and not self.HasFixedSetup:
                 Stop = self.CheckStoppingCriterion()
             if self.HasFixedSetup:
-                self.WriteInTraceFile("Iteration With Fixed Setup  LB: % r, (exp UB: % r) \n"% ( self.CurrentLowerBound, self.CurrentExpvalueUpperBound))
+                self.WriteInTraceFile("Iteration With Fixed Setup  LB: % r, (exp UB: % r) \n"% (self.CurrentLowerBound, self.CurrentExpvalueUpperBound))
             duration = time.time() - self.StartOfAlsorithm
 
             if self.CurrentForwardSampleSize < 10 and duration >= Constants.SDDPDurationBeforeIncreaseForwardSample:
@@ -655,22 +656,22 @@ class SDDP(object):
                 self.CurrentForwardSampleSize = 50
                 self.WriteInTraceFile("set number of scenario in forward to 50 \n")
 
-            newsetup = [[ round(self.ForwardStage[0].ProductionValue[0][t][p], 0)
+            newsetup = [[round(self.ForwardStage[0].ProductionValue[0][t][p], 0)
                          for p in self.Instance.ProductSet]
                         for t in self.Instance.TimeBucketSet]
 
 
-            if not createpreliminarycuts and self.CurrentSetups == newsetup and Constants.SDDPFixSetupStrategy and not self.HasFixedSetup:
-                self.HeuristicSetupValue = newsetup
-                self.ForwardStage[0].ChangeSetupToValueOfTwoStage()
-                self.IterationSetupFixed = self.CurrentIteration
-                self.HasFixedSetup = True
+          #  if not createpreliminarycuts and self.CurrentSetups == newsetup and Constants.SDDPFixSetupStrategy and not self.HasFixedSetup:
+          #      self.HeuristicSetupValue = newsetup
+          #      self.ForwardStage[0].ChangeSetupToValueOfTwoStage()
+          #      self.IterationSetupFixed = self.CurrentIteration
+          #      self.HasFixedSetup = True
 
-            if self.HasFixedSetup and self.IterationSetupFixed < self.CurrentIteration - 10:
-                self.ForwardStage[0].ChangeSetupToBinary()
-                self.HasFixedSetup = False
+          #  if self.HasFixedSetup and self.IterationSetupFixed < self.CurrentIteration - 10:
+          #      self.ForwardStage[0].ChangeSetupToBinary()
+          #      self.HasFixedSetup = False
 
-            self.CurrentSetups = newsetup
+         #   self.CurrentSetups = newsetup
             #if self.CurrentForwardSampleSize < 100 and duration >= 3*Constants.SDDPDurationBeforeIncreaseForwardSample:
             #    self.CurrentForwardSampleSize = 100
             #    self.WriteInTraceFile("set number of scenario in forward to 100 \n")
@@ -684,7 +685,7 @@ class SDDP(object):
 
         self.RecordSolveInfo()
         if Constants.PrintSDDPTrace:
-            self.WriteInTraceFile("End of the SDDP algorithm\n ")
+            self.WriteInTraceFile("End of the SDDP algorithm \n ")
 
 
     # This function runs the SDDP algorithm

@@ -10,7 +10,7 @@ import itertools
 class SDDPStage(object):
 
     def __init__(self, owner=None, previousstage=None, nextstage=None, decisionstage=-1, fixedccenarioset=[],
-                 forwardstage = None, isforward = False ):
+                 forwardstage=None, isforward=False):
 
         self.SDDPOwner = owner
         self.PreviousSDDPStage = previousstage
@@ -1349,8 +1349,10 @@ class SDDPStage(object):
         if Constants.Debug:
             print("Define the MIP of stage %d" % self.DecisionStage)
         self.DefineVariables()
-        if self.SDDPOwner.TestIdentifier.Model == Constants.ModelHeuristicYFix and self.IsFirstStage():
-            self.ChangeSetupToValueOfTwoStage()
+        if (self.SDDPOwner.TestIdentifier.Model == Constants.ModelHeuristicYFix\
+                or self.SDDPOwner.TestIdentifier.Method == Constants.Hybrid)\
+            and self.IsFirstStage():
+                self.ChangeSetupToValueOfTwoStage()
 
         if not self.IsLastStage():
             self.CreateProductionConstraints()
@@ -1709,7 +1711,6 @@ class SDDPStage(object):
 
     def SaveSolutionFromSol(self, sol):
             obj = sol.get_objective_value()
-
             self.StageCostPerScenarioWithCostoGo[self.CurrentTrialNr] = obj
             self.StageCostPerScenarioWithoutCostoGo[self.CurrentTrialNr] = self.StageCostPerScenarioWithCostoGo[self.CurrentTrialNr]
 

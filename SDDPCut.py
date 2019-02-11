@@ -186,9 +186,6 @@ class SDDPCut(object):
             self.IndexBackward = []
 
 
-
-
-
     #This function modify the cut to take into account the Fixed variables
     def ModifyCut(self, forward):
         constrainttuples = []
@@ -201,7 +198,6 @@ class SDDPCut(object):
         for constrnr in index:
             constrainttuples.append((constrnr, righthandside))
         return constrainttuples
-
 
 
     def GetRHS(self):

@@ -14,6 +14,7 @@ class Constants( object ):
     MIP = "MIP"
     SDDP = "SDDP"
     ProgressiveHedging = "PH"
+    Hybrid = "Hybrid"
 
     #Demand distributions:
     Lumpy = "Lumpy"
@@ -46,13 +47,13 @@ class Constants( object ):
     EvaluationScenarioSeed = 2934
 
     #Running option
-    Debug = False
+    Debug = True
     PrintSolutionFileToExcel = False
     PrintDetailsExcelFiles = False
     PrintOnlyFirstStageDecision = True
     RunEvaluationInSeparatedJob = False
     PrintScenarios = False
-    PrintSolutionFileInTMP = True
+    PrintSolutionFileInTMP = False
     LauchEvalAfterSolve = False
 
     #Code parameter
@@ -74,13 +75,13 @@ class Constants( object ):
     SDDPIncreaseNrScenarioTest = 100
     SDDPInitNrScenarioTest = 10
 
-    SolveRelaxationFirst = True
+    SolveRelaxationFirst = False
     SDDPNrIterationRelax = 500
     SDDPGapRelax = 0.01
 
     SDDPUseValidInequalities = False
 
-    SDDPGenerateCutWith2Stage = True
+    SDDPGenerateCutWith2Stage = False
 
 
 

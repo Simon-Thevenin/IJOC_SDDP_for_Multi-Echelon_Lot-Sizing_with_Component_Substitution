@@ -14,12 +14,15 @@ class ProgressiveHedging(object):
 
 
         self.Instance = instance
+
         self.TestIdentifier = testidentifier
         self.TreeStructure = treestructure
 
         self.GivenSetup = givensetup
         self.SolveWithFixedSetup = len(self.GivenSetup) > 0
         self.Evaluation = False
+
+
 
         self.GenerateScenarios(scenariotree)
 
@@ -150,6 +153,8 @@ class ProgressiveHedging(object):
                                   % (self.CurrentIteration, duration, gap, self.CurrentImplementableSolution.TotalCost,
                                      lpenalty, qpenalty, self.LagrangianMultiplier, primconv, dualconv, ratechangeimplem,
                                      ratequad_lin, rateprimaldual, ratedualprimal))
+
+
 
         return result
 
@@ -407,7 +412,6 @@ class ProgressiveHedging(object):
                                 solbackorder[w][time][indexp] = back[indexp]
                             for q in self.Instance.ProductSet:
                                 solconsumption[w][time][q][p] = cons[q][p]
-
 
 
         solution = Solution(self.Instance, solquantity, solproduction, solinventory, solbackorder,
@@ -683,7 +687,7 @@ class ProgressiveHedging(object):
         return result
 
     def GetLinearPenalty(self):
-        result = sum(self.ScenarioSet[w].Probability *  (self.GetLinearPenaltyForScenario(w) )
+        result = sum(self.ScenarioSet[w].Probability * (self.GetLinearPenaltyForScenario(w))
                      for w in self.ScenarioNrSet)
 
         return result
@@ -796,6 +800,7 @@ class ProgressiveHedging(object):
 
             # Create an implementable solution on the scenario tree
             self.PreviousImplementableSolution = copy.deepcopy(self.CurrentImplementableSolution)
+
             self.CurrentImplementableSolution = self.CreateImplementableSolution()
 
 
@@ -803,7 +808,9 @@ class ProgressiveHedging(object):
             self.CurrentIteration += 1
 
             if self.CurrentIteration == 1:
-               self.LagrangianMultiplier = 0.01
+                    self.LagrangianMultiplier = 0.01
+
+
 
             if False and self.CurrentIteration >= 2:
                 self.UpdateMultipler()

@@ -1622,9 +1622,9 @@ class MIPSolver(object):
         return solution
 
     #This function compute the cost per scenario
-    def ComputeCostPerScenario( self ):
+    def ComputeCostPerScenario(self):
         # Compute the cost per scenario:
-        costperscenarion = [ sum( self.Cplex.solution.get_values( [self.GetIndexInventoryVariable(p, t, w)] )[0]
+        costperscenarion = [sum( self.Cplex.solution.get_values( [self.GetIndexInventoryVariable(p, t, w)] )[0]
                                 * self.Instance.InventoryCosts[p] * math.pow( self.Instance.Gamma, t )
                                 + self.Cplex.solution.get_values( [self.GetIndexProductionVariable(p, t, w)] )[0]
                                 * self.Instance.SetupCosts[p] * math.pow( self.Instance.Gamma, t )
