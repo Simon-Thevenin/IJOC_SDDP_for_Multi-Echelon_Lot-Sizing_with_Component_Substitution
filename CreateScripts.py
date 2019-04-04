@@ -31,12 +31,28 @@ mkdir -p /tmp/thesim/CPLEXLog
 def CreatHeaderQuebec(file):
     file.write("""
 #!/bin/bash
-#PBS -A abc-123-aa
-#PBS -l walltime=30:00:00
-#PBS -l nodes=1:ppn=1
-#PBS -r n
+#SBATCH --time=00:01:00
+
 mkdir /tmp/thesim
-cd /home/thesim/stochasticmrp/
+
+module load python/2.7
+module load scipy-stack
+module load python/2.7
+module load cplex/2.9
+ENVDIR=/tmp/$RANDOM
+virtualenv --no-download $ENVDIR
+source $ENVDIR/bin/activate
+pip install --upgrade pip
+cd /home/thesim/installcplex/CPLEX_Studio129/cplex/python/2.7/x86-64_linux/
+python setup.py install
+cd /home/thesim/
+pip install openpyxl --upgrade --pre
+pip install networkx
+pip freeze > requirements.txt
+
+
+cd /home/thesim/ProjectJFY/scm
+
 """)
 
 
@@ -113,19 +129,19 @@ if __name__ == "__main__":
                 for setting in ["Default"]:
                     nrforward = 1
                     jobname = CreateSDDPJob(instance, nrback, nrforward, setting, model = "YFix")
-                    fileheur.write("qsub %s \n" % (jobname))
+                    fileheur.write("sbatch %s \n" % (jobname))
                     jobname = CreateMLLocalSearchJob(instance, nrback, nrforward, setting, model="YFix")
-                    fileheur.write("qsub %s \n" % (jobname))
+                    fileheur.write("sbatch %s \n" % (jobname))
 
 
             jobname = CreateMIPJob(instance, 100, model="YQFix")
-            fileheur.write("qsub %s \n" % (jobname))
+            fileheur.write("sbatch %s \n" % (jobname))
 
             for scenariotree in scenariotreeset:
                 jobname = CreateMIPJob(instance, scenariotree, model = "HeuristicYFix")
-                fileheur.write("qsub %s \n" % (jobname))
+                fileheur.write("sbatch %s \n" % (jobname))
                 jobname = CreatePHJob(instance, scenariotree, model = "HeuristicYFix")
-                fileheur.write("qsub %s \n" % (jobname))
+                fileheur.write("sbatch %s \n" % (jobname))
 
 
 
@@ -174,4 +190,4 @@ if __name__ == "__main__":
         for instance in InstanceSet:
             for scenariotree in scenariotreeset:
                 jobname = CreatePHJob(instance, scenariotree)
-                filemip.write("qsub %s \n" % (jobname) )
+                filemip.write("sbatch %s \n" % (jobname) )
