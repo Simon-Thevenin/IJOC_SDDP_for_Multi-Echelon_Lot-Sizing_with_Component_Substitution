@@ -48,6 +48,8 @@ python setup.py install
 cd /home/thesim/
 pip install openpyxl --upgrade --pre
 pip install networkx
+pip install sklearn
+
 pip freeze > requirements.txt
 
 
