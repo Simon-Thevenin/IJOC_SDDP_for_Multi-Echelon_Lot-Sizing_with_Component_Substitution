@@ -31,7 +31,7 @@ def CreatHeaderQuebec(file):
     file.write("""#!/bin/bash
 #SBATCH --time=00:05:00
 #SBATCH --job-name=test
-#SBATCH --output=%x-%j.out
+#SBATCH --output=./Temp/%x-%j.out
 
 mkdir /tmp/thesim
 
@@ -51,7 +51,7 @@ pip install networkx
 pip freeze > requirements.txt
 
 
-cd /home/thesim/ProjectJFY/scm
+cd /home/thesim/ProjetJFY/scm
 
 """)
 
