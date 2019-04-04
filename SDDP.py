@@ -146,13 +146,12 @@ class SDDP(object):
 
 
     #This function make the forward pass of SDDP
-    def ForwardPass(self, ignorefirststage = False):
+    def ForwardPass(self, ignorefirststage=False):
         start = time.time()
         if Constants.Debug:
             print("Start forward pass")
         for t in self.StagesSet:
             if not ignorefirststage or t >= 1:
-
                 if Constants.SDDPCleanCuts \
                     and self.CurrentIteration > 0 \
                     and self.CurrentIteration % 100 == 0 \
@@ -162,11 +161,8 @@ class SDDP(object):
                         print("Clean cut Should not be used")
 
                 #Run the forward pass at each stage t
-
                 self.ForwardStage[t].RunForwardPassMIP()
 
-                #try to use core point method, remove if it does not work
-                #if self.Stage[t].IsFirstStage()
         end = time.time()
         duration = end-start
 
@@ -183,19 +179,11 @@ class SDDP(object):
 
         self.UseCorePoint = self.GenerateStrongCut
 
-
-
         for t in self.StagesSet:
             if self.GenerateStrongCut:
                 self.ForwardStage[t].UpdateCorePoint()
 
-        #if self.IsIterationWithConvergenceTest:
-        #    self.ConsideredTrialForBackward = np.random.randint(self.CurrentNrScenario, size=Constants.SDDPNrScenarioBackwardPass)
-        #else:
         self.ConsideredTrialForBackward = self.TrialScenarioNrSet
-
-        #self.ConsideredTrialForBackward = np.random.randint(self.CurrentNrScenario,
-        #                                                    size=Constants.SDDPNrScenarioBackwardPass)
 
         if not self.DefineBakwarMip:
             for stage in self.StagesSet:
@@ -214,6 +202,8 @@ class SDDP(object):
             #Build or update the MIP of stage t
             returncutinsteadofadd = (returnfirststagecut and t == 1)
             firststagecuts, avgsubprobcosts = self.BackwardStage[t].GernerateCut(returncutinsteadofadd)
+
+
 
         self.UseCorePoint = False
 
@@ -323,7 +313,6 @@ class SDDP(object):
         for stage in self.StagesSet:
             time = self.BackwardStage[stage].TimeDecisionStage -1
 
-            #self.BackwardStage[stage].SAAScenarioNrSet(len(self.CurrentSetOfTrialScenarios))
             if time + max(len(self.BackwardStage[stage].RangePeriodQty),1) >= self.Instance.NrTimeBucketWithoutUncertaintyBefore + 1:
                 self.BackwardStage[stage].FixedScenarioSet = self.SAAScenarioNrSetInPeriod[time]
                 self.BackwardStage[stage].FixedScenarioPobability = [saascnarioproba[time][w] for w in self.SAAScenarioNrSetInPeriod[time]]
@@ -333,8 +322,7 @@ class SDDP(object):
                 self.BackwardStage[stage].FixedScenarioPobability = [1]
                 self.BackwardStage[stage].SAAStageCostPerScenarioWithoutCostoGopertrial = [0 for w in
                                                                                            self.TrialScenarioNrSet]
-           # if not self.BackwardStage[stage].IsFirstStage():
-           #     self.BackwardStage[stage].DefineMIP()
+
 
         self.CurrentScenarioSeed = self.CurrentScenarioSeed + 1
 
@@ -417,6 +405,7 @@ class SDDP(object):
             variance = sum(math.pow(expectedupperbound-self.ForwardStage[laststage].PartialCostPerScenario[w], 2) for w in self.TrialScenarioNrSet) / self.CurrentNrScenario
             self.CurrentUpperBound = expectedupperbound - 1.96 * math.sqrt(variance / self.CurrentNrScenario)
             self.CurrentExpvalueUpperBound = expectedupperbound
+            self.CurrentSafeUpperBound = expectedupperbound + 1.96 * math.sqrt(variance / self.CurrentNrScenario)
             self.VarianceForwardPass = variance
 
     #This function check if the stopping criterion of the algorithm is met
@@ -570,7 +559,9 @@ class SDDP(object):
         #if Constants.SDDPGenerateCutWith2Stage:
 
 
-        if self.TestIdentifier.Model == Constants.ModelHeuristicYFix or self.TestIdentifier.Method == Constants.Hybrid:
+
+
+        if True or self.TestIdentifier.Model == Constants.ModelHeuristicYFix or self.TestIdentifier.Method == Constants.Hybrid:
             Constants.SDDPGenerateCutWith2Stage = False
             Constants.SolveRelaxationFirst = False
             Constants.SDDPRunSigleTree = False
@@ -801,6 +792,9 @@ class SDDP(object):
 
         #self.LinkStages()
         #Make a last forward pass to find the optimal insample solution
+
+
+
 
 
 

@@ -7,7 +7,7 @@ import csv
 from Constants import Constants
 
 NrScenarioEvaluation = "5000"
-ForCIRRELT = True
+ForCIRRELT = False
 
 def CreatHeader(file):
     if ForCIRRELT:
@@ -50,6 +50,18 @@ ulimit -v 16000000
 python scm.py  Solve %s %s %s RQMC -n 5000 -p Fix -m SDDP --mipsetting %s --nrforward %s
 """ % (instance, model, nrback, setting, nrforward, instance, model, nrback, setting, nrforward))
     return qsub_filename
+
+def CreateMLLocalSearchJob(instance, nrback, nrforward, setting, model = "YFix"):
+    qsub_filename = "./Jobs/job_mllocalsearch_%s_%s_%s_%s_%s" % (instance, nrback, nrforward, setting, model)
+    qsub_file = open(qsub_filename, 'w')
+    CreatHeader(qsub_file )
+    qsub_file.write("""
+#$ -o /home/thesim/log/outputjobevaluate%s%s%s%s%s.txt
+ulimit -v 16000000
+python scm.py  Solve %s %s %s RQMC -n 5000 -p Fix -m MLLocalSearch --mipsetting %s --nrforward %s
+""" % (instance, model, nrback, setting, nrforward, instance, model, nrback, setting, nrforward))
+    return qsub_filename
+
 
 def CreateMIPJob(instance, scenariotree, model = "YFix"):
     qsub_filename = "./Jobs/job_mip_%s_%s_%s" % (instance, scenariotree, model)
@@ -94,12 +106,20 @@ if __name__ == "__main__":
         #
         """)
 
+        InstanceSet = ["SuperSmallIntance"]
+
         for instance in InstanceSet:
             for nrback in sddpnrbackset:
                 for setting in ["Default"]:
                     nrforward = 1
-                    jobname = CreateSDDPJob(instance, nrback, nrforward, setting, model = "HeuristicYFix")
+                    jobname = CreateSDDPJob(instance, nrback, nrforward, setting, model = "YFix")
                     fileheur.write("qsub %s \n" % (jobname))
+                    jobname = CreateMLLocalSearchJob(instance, nrback, nrforward, setting, model="YFix")
+                    fileheur.write("qsub %s \n" % (jobname))
+
+
+            jobname = CreateMIPJob(instance, 100, model="YQFix")
+            fileheur.write("qsub %s \n" % (jobname))
 
             for scenariotree in scenariotreeset:
                 jobname = CreateMIPJob(instance, scenariotree, model = "HeuristicYFix")

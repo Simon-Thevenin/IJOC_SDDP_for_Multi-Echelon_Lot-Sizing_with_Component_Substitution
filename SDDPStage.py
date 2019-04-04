@@ -3,6 +3,8 @@ import cplex
 import math
 from Constants import Constants
 from SDDPCut import SDDPCut
+#from SDDPMLCut import SDDPMLCut
+
 from ScenarioTree import ScenarioTree
 import itertools
 
@@ -151,6 +153,9 @@ class SDDPStage(object):
 
         self.FullTreeSolverDefine = False
         self.FullTreeSolver = None
+
+        #if self.IsForward and Constants.SDDPUseMLCuts:
+        #    self.MLCut = SDDPMLCut(self)
 
     def ComputeVariableIndices(self):
         self.TimePeriodToGoQty = range(self.TimeDecisionStage + len(self.RangePeriodQty), self.Instance.NrTimeBucket)
@@ -457,13 +462,13 @@ class SDDPStage(object):
         return self.StockIndexArray[t][w][p]
 
     def GetNamePIStockVariable(self, p, t, wevpi, w):
-            return "PII_%d_%d_%d_%d" % (p, t, wevpi, w)
+        return "PII_%d_%d_%d_%d" % (p, t, wevpi, w)
 
     def GetNamePIConsumptionVariable(self, c, t, wevpi, w):
-            return "PIW_%da%dt%ds%d_%d" % (c[0], c[1], t, wevpi, w)
+        return "PIW_%da%dt%ds%d_%d" % (c[0], c[1], t, wevpi, w)
 
     def GetNamePIQuantityVariable(self, p, t, wevpi, w):
-            return "PIQ_%d_%d_%d_%d" % (p, t, wevpi, w)
+        return "PIQ_%d_%d_%d_%d" % (p, t, wevpi, w)
 
     def GetNamePIBacklogVariable(self, p, t, wevpi, w):
         return "PIB_%d_%d_%d_%d" % (p, t, wevpi, w)
@@ -1350,7 +1355,9 @@ class SDDPStage(object):
             print("Define the MIP of stage %d" % self.DecisionStage)
         self.DefineVariables()
         if (self.SDDPOwner.TestIdentifier.Model == Constants.ModelHeuristicYFix\
-                or self.SDDPOwner.TestIdentifier.Method == Constants.Hybrid)\
+                or self.SDDPOwner.TestIdentifier.Method == Constants.Hybrid
+                or self.SDDPOwner.TestIdentifier.Method == Constants.MLLocalSearch
+        )\
             and self.IsFirstStage():
                 self.ChangeSetupToValueOfTwoStage()
 
@@ -1547,6 +1554,11 @@ class SDDPStage(object):
         # Create a cute for the previous stage problem
         #if generatecut:
         #    cut = SDDPCut(self.PreviousSDDPStage)
+
+        #Build the cost to go approximation
+       # if Constants.SDDPUseMLCuts and self.SDDPOwner.CurrentIteration>0 and not self.IsLastStage():
+       #     self.MLCut.ComputeRegression()
+
 
         averagecostofthesubproblem = 0
         if self.MIPDefined:
@@ -1795,13 +1807,14 @@ class SDDPStage(object):
 
                     sol = self.Cplex.solution
 
+                    #self.PreviousSDDPStage.CorrespondingForwardStage.MLCut.SavePreviousSolutionValue(trial, sol.get_objective_value())
+
                     if Constants.Debug:
                         print("cost of subproblem: %r"%sol.get_objective_value())
-                    averagecostofthesubproblem += sol.get_objective_value() #\
-                                                  #* self.SDDPOwner.SetOfSAAScenario[scenario].Probability
 
-                    #if not self.IsLastStage():
-                    #    print("uncomment if this was usefull")
+                    averagecostofthesubproblem += sol.get_objective_value()
+
+
                     self.SAAStageCostPerScenarioWithoutCostoGopertrial[trial] = sol.get_objective_value()
                     if not self.IsLastStage():
                         self.SAAStageCostPerScenarioWithoutCostoGopertrial[trial] -= sum(self.FixedScenarioPobability[w]
@@ -1968,7 +1981,6 @@ class SDDPStage(object):
                  cut.IncreaseCapacityRHS(self.Instance.Capacity[k] * duals[i])
 
     def IncreaseCutWithCutDuals(self, cut, sol):
-
         #if self.SDDPOwner.CurrentIteration > 0 :
             if Constants.Debug:
                 print("Increase cut with cut duals")

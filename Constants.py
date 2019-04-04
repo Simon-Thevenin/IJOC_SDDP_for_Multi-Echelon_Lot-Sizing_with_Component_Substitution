@@ -32,7 +32,7 @@ class Constants( object ):
     ModelYQFix = "YQFix"
     ModelYFix = "YFix"
     ModelHeuristicYFix = "HeuristicYFix"
-
+    MLLocalSearch = "MLLocalSearch"
     #Action
     Solve ="Solve"
     Evaluate = "Evaluate"
@@ -47,7 +47,7 @@ class Constants( object ):
     EvaluationScenarioSeed = 2934
 
     #Running option
-    Debug = True
+    Debug = False
     PrintSolutionFileToExcel = False
     PrintDetailsExcelFiles = False
     PrintOnlyFirstStageDecision = True
@@ -58,22 +58,22 @@ class Constants( object ):
 
     #Code parameter
     Infinity = 9999999999999
-    AlgorithmTimeLimit = 14400
+    AlgorithmTimeLimit = 60
     MIPBasedOnSymetricTree = True
 
     #SDDPparameters
-    AlgorithmOptimalityTolerence = 0.0005
+    AlgorithmOptimalityTolerence = 0.01#0.0005
     SDDPIterationLimit = 100000
     SDDPPrintDebugLPFiles = False
     PrintSDDPTrace = True
-    GenerateStrongCut = True
-    SDDPRunSigleTree = True
+    GenerateStrongCut = False
+    SDDPRunSigleTree = False
 
     #SDDPNrScenarioForwardPass = 10
     #SDDPNrScenarioBackwardPass = 10
     SDDPForwardPassInSAATree = True
     SDDPIncreaseNrScenarioTest = 100
-    SDDPInitNrScenarioTest = 10
+    SDDPInitNrScenarioTest = 100
 
     SolveRelaxationFirst = False
     SDDPNrIterationRelax = 500

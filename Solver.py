@@ -6,6 +6,7 @@ from MIPSolver import MIPSolver
 from SDDP import SDDP
 from ProgressiveHedging import ProgressiveHedging
 from Hybrid_PH_SDDP import Hybrid_PH_SDDP
+from MLLocalSearch import MLLocalSearch
 import csv
 import datetime
 #from DecentralizedMRP import DecentralizedMRP
@@ -291,6 +292,9 @@ class Solver( object ):
             self.Hybrid = Hybrid_PH_SDDP(self.Instance, self.TestIdentifier, self.TreeStructure, self)
             solution = self.Hybrid.Run()
 
+        if self.TestIdentifier.Method == Constants.MLLocalSearch:
+            self.MLLocalSearch = MLLocalSearch(self.Instance, self.TestIdentifier, self.TreeStructure, self)
+            solution = self.MLLocalSearch.Run()
 
         #self.SDDPSolver = SDDP(self.Instance, self.TestIdentifier)
              #self.SDDPSolver.LoadCuts()
@@ -356,7 +360,7 @@ class Solver( object ):
                 if nrtimebucketstochastic == 13:
                     stochasticparttreestructure = [4, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
                 if nrtimebucketstochastic == 14:
-                                stochasticparttreestructure = [4, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+                    stochasticparttreestructure = [4, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
 
             if self.TestIdentifier.NrScenario == "all20":
                 stochasticparttreestructure = [20]*nrtimebucketstochastic
