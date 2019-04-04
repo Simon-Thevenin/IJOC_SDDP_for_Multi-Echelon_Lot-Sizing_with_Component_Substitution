@@ -16,8 +16,7 @@ def CreatHeader(file):
         CreatHeaderQuebec(file)
 
 def CreatHeaderCirrelt(file):
-    file.write("""
-#!/bin/bash -l
+file.write("""#!/bin/bash -l
 #
 #$ -cwd
 #$ -q idra
@@ -29,9 +28,10 @@ mkdir -p /tmp/thesim/CPLEXLog
 """)
 
 def CreatHeaderQuebec(file):
-    file.write("""
-#!/bin/bash
-#SBATCH --time=00:01:00
+    file.write("""#!/bin/bash
+#SBATCH --time=00:05:00
+#SBATCH --job-name=test
+#SBATCH --output=%x-%j.out
 
 mkdir /tmp/thesim
 
@@ -118,9 +118,9 @@ if __name__ == "__main__":
         fileheurname = "runallheur.sh"
         fileheur = open(fileheurname, 'w')
         fileheur.write("""
-        #!/bin/bash -l
-        #
-        """)
+#!/bin/bash -l
+#
+""")
 
         InstanceSet = ["SuperSmallIntance"]
 
