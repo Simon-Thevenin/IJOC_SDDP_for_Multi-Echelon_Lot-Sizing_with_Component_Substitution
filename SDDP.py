@@ -274,11 +274,11 @@ class SDDP(object):
     def GenerateTrialScenarios(self):
         if Constants.SDDPForwardPassInSAATree:
             if self.IsIterationWithConvergenceTest:
-                self.CurrentSetOfTrialScenarios = self.CompleteSetOfSAAScenario
+                self.CurrentNrScenario = self.SDDPNrScenarioTest
             else:
                 self.CurrentNrScenario = self.CurrentForwardSampleSize
-                self.CurrentSetOfTrialScenarios =[]
-                for w in range(self.CurrentNrScenario):
+            self.CurrentSetOfTrialScenarios =[]
+            for w in range(self.CurrentNrScenario):
                     selected = random.choice(self.CompleteSetOfSAAScenario)
                     self.CurrentSetOfTrialScenarios.append(selected)
 

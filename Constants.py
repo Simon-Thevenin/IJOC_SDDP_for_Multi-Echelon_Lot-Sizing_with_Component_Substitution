@@ -58,7 +58,7 @@ class Constants( object ):
 
     #Code parameter
     Infinity = 9999999999999
-    AlgorithmTimeLimit = 60
+    AlgorithmTimeLimit = 3600
     MIPBasedOnSymetricTree = True
 
     #SDDPparameters
@@ -72,8 +72,8 @@ class Constants( object ):
     #SDDPNrScenarioForwardPass = 10
     #SDDPNrScenarioBackwardPass = 10
     SDDPForwardPassInSAATree = True
-    SDDPIncreaseNrScenarioTest = 100
-    SDDPInitNrScenarioTest = 100
+    SDDPIncreaseNrScenarioTest = 10
+    SDDPInitNrScenarioTest = 10
 
     SolveRelaxationFirst = False
     SDDPNrIterationRelax = 500

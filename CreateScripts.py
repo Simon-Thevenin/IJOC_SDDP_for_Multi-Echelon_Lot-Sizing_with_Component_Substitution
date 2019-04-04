@@ -29,7 +29,7 @@ mkdir -p /tmp/thesim/CPLEXLog
 
 def CreatHeaderQuebec(file):
     file.write("""#!/bin/bash
-#SBATCH --time=01:00:00
+#SBATCH --time=02:00:00
 #SBATCH --job-name=test
 #SBATCH --output=./Temp/%x-%j.out
 #SBATCH --mem=10G
@@ -130,7 +130,7 @@ if __name__ == "__main__":
 #
 """)
 
-        InstanceSet = ["01_NonStationary_b2_fe25_en_rk50_ll0_l20_HFalse_c2"]
+        InstanceSet = ["01_NonStationary_b2_fe25_en_rk50_ll0_l20_HFalse_c2", "02_NonStationary_b2_fe25_en_rk50_ll0_l20_HFalse_c2", "03_NonStationary_b2_fe25_en_rk50_ll0_l20_HFalse_c2" ]
 
         for instance in InstanceSet:
             for nrback in sddpnrbackset:

@@ -116,9 +116,10 @@ class MLLocalSearch(object):
 
         while( duration < Constants.AlgorithmTimeLimit):
             if(self.Iteration >= 1):
-                self.WriteInTraceFile("use heuristic setups")
+
                 self.GivenSetup2D = self.Descent(curentsolution)
             else:
+                self.WriteInTraceFile("use heuristic setups")
                 self.GivenSetup2D = self.GetHeuristicSetup()
 
             self.GivenSetup1D = [self.GivenSetup2D[t][p] for p in self.Instance.ProductSet for t in
@@ -409,7 +410,7 @@ class MLLocalSearch(object):
 
     def GetHeuristicSetup(self):
       #  print("Get Heuristic Setups")
-        treestructure = [1, 200] + [1] * (self.Instance.NrTimeBucket - 1) + [0]
+        treestructure = [1, 50] + [1] * (self.Instance.NrTimeBucket - 1) + [0]
         self.TestIdentifier.Model = Constants.ModelYQFix
         chosengeneration = self.TestIdentifier.ScenarioSampling
         self.ScenarioGeneration = "RQMC"
@@ -486,7 +487,7 @@ class MLLocalSearch(object):
 
 
         if(convergencecriterion <= 1 and delta > self.CurrentTolerance and  self.SDDPSolver.NrIterationWithoutLBImprovment>0):
-            self.SDDPSolver.CurrentForwardSampleSize = max(self.SDDPSolver.CurrentForwardSampleSize * 2, self.SDDPSolver.NrScenarioSAA)
+            self.SDDPSolver.CurrentForwardSampleSize = min(self.SDDPSolver.CurrentForwardSampleSize * 2, self.SDDPSolver.NrScenarioSAA)
 
 
 
