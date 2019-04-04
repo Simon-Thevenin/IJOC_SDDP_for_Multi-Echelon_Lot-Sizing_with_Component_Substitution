@@ -55,6 +55,12 @@ pip freeze > requirements.txt
 
 cd /home/thesim/ProjetJFY/scm
 
+
+mkdir -p /tmp/thesim
+mkdir -p /tmp/thesim/Evaluations
+mkdir -p /tmp/thesim/Solutions
+mkdir -p /tmp/thesim/CPLEXLog
+
 """)
 
 
