@@ -16,7 +16,7 @@ def CreatHeader(file):
         CreatHeaderQuebec(file)
 
 def CreatHeaderCirrelt(file):
-file.write("""#!/bin/bash -l
+    file.write("""#!/bin/bash -l
 #
 #$ -cwd
 #$ -q idra
