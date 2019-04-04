@@ -32,7 +32,7 @@ def CreatHeaderQuebec(file):
 #SBATCH --time=01:00:00
 #SBATCH --job-name=test
 #SBATCH --output=./Temp/%x-%j.out
-#SBATCH --mem=125G
+#SBATCH --mem=10G
 mkdir /tmp/thesim
 
 module load python/2.7
