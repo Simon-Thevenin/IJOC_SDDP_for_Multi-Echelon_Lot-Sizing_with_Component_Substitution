@@ -29,7 +29,7 @@ mkdir -p /tmp/thesim/CPLEXLog
 
 def CreatHeaderQuebec(file):
     file.write("""#!/bin/bash
-#SBATCH --time=00:05:00
+#SBATCH --time=01:00:00
 #SBATCH --job-name=test
 #SBATCH --output=./Temp/%x-%j.out
 
@@ -113,8 +113,8 @@ if __name__ == "__main__":
     InstanceSet = instancenameslist[0]
     instancetosolvename = ""
 
-    scenariotreeset = ["all2", "all5"]#, "allDIX", "all20"]
-    sddpnrbackset = [2, 5]#, 10, 20]
+    scenariotreeset = ["allDIX"] #["all2", "all5"]#, "allDIX", "all20"]
+    sddpnrbackset = [10] #[2, 5], 10, 20]
 
     if sys.argv[1] == "H":
         fileheurname = "runallheur.sh"
@@ -124,7 +124,7 @@ if __name__ == "__main__":
 #
 """)
 
-        InstanceSet = ["SuperSmallIntance"]
+        InstanceSet = ["01_NonStationary_b2_fe25_en_rk50_ll0_l20_HFalse_c2"]
 
         for instance in InstanceSet:
             for nrback in sddpnrbackset:
