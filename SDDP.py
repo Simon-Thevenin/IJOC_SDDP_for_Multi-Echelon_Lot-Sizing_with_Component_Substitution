@@ -277,6 +277,8 @@ class SDDP(object):
                 self.CurrentNrScenario = self.SDDPNrScenarioTest
             else:
                 self.CurrentNrScenario = self.CurrentForwardSampleSize
+
+
             self.CurrentSetOfTrialScenarios =[]
             for w in range(self.CurrentNrScenario):
                     selected = random.choice(self.CompleteSetOfSAAScenario)
@@ -390,7 +392,7 @@ class SDDP(object):
     def UpdateLowerBound(self):
         result = self.ForwardStage[0].PassCostWithAproxCosttoGo
 
-        if result <= self.CurrentLowerBound:
+        if self.CurrentLowerBound> 0 and result - self.CurrentLowerBound <= 0.000001:
             self.NrIterationWithoutLBImprovment += 1
         else:
             self.NrIterationWithoutLBImprovment = 0
