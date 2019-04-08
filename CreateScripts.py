@@ -49,6 +49,8 @@ cd /home/thesim/
 pip install openpyxl --upgrade --pre
 pip install networkx
 pip install sklearn
+module load scipy-stack
+
 
 pip freeze > requirements.txt
 
@@ -167,7 +169,7 @@ if __name__ == "__main__":
            for nrback in sddpnrbackset:
                 for setting in [ "Default", "NoFirstCuts", "NoEVPI", "NoStongCut", "NoSingleTree", "WithLPTree", "WithFixedSetups", "WithFixedSetupsNoScenarioTree" ]:
 
-                    nrforward = 1
+                    nrforward = 10
                     jobname = CreateSDDPJob(instance, nrback, nrforward, setting)
                     filesddp.write("qsub %s \n" % (jobname) )
 
