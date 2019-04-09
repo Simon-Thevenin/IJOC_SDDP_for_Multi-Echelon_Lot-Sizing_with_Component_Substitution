@@ -286,7 +286,7 @@ class SDDP(object):
 
             self.TrialScenarioNrSet = range(len(self.CurrentSetOfTrialScenarios))
             self.CurrentNrScenario = len(self.CurrentSetOfTrialScenarios)
-            self.SDDPNrScenarioTest = self.CurrentNrScenario
+           # self.SDDPNrScenarioTest = self.CurrentNrScenario
         else:
             if self.IsIterationWithConvergenceTest:
                    self.CurrentNrScenario = self.SDDPNrScenarioTest
@@ -416,6 +416,17 @@ class SDDP(object):
         duration = time.time() - self.StartOfAlsorithm
         timalimiteached = (duration > Constants.AlgorithmTimeLimit)
         optimalitygap = (self.CurrentExpvalueUpperBound - self.CurrentLowerBound)/self.CurrentExpvalueUpperBound
+
+        if Constants.PrintSDDPTrace:
+            self.WriteInTraceFile("Iteration: %d, Duration: %d, LB: %r, (exp UB:%r),  Gap: %r,  Fixed Y: %r  \n"
+                                  % (self.CurrentIteration, duration, self.CurrentLowerBound,
+                                     self.CurrentExpvalueUpperBound,
+                                     optimalitygap, self.HasFixedSetup))
+
+        return timalimiteached
+
+
+
         convergencecriterion = Constants.Infinity
         c = Constants.Infinity
         if self.CurrentLowerBound > 0:
@@ -563,7 +574,7 @@ class SDDP(object):
 
 
 
-        if True or self.TestIdentifier.Model == Constants.ModelHeuristicYFix or self.TestIdentifier.Method == Constants.Hybrid:
+        if self.TestIdentifier.Model == Constants.ModelHeuristicYFix or self.TestIdentifier.Method == Constants.Hybrid:
             Constants.SDDPGenerateCutWith2Stage = False
             Constants.SolveRelaxationFirst = False
             Constants.SDDPRunSigleTree = False
@@ -676,10 +687,25 @@ class SDDP(object):
         if Constants.SDDPRunSigleTree:
             self.RunSingleTreeSDDP()
 
+        self.ComputeUpperBound()
+
         self.RecordSolveInfo()
         if Constants.PrintSDDPTrace:
             self.WriteInTraceFile("End of the SDDP algorithm \n ")
 
+
+
+
+    def ComputeUpperBound(self):
+        self.IsIterationWithConvergenceTest = True
+        self.GenerateTrialScenarios()
+        self.ForwardPass()
+        self.ComputeCost()
+        self.UpdateUpperBound()
+        self.LastExpectedCostComputedOnAllScenario = self.CurrentExpvalueUpperBound
+        self.WriteInTraceFile(
+            "Convergence Test, Nr Scenario: %r, LB: %r, (exp UB:%r),  Fixed Y: %r \n"
+            % (self.SDDPNrScenarioTest,  self.CurrentLowerBound, self.CurrentExpvalueUpperBound,  self.HasFixedSetup))
 
     # This function runs the SDDP algorithm
     def RunSingleTreeSDDP(self):
