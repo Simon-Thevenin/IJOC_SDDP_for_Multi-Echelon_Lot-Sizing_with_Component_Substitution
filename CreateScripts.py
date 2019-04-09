@@ -137,7 +137,7 @@ if __name__ == "__main__":
         for instance in InstanceSet:
             for nrback in sddpnrbackset:
                 for setting in ["Default"]:
-                    nrforward = 1
+                    nrforward = 10
                     jobname = CreateSDDPJob(instance, nrback, nrforward, setting, model = "YFix")
                     fileheur.write("sbatch %s \n" % (jobname))
                     jobname = CreateMLLocalSearchJob(instance, nrback, nrforward, setting, model="YFix")
@@ -169,7 +169,7 @@ if __name__ == "__main__":
            for nrback in sddpnrbackset:
                 for setting in [ "Default", "NoFirstCuts", "NoEVPI", "NoStongCut", "NoSingleTree", "WithLPTree", "WithFixedSetups", "WithFixedSetupsNoScenarioTree" ]:
 
-                    nrforward = 10
+                    nrforward = 1
                     jobname = CreateSDDPJob(instance, nrback, nrforward, setting)
                     filesddp.write("qsub %s \n" % (jobname) )
 
