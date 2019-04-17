@@ -108,7 +108,6 @@ class Solver( object ):
 
         #scenarioset = scenariotree.GetAllScenarios(computeindex=False)
 
-
         MIPModel = self.TestIdentifier.Model
         if self.TestIdentifier.Model == Constants.Average:
             MIPModel = Constants.ModelYQFix
@@ -221,6 +220,7 @@ class Solver( object ):
         if self.TestIdentifier.Method == Constants.SDDP:
              self.TestIdentifier.Model = Constants.ModelHeuristicYFix
              self.SDDPSolver = SDDP(self.Instance, self.TestIdentifier)
+             self.SDDPSolver.HasFixedSetup = True
              self.SDDPSolver.HeuristicSetupValue = self.GivenSetup
              self.SDDPSolver.Run()
              if Constants.PrintOnlyFirstStageDecision:
@@ -294,8 +294,11 @@ class Solver( object ):
 
         if self.TestIdentifier.Method == Constants.MLLocalSearch:
             self.MLLocalSearch = MLLocalSearch(self.Instance, self.TestIdentifier, self.TreeStructure, self)
-            solution = self.MLLocalSearch.Run()
 
+            solution = self.MLLocalSearch.Run()
+            self.SDDPSolver = self.MLLocalSearch.SDDPSolver
+            if Constants.SDDPSaveInExcel:
+                self.SDDPSolver.SaveSolver()
         #self.SDDPSolver = SDDP(self.Instance, self.TestIdentifier)
              #self.SDDPSolver.LoadCuts()
              #SolveInformation = sddpsolver.SolveInfo

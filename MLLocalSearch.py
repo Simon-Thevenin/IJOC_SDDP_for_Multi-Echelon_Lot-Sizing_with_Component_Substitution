@@ -39,7 +39,7 @@ class MLLocalSearch(object):
         self.SDDPSolver.HasFixedSetup = True
         self.SDDPSolver.IsIterationWithConvergenceTest = False
         # self.SDDPSolver.Run()
-        self.SDDPSolver.GenerateSAAScenarios()
+        self.SDDPSolver.GenerateSAAScenarios2()
 
         # Mke sure SDDP do not unter in preliminary stage (at the end of the preliminary stage, SDDP would change the setup to bynary)
         Constants.SDDPGenerateCutWith2Stage = False
@@ -54,7 +54,7 @@ class MLLocalSearch(object):
 
         self.Iteration = 0
         self.SDDPNrScenarioTest = 200
-        self.CurrentTolerance = 0.25
+        self.SDDPSolver.CurrentToleranceForSameLB = 1
         self.InitTrace()
 
     def updateRecord(self, solution):
@@ -102,10 +102,10 @@ class MLLocalSearch(object):
 
         #Sample a set of 10 scenario.
 
-        start = time.time()
+        self.Start = time.time()
         duration = 0
         #Initialization
-        for i in range(1,2):
+        for i in range(1,50):
             self.GivenSetup1D, self.GivenSetup2D = self.GetRandomSetups()
             self.RunSDDPAndAddToTraining()
 
@@ -113,6 +113,7 @@ class MLLocalSearch(object):
         self.GenerateOutSample()
 
         self.CurrentTolerance = Constants.AlgorithmOptimalityTolerence
+        self.SDDPSolver.CurrentToleranceForSameLB = 0.000001
         self.BestSolutionCost = Constants.Infinity
         self.BestSolutionSafeUperBound = Constants.Infinity
 
@@ -188,11 +189,17 @@ class MLLocalSearch(object):
             self.Iteration += 1
 
             end = time.time()
-            duration = end - start
+            duration = end - self.Start
 
         self.GivenSetup2D = self.BestSolution.Production[0]
         self.SDDPSolver.IsIterationWithConvergenceTest = True
         self.BestSolution = self.RunSDDP()
+
+        self.BestSolution.LocalSearchIteration = self.Iteration
+
+        self.SDDPSolver.SDDPNrScenarioTest = 1000
+        random.seed = 9876
+        self.SDDPSolver.ComputeUpperBound()
 
         return self.BestSolution
 
@@ -378,6 +385,8 @@ class MLLocalSearch(object):
         stop = False
         lastbeforestop = False
 
+        self.SDDPSolver.NrIterationWithoutLBImprovment = 0
+
         self.SDDPSolver.CurrentForwardSampleSize = self.TestIdentifier.NrScenarioForward
         while (not stop ):
             self.SDDPSolver.GenerateTrialScenarios()
@@ -387,15 +396,21 @@ class MLLocalSearch(object):
             self.SDDPSolver.UpdateUpperBound()
             self.SDDPSolver.BackwardPass()
             self.SDDPSolver.CurrentIteration = self.SDDPSolver.CurrentIteration + 1
-            stop = self.CheckStopingSDDP()
 
+            end = time.time()
+            duration = end - self.Start
 
+            stop = self.CheckStopingSDDP() or duration > Constants.AlgorithmTimeLimit
+
+        self.SDDPSolver.SDDPNrScenarioTest = 100
+        self.SDDPSolver.ComputeUpperBound()
+        self.SDDPSolver.IsIterationWithConvergenceTest = False
 
 
         self.SDDPSolver.ForwardStage[0].ProductionValue = [[[self.SDDPSolver.HeuristicSetupValue[t][p]
                                                              for p in self.Instance.ProductSet]
                                                             for t in self.Instance.TimeBucketSet]
-                                                           for w in range(len(self.SDDPSolver.CompleteSetOfSAAScenario))]
+                                                           for w in range(len(self.SDDPSolver.CurrentSetOfTrialScenarios))]
 
 
 
@@ -487,15 +502,19 @@ class MLLocalSearch(object):
         self.SDDPSolver.CurrentLowerBound, self.SDDPSolver.CurrentExpvalueUpperBound, self.SDDPSolver.CurrentSafeUpperBound, self.SDDPSolver.VarianceForwardPass, convergencecriterion, delta, self.SDDPSolver.CurrentForwardSampleSize, self.SDDPSolver.NrIterationWithoutLBImprovment))
 
 
-        if(convergencecriterion <= 1 and delta > self.CurrentTolerance and  self.SDDPSolver.NrIterationWithoutLBImprovment>5):
-            self.SDDPNrScenarioTest += 200
-            self.SDDPSolver.CurrentForwardSampleSize = self.SDDPNrScenarioTest
-        else:
-            self.SDDPSolver.CurrentForwardSampleSize = self.TestIdentifier.NrScenarioForward
+       # if(convergencecriterion <= 1 and delta > self.CurrentTolerance and  self.SDDPSolver.NrIterationWithoutLBImprovment>5):
 
 
-        return self.SDDPSolver.CurrentLowerBound > self.BestSolutionSafeUperBound \
-                or (convergencecriterion <= 1 and delta <= self.CurrentTolerance)#
+        #     self.SDDPSolver.CurrentForwardSampleSize = self.SDDPNrScenarioTest + (self.SDDPSolver.NrIterationWithoutLBImprovment - 5) *200
+        #else:
+        #    self.SDDPSolver.CurrentForwardSampleSize = self.TestIdentifier.NrScenarioForward
+
+
+        #return (convergencecriterion <= 1 and delta > self.CurrentTolerance and  self.SDDPSolver.NrIterationWithoutLBImprovment>5)
+        return self.SDDPSolver.NrIterationWithoutLBImprovment > 5 or self.SDDPSolver.CurrentLowerBound > self.BestSolutionSafeUperBound
+
+    #self.SDDPSolver.CurrentLowerBound > self.BestSolutionSafeUperBound \
+            #    or (convergencecriterion <= 1 and delta <= self.CurrentTolerance)#
 
     def GetCurrentLowerBound(self, setups2D):
         self.SDDPSolver.HeuristicSetupValue = setups2D

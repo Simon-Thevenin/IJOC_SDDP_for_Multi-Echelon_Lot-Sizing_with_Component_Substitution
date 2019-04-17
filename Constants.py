@@ -58,7 +58,7 @@ class Constants( object ):
 
     #Code parameter
     Infinity = 9999999999999
-    AlgorithmTimeLimit = 7200
+    AlgorithmTimeLimit = 10000
     MIPBasedOnSymetricTree = True
 
     #SDDPparameters
@@ -66,14 +66,15 @@ class Constants( object ):
     SDDPIterationLimit = 100000
     SDDPPrintDebugLPFiles = False
     PrintSDDPTrace = True
-    GenerateStrongCut = False
+    GenerateStrongCut = True
     SDDPRunSigleTree = False
 
     #SDDPNrScenarioForwardPass = 10
     #SDDPNrScenarioBackwardPass = 10
     SDDPForwardPassInSAATree = True
+    SDDPPerformConvergenceTestDuringRun = False
     SDDPIncreaseNrScenarioTest = 100
-    SDDPInitNrScenarioTest = 500
+    SDDPInitNrScenarioTest = 1000
 
     SolveRelaxationFirst = False
     SDDPNrIterationRelax = 500
@@ -93,7 +94,7 @@ class Constants( object ):
     SDDPMinimumNrIterationBetweenTest = 30
     SDDPNrItNoImproveLBBeforeTest = 10
     SDDPDurationBeforeIncreaseForwardSample = 3600
-    SDDPSaveInExcel = False
+    SDDPSaveInExcel = True
     SDDPFixSetupStrategy = False
     SDDPFirstForwardWithEVPI = False
 
@@ -106,6 +107,13 @@ class Constants( object ):
                  or s == Constants.AverageSS \
                  or s == Constants.AverageSSGrave
         return result
+
+    @staticmethod
+    def IsSDDPBased(s):
+        result = s == Constants.SDDP \
+                 or s == Constants.MLLocalSearch
+        return result
+
 
     @staticmethod
     def UseSafetyStock(s):

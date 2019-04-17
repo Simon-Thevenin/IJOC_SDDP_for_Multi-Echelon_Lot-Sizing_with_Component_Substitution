@@ -340,13 +340,16 @@ class ScenarioTreeNode(object):
 
 
     #This function compute the indices of the variables associated wiht each node of the tree
-    def ComputeVariableIndex(self):
+    def ComputeVariableIndex(self, expandfirststage = False, nrscenar = -1):
 
         if self.NodeNumber == 0:
             self.ProductionVariable = [(self.Owner.Owner.StartProductionVariable
                                         + self.Instance.NrProduct * (t) + p)
                                        for p in self.Instance.ProductSet
                                        for t in self.Instance.TimeBucketSet]
+
+
+
 
         if self.Time < self.Instance.NrTimeBucket: #Do not associate Production or quantity variable to the last nodes
             self.ConsumptionVariable = [[ self.Owner.Owner.StartConsumptionVariable + \
@@ -360,6 +363,10 @@ class ScenarioTreeNode(object):
             self.QuanitityVariable = [(self.Owner.Owner.StartQuantityVariable +
                                        (self.Instance.NrProduct * (self.NodeNumber - 1)) + p)
                                       for p in self.Instance.ProductSet]
+
+
+
+
 
         if self.Time > 0: #use ( self.NodeNumber -2 ) because thee is no inventory variable for the first node and for the root node
             self.InventoryVariable = [(self.Owner.Owner.StartInventoryVariable

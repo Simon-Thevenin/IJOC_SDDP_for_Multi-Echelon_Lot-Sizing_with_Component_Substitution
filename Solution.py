@@ -73,6 +73,8 @@ class Solution(object):
         self.SDDPExpUB = -1
         self.SDDPNrIteration = -1
 
+        self.LocalSearchIteration = -1
+
         self.SDDPTimeBackward = -1
         self.SDDPTimeForwardNoTest = -1
         self.SDDPTimeForwardTest = -1
@@ -104,13 +106,13 @@ class Solution(object):
         general = [self.Instance.InstanceName, self.Instance.Distribution, model,
                    self.CplexCost, self.CplexTime, self.TotalTime, self.CplexGap, self.CplexNrConstraints,
                    self.CplexNrVariables, self.SDDPLB, self.SDDPExpUB, self.SDDPNrIteration,  self.SDDPTimeBackward,
-                   self.SDDPTimeForwardNoTest, self.SDDPTimeForwardTest, self.PHCost,
+                   self.SDDPTimeForwardNoTest, self.SDDPTimeForwardTest, self.LocalSearchIteration, self.PHCost,
                    self.PHNrIteration, self.IsPartialSolution, self.IsSDDPSolution]
 
         
         columnstab = ["Name", "Distribution", "Model", "CplexCost", "CplexTime", "TotalTime", "CplexGap", "CplexNrConstraints",
                       "CplexNrVariables", "SDDP_LB", "SDDP_ExpUB", "SDDP_NrIteration",  "SDDPTimeBackward",
-                   "SDDPTimeForwardNoTest", "SDDPTimeForwardTest", "PH_Cost", "PH_NrIteration", "IsPartialSolution", "ISSDDPSolution"]
+                   "SDDPTimeForwardNoTest", "SDDPTimeForwardTest",  "LocalSearchIterations", "PH_Cost", "PH_NrIteration", "IsPartialSolution", "ISSDDPSolution"]
         generaldf = pd.DataFrame(general, index=columnstab)
         return generaldf
 
@@ -246,6 +248,9 @@ class Solution(object):
         self.SDDPLB = instanceinfo.at['SDDP_LB', 0]
         self.SDDPExpUB = instanceinfo.at['SDDP_ExpUB', 0]
         self.SDDPNrIteration = instanceinfo.at['SDDP_NrIteration', 0]
+
+        self.LocalSearchIteration = instanceinfo.at['LocalSearchIterations', 0]
+
         self.SDDPTimeBackward = instanceinfo.at['SDDPTimeBackward', 0]
         self.SDDPTimeForwardNoTest = instanceinfo.at['SDDPTimeForwardNoTest', 0]
         self.SDDPTimeForwardTest = instanceinfo.at['SDDPTimeForwardTest', 0]
@@ -674,6 +679,7 @@ class Solution(object):
                     self.SDDPTimeBackward,
                     self.SDDPTimeForwardNoTest,
                     self.SDDPTimeForwardTest,
+                    self.LocalSearchIteration,
                     self.PHCost,
                     self.PHNrIteration,
                     self.TotalTime,

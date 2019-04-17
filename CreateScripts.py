@@ -10,10 +10,8 @@ NrScenarioEvaluation = "5000"
 ForCIRRELT = False
 
 def CreatHeader(file):
-    if ForCIRRELT:
-        CreatHeaderCirrelt(file)
-    else:
-        CreatHeaderQuebec(file)
+       CreatHeaderNantes(file)
+
 
 def CreatHeaderCirrelt(file):
     file.write("""#!/bin/bash -l
@@ -39,8 +37,12 @@ module load python/2.7
 module load scipy-stack
 module load python/2.7
 module load cplex/2.9
+
+
 ENVDIR=/tmp/$RANDOM
 virtualenv --no-download $ENVDIR
+ virtualenv --no-download -p /home/LS2N/thevenin-s/python/bin/python2.7 $ENVDIR
+
 source $ENVDIR/bin/activate
 pip install --upgrade pip
 cd /home/thesim/installcplex/CPLEX_Studio129/cplex/python/2.7/x86-64_linux/
@@ -66,15 +68,56 @@ mkdir -p /tmp/thesim/CPLEXLog
 """)
 
 
+def CreatHeaderNantes(file):
+    file.write("""#!/bin/bash
+# Nom du job
+#SBATCH -J MON_JOB_MPI
+#
+# Partition visee
+#SBATCH --partition=MPI-short
+#
+# Nombre de noeuds
+#SBATCH --nodes=1
+# Nombre de processus MPI par noeud
+#SBATCH --ntasks-per-node=1
+#
+# Temps de presence du job
+#SBATCH --time=05:00:00
+#
+# Adresse mel de l'utilisateur
+#SBATCH --mail-user=simon.thevenin@imt-atlantique.fr
+#
+# Envoi des mails
+#SBATCH --mail-type=abort,end
+#
+#SBATCH -o /home/LS2N/thevenin-s/log/job_mpi-%j.out
+ 
+module purge
+module load intel/2016.3.210
+module load intel/mkl/64/2016.3.210
+module load intel/mpi/2016.3.210
+module load python/2.7.12
+module load intel/mkl/64/2017.4.196
+module load compilateurs_interpreteurs/gcc/7.3.0
+
+export LD_PRELOAD=/lib64/psm2-compat/libpsm_infinipath.so.1
+
+
+
+#
+# Faire le lien entre SLURM et Intel MPI
+export I_MPI_PMI_LIBRARY=/usr/lib64/libpmi.so
+
+""")
+
+
 def CreateSDDPJob(instance, nrback, nrforward, setting, model = "YFix"):
     qsub_filename = "./Jobs/job_sddp_%s_%s_%s_%s_%s" % (instance, nrback, nrforward, setting, model)
     qsub_file = open(qsub_filename, 'w')
     CreatHeader(qsub_file )
     qsub_file.write("""
-#$ -o /home/thesim/log/outputjobevaluate%s%s%s%s%s.txt
-ulimit -v 16000000
-python scm.py  Solve %s %s %s RQMC -n 5000 -p Fix -m SDDP --mipsetting %s --nrforward %s
-""" % (instance, model, nrback, setting, nrforward, instance, model, nrback, setting, nrforward))
+srun python scm.py  Solve %s %s %s RQMC -n 5000 -p Re-solve -m SDDP --mipsetting %s --nrforward %s  > /home/LS2N/thevenin-s/log/output-${SLURM_JOB_ID}.txt 
+""" % (instance, model, nrback, setting, nrforward))
     return qsub_filename
 
 def CreateMLLocalSearchJob(instance, nrback, nrforward, setting, model = "YFix"):
@@ -82,10 +125,8 @@ def CreateMLLocalSearchJob(instance, nrback, nrforward, setting, model = "YFix")
     qsub_file = open(qsub_filename, 'w')
     CreatHeader(qsub_file )
     qsub_file.write("""
-#$ -o /home/thesim/log/outputjobevaluate%s%s%s%s%s.txt
-ulimit -v 16000000
-python scm.py  Solve %s %s %s RQMC -n 5000 -p Fix -m MLLocalSearch --mipsetting %s --nrforward %s
-""" % (instance, model, nrback, setting, nrforward, instance, model, nrback, setting, nrforward))
+srun python scm.py  Solve %s %s %s RQMC -n 5000 -p Re-solve -m MLLocalSearch --mipsetting %s --nrforward %s >/home/LS2N/thevenin-s/log/output-${SLURM_JOB_ID}.txt
+""" % (instance, model, nrback, setting, nrforward))
     return qsub_filename
 
 
@@ -94,10 +135,8 @@ def CreateMIPJob(instance, scenariotree, model = "YFix"):
     qsub_file = open(qsub_filename, 'w')
     CreatHeader(qsub_file)
     qsub_file.write("""
-#$ -o /home/thesim/log/outputjobevaluate%s%s%s.txt
-ulimit -v 16000000
-python scm.py  Solve %s %s %s RQMC -n 5000 -p Fix -m MIP 
-""" % (instance, model, scenariotree, instance, model, scenariotree))
+srun python scm.py  Solve %s %s %s RQMC -n 5000 -p Re-solve -m MIP  >/home/LS2N/thevenin-s/log/output-${SLURM_JOB_ID}.txt 
+""" % (instance, model, scenariotree))
     return qsub_filename
 
 
@@ -106,10 +145,8 @@ def CreatePHJob(instance, scenariotree, model = "YFix"):
     qsub_file = open(qsub_filename, 'w')
     CreatHeader(qsub_file)
     qsub_file.write("""
-#$ -o /home/thesim/log/outputjobevaluateph%s%s%s.txt
-ulimit -v 16000000
-python scm.py  Solve %s %s %s RQMC -n 5000 -p Fix -m PH 
-""" % (instance, model, scenariotree, instance, model, scenariotree))
+srun python scm.py  Solve %s %s %s RQMC -n 5000 -p Re-solve -m PH  >/home/LS2N/thevenin-s/log/output-${SLURM_JOB_ID}.txt
+""" % (instance, model, scenariotree))
     return qsub_filename
 
 if __name__ == "__main__":
@@ -121,8 +158,8 @@ if __name__ == "__main__":
     InstanceSet = instancenameslist[0]
     instancetosolvename = ""
 
-    scenariotreeset = ["allDIX", "all20"] #["all2", "all5"]#, "allDIX", "all20"]
-    sddpnrbackset = [10] #[2, 5], 10, 20]
+    scenariotreeset = ["6400b"] #["all2", "all5"]#, "allDIX", "all20"]
+    sddpnrbackset = [5, 10, 20, 50]#,10,20] #[2, 5], 10, 20]
 
     if sys.argv[1] == "H":
         fileheurname = "runallheur.sh"
@@ -132,12 +169,20 @@ if __name__ == "__main__":
 #
 """)
 
-        InstanceSet = ["01_NonStationary_b2_fe25_en_rk50_ll0_l20_HFalse_c2", "02_NonStationary_b2_fe25_en_rk50_ll0_l20_HFalse_c2", "03_NonStationary_b2_fe25_en_rk50_ll0_l20_HFalse_c2" ]
+        InstanceSet = ["01_NonStationary_b2_fe25_en_rk50_ll0_l20_HFalse10_c2",
+                       "02_NonStationary_b2_fe25_en_rk50_ll0_l20_HFalse10_c2",
+                       "03_NonStationary_b2_fe25_en_rk50_ll0_l20_HFalse10_c2",
+                       "04_NonStationary_b2_fe25_en_rk50_ll0_l20_HFalse10_c2",
+                       "05_NonStationary_b2_fe25_en_rk50_ll0_l20_HFalse10_c2"]
+
+        InstanceSet = ["05_NonStationary_b2_fe25_en_rk50_ll0_l20_HFalse10_c2"]
 
         for instance in InstanceSet:
             for nrback in sddpnrbackset:
                 for setting in ["Default"]:
-                    nrforward = 10
+                    nrforward = 1
+                    jobname = CreateSDDPJob(instance, nrback, nrforward, setting, model="HeuristicYFix")
+                    fileheur.write("sbatch %s \n" % (jobname))
                     jobname = CreateSDDPJob(instance, nrback, nrforward, setting, model = "YFix")
                     fileheur.write("sbatch %s \n" % (jobname))
                     jobname = CreateMLLocalSearchJob(instance, nrback, nrforward, setting, model="YFix")
@@ -148,10 +193,10 @@ if __name__ == "__main__":
             fileheur.write("sbatch %s \n" % (jobname))
 
             for scenariotree in scenariotreeset:
-                jobname = CreateMIPJob(instance, scenariotree, model = "HeuristicYFix")
-                fileheur.write("sbatch %s \n" % (jobname))
-                jobname = CreatePHJob(instance, scenariotree, model = "HeuristicYFix")
-                fileheur.write("sbatch %s \n" % (jobname))
+                     jobname = CreateMIPJob(instance, scenariotree, model = "HeuristicYFix")
+                     fileheur.write("sbatch %s \n" % (jobname))
+             #   jobname = CreatePHJob(instance, scenariotree, model = "HeuristicYFix")
+             #   fileheur.write("sbatch %s \n" % (jobname))
 
 
 

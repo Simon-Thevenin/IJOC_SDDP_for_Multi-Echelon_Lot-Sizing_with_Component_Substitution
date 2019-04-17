@@ -1,4 +1,5 @@
 # This class contains the attributes and methods allowing to define the progressive hedging algorithm.
+from __future__ import division
 from ScenarioTree import ScenarioTree
 from Constants import Constants
 from MIPSolver import MIPSolver
@@ -64,7 +65,7 @@ class ProgressiveHedging(object):
 
         self.CurrentIteration = 0
         self.StartTime = time.time()
-        self.BuildMIPs()
+        self.BuildMIPs2()
 
     #This function creates the scenario tree
     def GenerateScenarios(self, scenariotree=None):
@@ -81,7 +82,7 @@ class ProgressiveHedging(object):
 
         self.ScenarioSet = self.ScenarioTree.GetAllScenarios(False)
         self.ScenarioNrSet = range(len(self.ScenarioSet))
-        self.SplitScenrioTree()
+        self.SplitScenrioTree2()
 
 
 
@@ -100,6 +101,23 @@ class ProgressiveHedging(object):
             self.MIPSolvers[w].BuildModel()
 
 
+
+    def BuildMIPs2(self):
+        #Build the mathematicals models (1 per scenarios)
+        mipset = [0]#range(self.NrMIPBatch)
+        #mipset = self.ScenarioNrSet
+
+        self.MIPSolvers = [MIPSolver(self.Instance, Constants.ModelYFix, self.SplitedScenarioTree[w], yfixheuristic=self.SolveWithFixedSetup,
+                                     givensetups=self.GivenSetup, logfile="NO", expandfirstnode=True)
+                           for w in mipset]
+
+        self.SetFixedUntil(self.FixedUntil)
+
+        for w in mipset:
+            self.MIPSolvers[w].BuildModel()
+        #    self.MIPSolvers[w].Cplex.write("test.lp")
+
+
     def SplitScenrioTree(self):
 
         treestructure = [1] + [1] * self.Instance.NrTimeBucket + [0]
@@ -114,6 +132,39 @@ class ProgressiveHedging(object):
 
             #justotest = self.SplitedScenarioTree[scenarionr].GetAllScenarios(False)
             #justotest[0].DisplayScenario()
+
+    def SplitScenrioTree2(self):
+
+        batchsize = 1000
+        self.NrMIPBatch = int(math.ceil(len(self.ScenarioNrSet)/(batchsize)))
+        self.Indexscenarioinbatch = [None for m in range(self.NrMIPBatch)]
+        self.Scenarioinbatch = [None for m in range(self.NrMIPBatch)]
+        self.SplitedScenarioTree = [None for m in range(self.NrMIPBatch)]
+        self.BatchofScenario = [int(math.floor(w/batchsize)) for w in self.ScenarioNrSet]
+        self.NewIndexOfScenario = [ w % batchsize for w in self.ScenarioNrSet]
+
+
+        for m in range(self.NrMIPBatch):
+
+            firstscenarioinbatch = m * batchsize
+            lastscenarioinbatch = min( (m+1) * batchsize, len(self.ScenarioNrSet) )
+            nrscenarioinbatch = lastscenarioinbatch - firstscenarioinbatch
+            self.Indexscenarioinbatch[m] = range(firstscenarioinbatch, lastscenarioinbatch)
+            self.Scenarioinbatch[m] = [self.ScenarioSet[w] for w in self.Indexscenarioinbatch[m]]
+
+            treestructure = [1]  + [nrscenarioinbatch] + [1] * (self.Instance.NrTimeBucket-1) + [0]
+
+
+
+            self.SplitedScenarioTree[m] = ScenarioTree(self.Instance, treestructure, 0,
+                                                                    givenscenarioset=self.Scenarioinbatch[m],
+                                                                    CopyscenariofromYFIX = True,
+                                                                    scenariogenerationmethod=self.TestIdentifier.ScenarioSampling,
+                                                                    model=Constants.ModelYFix)
+
+                # justotest = self.SplitedScenarioTree[scenarionr].GetAllScenarios(False)
+                # justotest[0].DisplayScenario()
+
 
     def CheckStopingCriterion(self):
         gap = Constants.Infinity
@@ -149,10 +200,10 @@ class ProgressiveHedging(object):
 
             self.WriteInTraceFile("Iteration: %r Duration: %.2f Gap: %.5f UB:%.2f linear penalty:%.2f quadratic penalty: %.2f"
                                   " Multiplier:%.2f primal conv:%.2f dual conv:%.2f Rate Large Change(l): %.2f"
-                                  " rate quad_lin(s):%.2f rateprimaldual(l<-):%.2f ratedualprimal(l->): %.2f \n"
+                                  " rate quad_lin(s):%.2f rateprimaldual(l<-):%.2f ratedualprimal(l->): %.2f  convergenceY:%r\n"
                                   % (self.CurrentIteration, duration, gap, self.CurrentImplementableSolution.TotalCost,
                                      lpenalty, qpenalty, self.LagrangianMultiplier, primconv, dualconv, ratechangeimplem,
-                                     ratequad_lin, rateprimaldual, ratedualprimal))
+                                     ratequad_lin, rateprimaldual, ratedualprimal, self.ComputeConvergenceY()))
 
 
 
@@ -161,23 +212,26 @@ class ProgressiveHedging(object):
 
     def SolveScenariosIndependently(self):
         #For each scenario
-        for w in self.ScenarioNrSet:
+        for m in range(self.NrMIPBatch):#self.MIPSolvers:
+       # for w in self.ScenarioNrSet:
 
             #Update the coeffient in the objective function
-            self.UpdateLagrangianCoeff(w)
+            self.UpdateLagrangianCoeff(m)
             #mip = self.MIPSolvers[w]
             mip = self.MIPSolvers[0]
-            mip.ModifyMipForScenarioTree(self.SplitedScenarioTree[w])
+            mip.ModifyMipForScenarioTree(self.SplitedScenarioTree[m])
 
             #Solve the model.
             #self.MIPSolvers[w].Cplex.write("moel.lp")
-            self.CurrentSolution[w] = mip.Solve(True)
+
+            self.CurrentSolution[m] = mip.Solve(True)
 
             #compute the cost for the penalty update strategy
-            self.CurrentSolution[w].ComputeCost()
+            self.CurrentSolution[m].ComputeCost()
 
-            if Constants.Debug and self.CurrentIteration > 1:
-                qp = sum(math.pow((self.CurrentSolution[w].ProductionQuantity[0][t][p]
+            if False and Constants.Debug and self.CurrentIteration > 1:
+
+                qp = sum(math.pow((self.CurrentSolution[m].ProductionQuantity[0][t][p]
                                    - self.CurrentImplementableSolution.ProductionQuantity[w][t][p]), 2)
                              for p in self.Instance.ProductSet
                              for t in self.Instance.TimeBucketSet)
@@ -267,62 +321,72 @@ class ProgressiveHedging(object):
                 #self.CurrentSolution[w].Print()
 
     def GetQuadraticPenaltyForScenario(self, w):
+        nw = self.NewIndexOfScenario[w]
+        m = self.BatchofScenario[w]
         quadterm = sum(0.5 * self.LagrangianMultiplier \
-                       * math.pow((self.CurrentSolution[w].ProductionQuantity[0][t][p]), 2)
+                       * math.pow((self.CurrentSolution[m].ProductionQuantity[nw][t][p]), 2)
                        for p in self.Instance.ProductSet
                        for t in self.Instance.TimeBucketSet)
 
         quadterm += sum(0.5 * self.LagrangianMultiplier \
-                        * math.pow((self.CurrentSolution[w].Production[0][t][p]), 2)
+                        * math.pow((self.CurrentSolution[m].Production[nw][t][p]), 2)
                         for p in self.Instance.ProductSet
                         for t in self.Instance.TimeBucketSet)
 
         quadterm += sum(0.5 * self.LagrangianMultiplier \
-                        * math.pow((self.CurrentSolution[w].Consumption[0][t][c[0]][c[1]]), 2)
+                        * math.pow((self.CurrentSolution[m].Consumption[nw][t][c[0]][c[1]]), 2)
                         for c in self.Instance.ConsumptionSet
                         for t in self.Instance.TimeBucketSet)
 
         return quadterm
 
     def GetLinearPenaltyForScenario(self, w):
+
+        nw =self.NewIndexOfScenario[w]
+        m =self.BatchofScenario[w]
         linterm = sum(self.LagrangianQuantity[w][t][p] \
-                      * (self.CurrentSolution[w].ProductionQuantity[0][t][p])
+                      * (self.CurrentSolution[m].ProductionQuantity[nw][t][p])
                       for p in self.Instance.ProductSet
                       for t in self.Instance.TimeBucketSet)
 
         linterm += sum(self.LagrangianProduction[w][t][p] \
-                       * (self.CurrentSolution[w].Production[0][t][p])
+                       * (self.CurrentSolution[m].Production[nw][t][p])
                        for p in self.Instance.ProductSet
                        for t in self.Instance.TimeBucketSet)
 
         linterm += sum(self.LagrangianConsumption[w][t][c[0]][c[1]] \
-                       * (self.CurrentSolution[w].Consumption[0][t][c[0]][c[1]])
+                       * (self.CurrentSolution[m].Consumption[nw][t][c[0]][c[1]])
                        for c in self.Instance.ConsumptionSet
                        for t in self.Instance.TimeBucketSet)
 
         return linterm
 
-    def UpdateLagrangianCoeff(self, scenario):
+    def UpdateLagrangianCoeff(self, batch):
         variables = []
         variablesquad = []
         mipsolver = self.MIPSolvers[0] #self.MIPSolvers[scenario]
-        for t in self.Instance.TimeBucketSet:
-                for p in self.Instance.ProductSet:
-                    variable = mipsolver.GetIndexQuantityVariable(p, t, 0)
-                    coeff = mipsolver.GetQuantityCoeff(p, t, 0) + self.LagrangianQuantity[scenario][t][p]
-                    variables.append((variable, coeff))
-                    variablesquad.append((variable, variable, 2 * 0.5 * self.LagrangianMultiplier))
 
-                    variable = mipsolver.GetIndexProductionVariable(p, t, 0)
-                    coeff = mipsolver.GetProductionCefficient(p, t, 0) + self.LagrangianProduction[scenario][t][p]
-                    variables.append((variable, coeff))
-                    variablesquad.append((variable, variable, 2 * 0.5 * self.LagrangianMultiplier))
-
-                for c in self.Instance.ConsumptionSet:
-                        variable = mipsolver.GetIndexConsumptionVariable(c[1], c[0], t, 0)
-                        coeff = mipsolver.GetConsumptionCoeff(c[1], c[0], t, 0) + self.LagrangianConsumption[scenario][t][c[0]][c[1]]
+        scenarioindexinmip = 0
+        for scenario in self.Indexscenarioinbatch[batch]:
+            for t in self.Instance.TimeBucketSet:
+                    for p in self.Instance.ProductSet:
+                        variable = mipsolver.GetIndexQuantityVariable(p, t, scenarioindexinmip)
+                        coeff = mipsolver.GetQuantityCoeff(p, t, scenarioindexinmip) + self.LagrangianQuantity[scenario][t][p]
                         variables.append((variable, coeff))
                         variablesquad.append((variable, variable, 2 * 0.5 * self.LagrangianMultiplier))
+
+                      #  variable = mipsolver.GetIndexProductionVariable(p, t, scenarioindexinmip)
+                      #  coeff = mipsolver.GetProductionCefficient(p, t, scenarioindexinmip) + self.LagrangianProduction[scenario][t][p]
+                      #  variables.append((variable, coeff))
+                      #  variablesquad.append((variable, variable, 2 * 0.5 * self.LagrangianMultiplier))
+
+                    for c in self.Instance.ConsumptionSet:
+                            variable = mipsolver.GetIndexConsumptionVariable(c[1], c[0], t, scenarioindexinmip)
+                            coeff = mipsolver.GetConsumptionCoeff(c[1], c[0], t, scenarioindexinmip) + self.LagrangianConsumption[scenario][t][c[0]][c[1]]
+                            variables.append((variable, coeff))
+                            variablesquad.append((variable, variable, 2 * 0.5 * self.LagrangianMultiplier))
+
+            scenarioindexinmip += 1
 
         #print("New coeff: %r"%variables)
         mipsolver.Cplex.objective.set_linear(variables)
@@ -372,32 +436,35 @@ class ProgressiveHedging(object):
                 sumprob = sum(self.ScenarioSet[w].Probability for w in scenarios)
                 # Average the quantities, and setups for this nodes.
                 if time < self.Instance.NrTimeBucket:
-                    if Constants.Debug:
-                        for w in scenarios:
-                            print("qty %r"%self.CurrentSolution[w].ProductionQuantity[0][time])
+                    #if Constants.Debug:
+                       # for w in scenarios:
+
+                       #     print("qty %r"%self.CurrentSolution[self.BatchofScenario[w]].ProductionQuantity[self.NewIndexOfScenario[w]][time])
+
+
 
                     qty = [round(sum(self.ScenarioSet[w].Probability
-                                * self.CurrentSolution[w].ProductionQuantity[0][time][p] for w in scenarios) \
+                                * self.CurrentSolution[self.BatchofScenario[w]].ProductionQuantity[self.NewIndexOfScenario[w]][time][p] for w in scenarios) \
                            / sumprob, 4)
                            for p in self.Instance.ProductSet]
 
                     inv = [round(sum(self.ScenarioSet[w].Probability
-                                     * self.CurrentSolution[w].InventoryLevel[0][time][p] for w in scenarios) \
+                                     * self.CurrentSolution[self.BatchofScenario[w]].InventoryLevel[self.NewIndexOfScenario[w]][time][p] for w in scenarios) \
                                  / sumprob, 4)
                            for p in self.Instance.ProductSet]
 
                     back = [round(sum(self.ScenarioSet[w].Probability
-                                     * self.CurrentSolution[w].BackOrder[0][time][self.Instance.ProductWithExternalDemandIndex[p]] for w in scenarios) \
+                                     * self.CurrentSolution[self.BatchofScenario[w]].BackOrder[self.NewIndexOfScenario[w]][time][self.Instance.ProductWithExternalDemandIndex[p]] for w in scenarios) \
                                  / sumprob, 4)
                            for p in self.Instance.ProductWithExternalDemand]
 
                     prod = [sum(self.ScenarioSet[w].Probability
-                                * self.CurrentSolution[w].Production[0][time][p] for w in scenarios)\
+                                * self.CurrentSolution[self.BatchofScenario[w]].Production[self.NewIndexOfScenario[w]][time][p] for w in scenarios)\
                            / sumprob
                              for p in self.Instance.ProductSet]
 
                     cons = [[round(sum(self.ScenarioSet[w].Probability
-                                        * self.CurrentSolution[w].Consumption[0][time][q][p] for w in scenarios) \
+                                        * self.CurrentSolution[self.BatchofScenario[w]].Consumption[self.NewIndexOfScenario[w]][time][q][p] for w in scenarios) \
                                      / sumprob,4)
                              for p in self.Instance.ProductSet]
                             for q in self.Instance.ProductSet]
@@ -422,23 +489,25 @@ class ProgressiveHedging(object):
 
     def UpdateLagragianMultipliers(self):
         for w in self.ScenarioNrSet:
+            m = self.BatchofScenario[w]
+            nw = self.NewIndexOfScenario[w]
             for t in self.Instance.TimeBucketSet:
                 for p in self.Instance.ProductSet:
                     self.LinearLagQuantity[w][t][p], self.LagrangianQuantity[w][t][p] = \
                         self.ComputeLagrangian(self.LinearLagQuantity[w][t][p],
-                                               self.CurrentSolution[w].ProductionQuantity[0][t][p],
+                                               self.CurrentSolution[m].ProductionQuantity[nw][t][p],
                                                self.CurrentImplementableSolution.ProductionQuantity[w][t][p])
 
                     self.LinearLagProduction[w][t][p], self.LagrangianProduction[w][t][p] = \
                         self.ComputeLagrangian(self.LinearLagProduction[w][t][p],
-                                               self.CurrentSolution[w].Production[0][t][p],
+                                               self.CurrentSolution[m].Production[nw][t][p],
                                                self.CurrentImplementableSolution.Production[w][t][p])
 
 
                     for q in self.Instance.ProductSet:
                         self.LinearLagConsumption[w][t][p][q], self.LagrangianConsumption[w][t][p][q] = \
                             self.ComputeLagrangian(self.LinearLagConsumption[w][t][p][q],
-                                                   self.CurrentSolution[w].Consumption[0][t][p][q],
+                                                   self.CurrentSolution[m].Consumption[nw][t][p][q],
                                                    self.CurrentImplementableSolution.Consumption[w][t][p][q])
 
 
@@ -454,24 +523,39 @@ class ProgressiveHedging(object):
 
         return linearlag, lagrangian
 
+    def ComputeConvergenceY(self):
+        difference = 0
+        for w in self.ScenarioNrSet:
+            nw = self.NewIndexOfScenario[w]
+            m = self.BatchofScenario[w]
+            for t in self.Instance.TimeBucketSet:
+                for p in self.Instance.ProductSet:
+                    difference += self.ScenarioSet[w].Probability \
+                                  * math.pow(self.CurrentSolution[m].Production[nw][t][p] \
+                                             - self.CurrentImplementableSolution.Production[w][t][p], 2)
+
+        convergence = math.sqrt(difference)
+
+        return convergence
 
     def ComputeConvergence(self):
         difference = 0
         for w in self.ScenarioNrSet:
+            nw = self.NewIndexOfScenario[w]
+            m = self.BatchofScenario[w]
             for t in self.Instance.TimeBucketSet:
                 for p in self.Instance.ProductSet:
                     difference += self.ScenarioSet[w].Probability\
-                                  * math.pow(self.CurrentSolution[w].ProductionQuantity[0][t][p] \
+                                  * math.pow(self.CurrentSolution[m].ProductionQuantity[nw][t][p] \
                                            - self.CurrentImplementableSolution.ProductionQuantity[w][t][p], 2)
 
                     difference += self.ScenarioSet[w].Probability\
-                                  * math.pow(self.CurrentSolution[w].Production[0][t][p] \
+                                  * math.pow(self.CurrentSolution[m].Production[nw][t][p] \
                                            - self.CurrentImplementableSolution.Production[w][t][p], 2)
-
 
                     for q in self.Instance.ProductSet:
                         difference += self.ScenarioSet[w].Probability\
-                                      * math.pow(self.CurrentSolution[w].Consumption[0][t][p][q] \
+                                      * math.pow(self.CurrentSolution[m].Consumption[nw][t][p][q] \
                                                - self.CurrentImplementableSolution.Consumption[w][t][p][q], 2)
 
         convergence = math.sqrt(difference)
@@ -483,8 +567,8 @@ class ProgressiveHedging(object):
         print("----------------Independent solutions--------------")
         for w in self.ScenarioNrSet:
             #self.CurrentSolution[w].Print()
+            print("Scena %r: %r"%(w, self.CurrentSolution[self.BatchofScenario[w]].ProductionQuantity))
 
-            print("Scena %r: %r"%(w, self.CurrentSolution[w].ProductionQuantity))
         print("Implementable: %r" % ( self.CurrentImplementableSolution.ProductionQuantity))
         print("-----------IMPLEMENTABLE: -------------------------")
         self.CurrentImplementableSolution.Print()
@@ -543,7 +627,7 @@ class ProgressiveHedging(object):
             tau = delta/self.PrevioudDualConvIndice
 
         self.PrevioudDualConvIndice = delta
-        gamma = max(0.1, min( 0.9, tau - 0.6))
+        gamma = max(0.1, min(0.9, tau - 0.6))
 
         if self.CurrentIteration == 2:
             sigma = 1
@@ -681,8 +765,9 @@ class ProgressiveHedging(object):
 
     def GetLinearLagrangianterm(self):
 
+
         result = sum( self.ScenarioSet[w].Probability * \
-                      (self.GetLinearPenaltyForScenario(w) + self.CurrentSolution[w].TotalCost)
+                      (self.GetLinearPenaltyForScenario(w) + self.CurrentSolution[self.BatchofScenario[w]].TotalCost)
                         for w in self.ScenarioNrSet)
         return result
 
@@ -693,24 +778,28 @@ class ProgressiveHedging(object):
         return result
 
     def GetDualConvergenceIndice(self):
+
         result = sum(self.ScenarioSet[w].Probability \
-                     * math.pow(self.CurrentSolution[w].ProductionQuantity[0][t][p]
+                     * math.pow(self.CurrentSolution[self.BatchofScenario[w]].ProductionQuantity[self.NewIndexOfScenario[w]][t][p]
                                   - self.CurrentImplementableSolution.ProductionQuantity[w][t][p],
                                   2)
                     for p in self.Instance.ProductSet
                     for t in self.Instance.TimeBucketSet
                     for w in self.ScenarioNrSet)
 
+
+
         result += sum(self.ScenarioSet[w].Probability \
-                      * math.pow(self.CurrentSolution[w].Production[0][t][p]
+                      * math.pow(self.CurrentSolution[self.BatchofScenario[w]].Production[self.NewIndexOfScenario[w]][t][p]
                                   - self.CurrentImplementableSolution.Production[w][t][p],
                                   2)
                      for p in self.Instance.ProductSet
                      for t in self.Instance.TimeBucketSet
                      for w in self.ScenarioNrSet)
 
+
         result += sum(self.ScenarioSet[w].Probability \
-                      * math.pow(self.CurrentSolution[w].Consumption[0][t][c[0]][c[1]]
+                      * math.pow(self.CurrentSolution[self.BatchofScenario[w]].Consumption[self.NewIndexOfScenario[w]][t][c[0]][c[1]]
                                   - self.CurrentImplementableSolution.Consumption[w][t][c[0]][c[1]],
                                   2)
                      for c in self.Instance.ConsumptionSet
@@ -803,8 +892,6 @@ class ProgressiveHedging(object):
 
             self.CurrentImplementableSolution = self.CreateImplementableSolution()
 
-
-
             self.CurrentIteration += 1
 
             if self.CurrentIteration == 1:
@@ -821,8 +908,8 @@ class ProgressiveHedging(object):
             # Update the lagrangian multiplier
             self.UpdateLagragianMultipliers()
 
-            if Constants.Debug:
-                self.PrintCurrentIteration()
+            #if Constants.Debug:
+            #    self.PrintCurrentIteration()
 
         self.CurrentImplementableSolution.PHCost = self.CurrentImplementableSolution.TotalCost
 

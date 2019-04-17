@@ -172,7 +172,7 @@ class ScenarioTree(object):
         self.RootNode.Display()
 
     #This function assemble the data in the tree, and return the list of leaves, which contain the scenarios
-    def GetAllScenarios(self, computeindex=True):
+    def GetAllScenarios(self, computeindex=True,expandfirststage = False):
         #A mip solver is required to compute the index, it is not always set
         if computeindex:
             self.ComputeVariableIdicies()
@@ -193,6 +193,30 @@ class ScenarioTree(object):
         for s in scenarios:
             s.ScenarioId = id
             id = id + 1
+
+        if expandfirststage:
+            for s in scenarios:
+                s.ProductionVariable = [[(self.Owner.StartProductionVariable
+                                         + s.ScenarioId * self.Instance.NrProduct * len(self.Instance.TimeBucketSet) + self.Instance.NrProduct * (t) + p)
+                                        for p in self.Instance.ProductSet]
+                                        for t in self.Instance.TimeBucketSet]
+
+                s.ConsumptionVariable = [[[self.Owner.StartConsumptionVariable + \
+                                           s.ScenarioId * self.Instance.NrComponentTotal * len(self.Instance.TimeBucketSet) \
+                                        +   self.Instance.NrComponentTotal * t \
+                                             + sum(self.Instance.NrComponent[k] for k in range(p)) \
+                                             + sum(self.Instance.PossibleComponents[p][k] for k in range(q))
+                                             if self.Instance.PossibleComponents[p][q]
+                                             else -1
+                                             for q in self.Instance.ProductSet]
+                                            for p in self.Instance.ProductSet]
+                                          for t in self.Instance.TimeBucketSet]
+
+                s.QuanitityVariable = [[self.Owner.StartQuantityVariable +\
+                                          s.ScenarioId * self.Instance.NrProduct * len(self.Instance.TimeBucketSet)\
+                                        + (self.Instance.NrProduct * t + p) \
+                                       for p in self.Instance.ProductSet ]
+                                       for t in self.Instance.TimeBucketSet]
 
         return scenarios
 

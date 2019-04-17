@@ -15,13 +15,14 @@ class Evaluator( object ):
     # Constructor
     def __init__(self, instance, testidentifier, evaluatoridentificator, solver):
         self.TestIdentifier = testidentifier
+        self.AttentionModelInTestIdentifierChanged = False
         self.EvalutorIdentificator = evaluatoridentificator
         self.Solutions = self.GetPreviouslyFoundSolution()
         self.Instance = instance
         self.Solver = solver
         self.OutOfSampleTestResult = []
         self.InSampleTestResult =[]
-        if self.TestIdentifier.Method == Constants.SDDP:
+        if Constants.IsSDDPBased(self.TestIdentifier.Method):
             if Constants.SDDPSaveInExcel:
                 self.Solver.SDDPSolver = SDDP(instance, self.TestIdentifier)
                 self.Solver.SDDPSolver.LoadCuts()
@@ -36,9 +37,12 @@ class Evaluator( object ):
         for s in seeds:
             try:
                 self.TestIdentifier.ScenarioSeed = s
-                filedescription = self.TestIdentifier.GetAsString()
-                solution = Solution()
 
+                filedescription = self.TestIdentifier.GetAsString()
+
+
+
+                solution = Solution()
                 solution.ReadFromFile(filedescription)
                 result.append(solution)
 
@@ -92,12 +96,14 @@ class Evaluator( object ):
         tmpmodel = self.TestIdentifier.Model
         filedescription = self.TestIdentifier.GetAsString()
 
+        self.AttentionModelInTestIdentifierChanged = False
         MIPModel = self.TestIdentifier.Model
         if Constants.IsDeterministic(self.TestIdentifier.Model):
             MIPModel = Constants.ModelYQFix
-        if self.TestIdentifier.Model == Constants.ModelHeuristicYFix:
+        if  self.TestIdentifier.Model == Constants.ModelHeuristicYFix:
             MIPModel = Constants.ModelYFix
             self.TestIdentifier.Model = Constants.ModelYFix
+            self.AttentionModelInTestIdentifierChanged = True
 
         solution = Solution()
         if not self.TestIdentifier.EVPI and not self.TestIdentifier.ScenarioSampling == Constants.RollingHorizon:
@@ -105,7 +111,14 @@ class Evaluator( object ):
             if Constants.RunEvaluationInSeparatedJob:
                 solution.ReadFromFile(filedescription)
             else:
+                if self.AttentionModelInTestIdentifierChanged:
+                    self.TestIdentifier.Model = Constants.ModelHeuristicYFix
+
                 solution = self.GetPreviouslyFoundSolution()[0]
+
+                if self.AttentionModelInTestIdentifierChanged:
+                    self.TestIdentifier.Model = Constants.ModelYFix
+
 
                 if not solution.IsPartialSolution:
                     solution.ComputeCost()

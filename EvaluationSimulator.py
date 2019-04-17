@@ -80,23 +80,24 @@ class EvaluationSimulator(object):
         for n in range(self.NrSolutions):
                 sol = None
                 if not evpi and not self.Policy == Constants.RollingHorizon:
-                    if self.TestIdentificator.Method == Constants.MIP or self.TestIdentificator.Method == Constants.ProgressiveHedging:
-                        sol = self.Solutions[n]
-                        seed = sol.ScenarioTree.Seed
-                else:
-                    if evpi:
-                        seed = self.EVPISeed
-                    else:
-                        seed = self.StartSeedResolve
+                   # if self.TestIdentificator.Method == Constants.MIP or self.TestIdentificator.Method == Constants.ProgressiveHedging:
+                   sol = self.Solutions[n]
+         #               seed = sol.ScenarioTree.Seed
+         #       else:
+         #          if evpi:
+         #               seed = self.EVPISeed
+         #           else:
+         #               seed = self.StartSeedResolve
 
-                if self.TestIdentificator.Method == Constants.SDDP:
+                if Constants.IsSDDPBased(self.TestIdentificator.Method):
                     sddp = self.SDDPs[n]
-                    seed = sddp.StartingSeed
+
+                #          seed = sddp.StartingSeed
 
                 evaluatoinscenarios, scenariotrees = self.GetScenarioSet(Constants.EvaluationScenarioSeed, nrscenario, allscenario)
 
-                if self.TestIdentificator.Method == Constants.SDDP:
-                     self.ForwardPassOnScenarios(sddp, evaluatoinscenarios)
+                if Constants.IsSDDPBased( self.TestIdentificator.Method ) : #== Constants.SDDP:
+                     self.ForwardPassOnScenarios(sddp, evaluatoinscenarios, sol)
 
                 firstscenario = True
                 self.IsDefineMIPResolveTime = [False for t in self.Instance.TimeBucketSet]
@@ -112,7 +113,7 @@ class EvaluationSimulator(object):
                         if self.TestIdentificator.Method == Constants.MIP or self.TestIdentificator.Method == Constants.ProgressiveHedging:
                             givensetup, givenquantty, givenconsumption = self.GetDecisionFromSolutionForScenario(sol, scenario)
 
-                        if self.TestIdentificator.Method == Constants.SDDP:
+                        if Constants.IsSDDPBased(self.TestIdentificator.Method):
                             givensetup, givenquantty, givenconsumption = self.GetDecisionFromSDDPForScenario(sddp, indexscenario)
                             # Solve the MIP and fix the decision to the one given.
                         if Constants.Debug:
@@ -122,8 +123,8 @@ class EvaluationSimulator(object):
                                     print("Consumption:%r" % givenconsumption[t])
                                     print("Demand:%r" % scenario.Demands[t])
 
-                        if self.TestIdentificator.Method == Constants.SDDP:
-                            givensetup, givenquantty, givenconsumption = self.GetDecisionFromSDDPForScenario(sddp, indexscenario)
+                       # if self.TestIdentificator.Method == Constants.SDDP:
+                       #     givensetup, givenquantty, givenconsumption = self.GetDecisionFromSDDPForScenario(sddp, indexscenario)
 
 
                     else:
@@ -157,6 +158,7 @@ class EvaluationSimulator(object):
                             mipsolver.ModifyMIPForSetup(givensetup)
 
                     mipsolver.Cplex.parameters.advance = 0
+                    mipsolver.Cplex.parameters.simplex.tolerances.feasibility= 0.01
                     #mipsolver.Cplex.parameters.lpmethod = 2
                     mipsolver.Cplex.parameters.lpmethod.set(mipsolver.Cplex.parameters.lpmethod.values.barrier)
                     solution = mipsolver.Solve()
@@ -256,9 +258,10 @@ class EvaluationSimulator(object):
         return givensetup, givenquantty, givenconsumption
 
     #This method run a forward pass of the SDDP algorithm on the considered set of scenarios
-    def ForwardPassOnScenarios(self, sddp, scenarios):
+    def ForwardPassOnScenarios(self, sddp, scenarios, solution):
         sddp.EvaluationMode = True
         Constants.SDDPRunSigleTree = False
+        sddp.HeuristicSetupValue = [[ solution.Production[0][t][p] for p in self.Instance.ProductSet] for t in self.Instance.TimeBucketSet]
         # Make a forward pass on the
         #Create the SAA scenario, which are used to compute the EVPI scenario
         sddp.GenerateSAAScenarios()

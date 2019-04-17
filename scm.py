@@ -10,7 +10,6 @@ import argparse
 from SDDP import SDDP
 
 
-from Tkinter import *
 
 import csv
 import datetime
@@ -69,6 +68,7 @@ def parseArguments():
     if args.evpi:
         policygeneration ="EVPI"
 
+
     TestIdentifier = TestIdentificator(args.Instance,
                                        args.Model,
                                        args.method,
@@ -111,27 +111,36 @@ def GenerateInstances():
     instance = Instance()
     #instance.DefineAsSuperSmallIntance()
     # instance.ReadFromFile("K0011525", "NonStationary", "Normal")
-    # instance.ReadFromFile("01", "NonStationary", "Normal")
-    # instance.SaveCompleteInstanceInExelFile()
-    # instancecreated = instancecreated + [instance.InstanceName]
+    instance.ReadFromFile("01", "NonStationary", "Normal")
+    instance.SaveCompleteInstanceInExelFile()
+    instancecreated = instancecreated + [instance.InstanceName]
     #
-    # instance.ReadFromFile("02", "NonStationary", "Normal")
-    # instance.SaveCompleteInstanceInExelFile()
-    # instancecreated = instancecreated + [instance.InstanceName]
+    instance.ReadFromFile("02", "NonStationary", "Normal")
+    instance.SaveCompleteInstanceInExelFile()
+    instancecreated = instancecreated + [instance.InstanceName]
     #
-    # instance.ReadFromFile("03", "NonStationary", "Normal")
-    # instance.SaveCompleteInstanceInExelFile()
-    # instancecreated = instancecreated + [instance.InstanceName]
+    instance.ReadFromFile("03", "NonStationary", "Normal")
+    instance.SaveCompleteInstanceInExelFile()
+    instancecreated = instancecreated + [instance.InstanceName]
+    #
+    instance.ReadFromFile("04", "NonStationary", "Normal")
+    instance.SaveCompleteInstanceInExelFile()
+    instancecreated = instancecreated + [instance.InstanceName]
+    #
+    instance.ReadFromFile("05", "NonStationary", "Normal")
+    instance.SaveCompleteInstanceInExelFile()
+    instancecreated = instancecreated + [instance.InstanceName]
 
-    for name in ["G0041111", "K0017311"]: #["K0011525", "G0041421", "K0011111", "G0041111","K0017311", "G0041523","K0014432"]:
-        for distribution in ["Lumpy", "NonStationary"]:
-            instance.ReadFromFile(name, distribution, "Normal")
-            instance.SaveCompleteInstanceInExelFile()
-            instancecreated = instancecreated + [instance.InstanceName]
 
-            instance.ReadFromFile(name, distribution, "Normal", longtimehoizon=True, longtimehorizonperiod = 6)
-            instance.SaveCompleteInstanceInExelFile()
-            instancecreated = instancecreated + [instance.InstanceName]
+    # for name in ["G0041111", "K0017311"]: #["K0011525", "G0041421", "K0011111", "G0041111","K0017311", "G0041523","K0014432"]:
+    #     for distribution in ["Lumpy", "NonStationary"]:
+    #         instance.ReadFromFile(name, distribution, "Normal")
+    #         instance.SaveCompleteInstanceInExelFile()
+    #         instancecreated = instancecreated + [instance.InstanceName]
+    #
+    #         instance.ReadFromFile(name, distribution, "Normal", longtimehoizon=True, longtimehorizonperiod = 6)
+    #         instance.SaveCompleteInstanceInExelFile()
+    #         instancecreated = instancecreated + [instance.InstanceName]
 
 
     csvfile = open("./Instances/InstancesToSolve.csv", 'wb')
