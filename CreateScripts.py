@@ -130,7 +130,7 @@ srun python scm.py  Solve %s %s %s RQMC -n 0 -p Re-solve -m MLLocalSearch --mips
     return qsub_filename
 
 def CreateHybridSearchJob(instance, nrback, nrforward, setting, model = "YFix"):
-    qsub_filename = "./Jobs/job_mllocalsearch_%s_%s_%s_%s_%s" % (instance, nrback, nrforward, setting, model)
+    qsub_filename = "./Jobs/job_hybrid_%s_%s_%s_%s_%s" % (instance, nrback, nrforward, setting, model)
     qsub_file = open(qsub_filename, 'w')
     CreatHeader(qsub_file )
     qsub_file.write("""
