@@ -7,10 +7,10 @@ from InstanceReaderGrave import InstanceReaderGrave
 from InstanceReaderTemplemeier import InstanceReaderTemplemeier
 from InstanceReaderJDA import InstanceReaderJDA
 from Constants import Constants
-import networkx as nx
+#import networkx as nx
 
 
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 
 class Instance(object):
 
