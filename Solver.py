@@ -296,6 +296,10 @@ class Solver( object ):
                 solution = self.Hybrid.SDDPSolver.CreateSolutionAtFirstStage()
             else:
                  solution = self.Hybrid.SDDPSolver.CreateSolutionOfAllInSampleScenario()
+
+            self.SDDPSolver = self.Hybrid.SDDPSolver
+            if Constants.SDDPSaveInExcel:
+                self.SDDPSolver.SaveSolver()
         if self.TestIdentifier.Method == Constants.MLLocalSearch:
             self.MLLocalSearch = MLLocalSearch(self.Instance, self.TestIdentifier, self.TreeStructure, self)
 
