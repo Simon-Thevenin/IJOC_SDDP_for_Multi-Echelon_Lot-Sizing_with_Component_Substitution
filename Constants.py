@@ -113,7 +113,8 @@ class Constants( object ):
     @staticmethod
     def IsSDDPBased(s):
         result = s == Constants.SDDP \
-                 or s == Constants.MLLocalSearch
+                 or s == Constants.MLLocalSearch \
+                 or s == Constants.Hybrid
         return result
 
 
