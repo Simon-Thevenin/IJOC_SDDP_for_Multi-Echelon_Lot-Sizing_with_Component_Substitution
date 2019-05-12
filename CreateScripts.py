@@ -85,7 +85,6 @@ def CreatHeaderNantes(file):
 #SBATCH --time=06:00:00
 #
 # Adresse mel de l'utilisateur
-#SBATCH --mail-user=simon.thevenin@imt-atlantique.fr
 #
 # Envoi des mails
 #SBATCH --mail-type=abort,end
@@ -110,6 +109,7 @@ export I_MPI_PMI_LIBRARY=/usr/lib64/libpmi.so
 
 """)
 
+#SBATCH --mail-user=simon.thevenin@imt-atlantique.fr
 
 def CreateSDDPJob(instance, nrback, nrforward, setting, model = "YFix"):
     qsub_filename = "./Jobs/job_sddp_%s_%s_%s_%s_%s" % (instance, nrback, nrforward, setting, model)
