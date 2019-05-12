@@ -116,7 +116,7 @@ def CreateSDDPJob(instance, nrback, nrforward, setting, model = "YFix"):
     qsub_file = open(qsub_filename, 'w')
     CreatHeader(qsub_file )
     qsub_file.write("""
-srun python scm.py  Solve %s %s %s RQMC -n 0 -p Re-solve -m SDDP --mipsetting %s --nrforward %s  > /home/LS2N/thevenin-s/log/output-${SLURM_JOB_ID}.txt 
+srun python scm.py  Solve %s %s %s RQMC -n 5000 -p Re-solve -m SDDP --mipsetting %s --nrforward %s  > /home/LS2N/thevenin-s/log/output-${SLURM_JOB_ID}.txt 
 """ % (instance, model, nrback, setting, nrforward))
     return qsub_filename
 
@@ -125,7 +125,7 @@ def CreateMLLocalSearchJob(instance, nrback, nrforward, setting, model = "YFix")
     qsub_file = open(qsub_filename, 'w')
     CreatHeader(qsub_file )
     qsub_file.write("""
-srun python scm.py  Solve %s %s %s RQMC -n 0 -p Re-solve -m MLLocalSearch --mipsetting %s --nrforward %s >/home/LS2N/thevenin-s/log/output-${SLURM_JOB_ID}.txt
+srun python scm.py  Solve %s %s %s RQMC -n 5000 -p Re-solve -m MLLocalSearch --mipsetting %s --nrforward %s >/home/LS2N/thevenin-s/log/output-${SLURM_JOB_ID}.txt
 """ % (instance, model, nrback, setting, nrforward))
     return qsub_filename
 
@@ -134,7 +134,7 @@ def CreateHybridSearchJob(instance, nrback, nrforward, setting, model = "YFix"):
     qsub_file = open(qsub_filename, 'w')
     CreatHeader(qsub_file )
     qsub_file.write("""
-srun python scm.py  Solve %s %s %s RQMC -n 0 -p Re-solve -m Hybrid --mipsetting %s --nrforward %s >/home/LS2N/thevenin-s/log/output-${SLURM_JOB_ID}.txt
+srun python scm.py  Solve %s %s %s RQMC -n 5000 -p Re-solve -m Hybrid --mipsetting %s --nrforward %s >/home/LS2N/thevenin-s/log/output-${SLURM_JOB_ID}.txt
 """ % (instance, model, nrback, setting, nrforward))
     return qsub_filename
 

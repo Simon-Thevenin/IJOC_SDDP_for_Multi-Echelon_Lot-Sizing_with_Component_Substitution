@@ -58,7 +58,7 @@ class Constants( object ):
 
     #Code parameter
     Infinity = 9999999999999
-    AlgorithmTimeLimit = 10#10800
+    AlgorithmTimeLimit = 10
     MIPBasedOnSymetricTree = True
 
     #SDDPparameters
