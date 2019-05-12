@@ -18,6 +18,7 @@ import itertools
 #from MRPSolution import MRPSolution
 #from decimal import Decimal, ROUND_HALF_DOWN
 import pickle
+import RollingHorizonSolver
 #from matplotlib import pyplot as PLT
 
 class EvaluationSimulator(object):
@@ -264,7 +265,7 @@ class EvaluationSimulator(object):
         sddp.HeuristicSetupValue = [[ solution.Production[0][t][p] for p in self.Instance.ProductSet] for t in self.Instance.TimeBucketSet]
         # Make a forward pass on the
         #Create the SAA scenario, which are used to compute the EVPI scenario
-        sddp.GenerateSAAScenarios()
+        sddp.GenerateSAAScenarios2()
 
         # Get the set of scenarios
         sddp.CurrentSetOfTrialScenarios = scenarios

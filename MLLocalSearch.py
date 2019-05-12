@@ -35,7 +35,7 @@ class MLLocalSearch(object):
         self.BestSolution = None
         self.BestSolutionCost = Constants.Infinity
         self.BestSolutionSafeUperBound = Constants.Infinity
-        self.SDDPSolver = SDDP(self.Instance, self.TestIdentifier)
+        self.SDDPSolver = SDDP(self.Instance, self.TestIdentifier, treestructure)
         self.SDDPSolver.HasFixedSetup = True
         self.SDDPSolver.IsIterationWithConvergenceTest = False
         # self.SDDPSolver.Run()
@@ -105,7 +105,7 @@ class MLLocalSearch(object):
         self.Start = time.time()
         duration = 0
         #Initialization
-        for i in range(1,50):
+        for i in range(1,2):
             self.GivenSetup1D, self.GivenSetup2D = self.GetRandomSetups()
             self.RunSDDPAndAddToTraining()
 
@@ -113,7 +113,7 @@ class MLLocalSearch(object):
         self.GenerateOutSample()
 
         self.CurrentTolerance = Constants.AlgorithmOptimalityTolerence
-        self.SDDPSolver.CurrentToleranceForSameLB = 0.000001
+        self.SDDPSolver.CurrentToleranceForSameLB = 0.01
         self.BestSolutionCost = Constants.Infinity
         self.BestSolutionSafeUperBound = Constants.Infinity
 
@@ -192,7 +192,10 @@ class MLLocalSearch(object):
             duration = end - self.Start
 
         self.GivenSetup2D = self.BestSolution.Production[0]
-        self.SDDPSolver.IsIterationWithConvergenceTest = True
+        self.SDDPSolver.IsIterationWithConvergenceTest = False
+
+        self.SDDPSolver.CurrentToleranceForSameLB = 0.000001
+        self.Start = 0
         self.BestSolution = self.RunSDDP()
 
         self.BestSolution.LocalSearchIteration = self.Iteration
@@ -387,6 +390,8 @@ class MLLocalSearch(object):
 
         self.SDDPSolver.NrIterationWithoutLBImprovment = 0
 
+        self.SDDPSolver.CorePointQuantityValues = []
+
         self.SDDPSolver.CurrentForwardSampleSize = self.TestIdentifier.NrScenarioForward
         while (not stop ):
             self.SDDPSolver.GenerateTrialScenarios()
@@ -402,9 +407,10 @@ class MLLocalSearch(object):
 
             stop = self.CheckStopingSDDP() or duration > Constants.AlgorithmTimeLimit
 
-        self.SDDPSolver.SDDPNrScenarioTest = 100
-        self.SDDPSolver.ComputeUpperBound()
-        self.SDDPSolver.IsIterationWithConvergenceTest = False
+        if self.SDDPSolver.CurrentLowerBound < self.BestSolutionSafeUperBound:
+            self.SDDPSolver.SDDPNrScenarioTest = 100
+            self.SDDPSolver.ComputeUpperBound()
+            self.SDDPSolver.IsIterationWithConvergenceTest = False
 
 
         self.SDDPSolver.ForwardStage[0].ProductionValue = [[[self.SDDPSolver.HeuristicSetupValue[t][p]
@@ -418,9 +424,8 @@ class MLLocalSearch(object):
         solution =  self.SDDPSolver.CreateSolutionAtFirstStage()
         solution.TotalCost = self.SDDPSolver.CurrentExpvalueUpperBound
 
-        if (self.SDDPSolver.IsIterationWithConvergenceTest):
-            self.SDDPSolver.LastExpectedCostComputedOnAllScenario = self.SDDPSolver.CurrentExpvalueUpperBound
-            solution.SDDPExpUB = self.SDDPSolver.CurrentExpvalueUpperBound
+        self.SDDPSolver.LastExpectedCostComputedOnAllScenario = self.SDDPSolver.CurrentExpvalueUpperBound
+        solution.SDDPExpUB = self.SDDPSolver.CurrentExpvalueUpperBound
 
         return solution
 

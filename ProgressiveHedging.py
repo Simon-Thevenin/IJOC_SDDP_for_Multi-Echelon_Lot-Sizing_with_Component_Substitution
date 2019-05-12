@@ -135,7 +135,7 @@ class ProgressiveHedging(object):
 
     def SplitScenrioTree2(self):
 
-        batchsize = 1000
+        batchsize = 200
         self.NrMIPBatch = int(math.ceil(len(self.ScenarioNrSet)/(batchsize)))
         self.Indexscenarioinbatch = [None for m in range(self.NrMIPBatch)]
         self.Scenarioinbatch = [None for m in range(self.NrMIPBatch)]
@@ -147,14 +147,12 @@ class ProgressiveHedging(object):
         for m in range(self.NrMIPBatch):
 
             firstscenarioinbatch = m * batchsize
-            lastscenarioinbatch = min( (m+1) * batchsize, len(self.ScenarioNrSet) )
+            lastscenarioinbatch = min((m+1) * batchsize, len(self.ScenarioNrSet))
             nrscenarioinbatch = lastscenarioinbatch - firstscenarioinbatch
             self.Indexscenarioinbatch[m] = range(firstscenarioinbatch, lastscenarioinbatch)
             self.Scenarioinbatch[m] = [self.ScenarioSet[w] for w in self.Indexscenarioinbatch[m]]
 
-            treestructure = [1]  + [nrscenarioinbatch] + [1] * (self.Instance.NrTimeBucket-1) + [0]
-
-
+            treestructure = [1] + [nrscenarioinbatch] + [1] * (self.Instance.NrTimeBucket-1) + [0]
 
             self.SplitedScenarioTree[m] = ScenarioTree(self.Instance, treestructure, 0,
                                                                     givenscenarioset=self.Scenarioinbatch[m],
@@ -170,7 +168,7 @@ class ProgressiveHedging(object):
         gap = Constants.Infinity
 
         if self.CurrentIteration > 0:
-            gap = self.ComputeConvergence()
+            gap = self.ComputeConvergenceY()
 
         convergencereached = gap < Constants.PHConvergenceTolerence
 

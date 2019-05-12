@@ -22,8 +22,13 @@ class Hybrid_PH_SDDP(object):
 #
         self.Solver = solver
 
-        self.ProgressiveHedging = ProgressiveHedging(self.Instance, self.TestIdentifier, self.TreeStructure)
 
+        OldNrScenar =self.TestIdentifier.NrScenario
+        self.TestIdentifier.NrScenario = "1000"
+        PHTreestructure = solver.GetTreeStructure()
+        self.ProgressiveHedging = ProgressiveHedging(self.Instance, self.TestIdentifier, PHTreestructure)
+
+        self.TestIdentifier.NrScenario = OldNrScenar
     def Run(self):
 
         #self.GetHeuristicSetup()
@@ -33,21 +38,22 @@ class Hybrid_PH_SDDP(object):
         self.ProgressiveHedging.InitTrace()
         # self.ProgressiveHedging.Run()
         self.ProgressiveHedging.CurrentSolution = [None for w in self.ProgressiveHedging.ScenarioNrSet]
-        Constants.PrintOnlyFirstStageDecision = False
+        self.PrintOnlyFirstStagePreviousValue = Constants.PrintOnlyFirstStageDecision
+        if Constants.PrintOnlyFirstStageDecision:
+            Constants.PrintOnlyFirstStageDecision = False
 
-        while not self.ProgressiveHedging.CheckStopingCriterion():
+
+        while self.ProgressiveHedging.CurrentIteration < 1 or not self.ProgressiveHedging.ComputeConvergenceY() <= 1.0:
             self.ProgressiveHedging.SolveScenariosIndependently()
             solution = self.ProgressiveHedging.CreateImplementableSolution()
 
-            self.GivenSetup = [[solution.Production[0][t][p] for p in self.Instance.ProductSet] for t in
-                               self.Instance.TimeBucketSet]  # solution.Production[0][t][p]
 
-            solution = self.RunSDDP()
 
             self.ProgressiveHedging.PreviousImplementableSolution = copy.deepcopy(self.ProgressiveHedging.CurrentImplementableSolution)
             self.ProgressiveHedging.CurrentImplementableSolution = solution
 
-            self.ProgressiveHedging.PrintCurrentIteration()
+            if Constants.Debug:
+                self.ProgressiveHedging.PrintCurrentIteration()
 
 
             self.ProgressiveHedging.CurrentIteration += 1
@@ -56,20 +62,30 @@ class Hybrid_PH_SDDP(object):
 
             self.ProgressiveHedging.UpdateLagragianMultipliers()
 
-        return solution
+        self.GivenSetup = [[solution.Production[0][t][p] for p in self.Instance.ProductSet] for t in
+                           self.Instance.TimeBucketSet]  # solution.Production[0][t][p]
+
+        Constants.PrintOnlyFirstStageDecision = self.PrintOnlyFirstStagePreviousValue
+
+        self.RunSDDP()
+
+      #  return solution
 
     def RunSDDP(self):
-        print("RUN SDDP")
-        self.SDDPSolver = SDDP(self.Instance, self.TestIdentifier)
+     #   print("RUN SDDP")
+        treestructure = []
+        self.SDDPSolver = SDDP(self.Instance, self.TestIdentifier, self.TreeStructure)
 
         #Mke sure SDDP do not unter in preliminary stage (at the end of the preliminary stage, SDDP would change the setup to bynary)
         Constants.SDDPGenerateCutWith2Stage = False
         Constants.SolveRelaxationFirst = False
         Constants.SDDPRunSigleTree = False
 
+
         self.SDDPSolver.HeuristicSetupValue = self.GivenSetup
+
         self.SDDPSolver.Run()
-        return self.SDDPSolver.CreateSolutionOfAllInSampleScenario()
+       # return self.SDDPSolver.CreateSolutionOfAllInSampleScenario()
 
 
 

@@ -224,6 +224,7 @@ class SDDPLastStage( SDDPStage ):
                                                                       "Capt%d" % ( k))
 
                     self.IndexCapacityConstraint.append(self.LastAddedConstraintIndex)
+                    self.IndexCapacityConstraintPerScenario[w].append(self.LastAddedConstraintIndex)
                     self.LastAddedConstraintIndex = self.LastAddedConstraintIndex + 1
 
                     self.ConcernedResourceCapacityConstraint.append(k)
@@ -338,11 +339,13 @@ class SDDPLastStage( SDDPStage ):
                                                                           self.FlowConstraintNR[p][t])
 
                         self.IndexFlowConstraint.append(self.LastAddedConstraintIndex)
+                        self.IndexFlowConstraintPerScenario[w].append(self.LastAddedConstraintIndex)
                         self.LastAddedConstraintIndex = self.LastAddedConstraintIndex + 1
 
                         self.ConcernedTimeFlowConstraint.append(self.GetTimePeriodAssociatedToInventoryVariable(p,t))
                         self.ConcernedProductFlowConstraint.append(p)
                         self.ConcernedScenarioFlowConstraint.append(w)
+
 
     def IncreaseCutWithFlowDual2(self, cut, sol):
         if Constants.Debug:

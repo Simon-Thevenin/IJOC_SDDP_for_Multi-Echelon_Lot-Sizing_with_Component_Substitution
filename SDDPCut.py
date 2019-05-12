@@ -5,7 +5,7 @@ from Constants import Constants
 
 class SDDPCut(object):
 
-    def __init__(self, owner=None, forwardstage=None, trial=-1):
+    def __init__(self, owner=None, forwardstage=None, trial=-1, backwardscenario=-1):
         self.BackwarStage = owner
         self.ForwardStage = forwardstage
         self.BackwarStage.SDDPCuts.append(self)
@@ -43,7 +43,11 @@ class SDDPCut(object):
         self.LastIterationWithDual = self.Iteration
         #self.LastAddedConstraintIndex = 0
 
+
+
         #This function add the cut to the MIP
+
+        self.BackwardScenario = backwardscenario
 
     def Print(self):
         print("RHS:%s"%self.GetRHS())
@@ -57,7 +61,7 @@ class SDDPCut(object):
 
     #This function return the variables of the cut in its stage (do ot include the variable fixed at previous stage)
     def GetCutVariablesAtStage(self, stage, w):
-        vars = [stage.GetIndexCostToGo(w)] \
+        vars = [stage.GetIndexCostToGo(w, self.BackwardScenario)] \
                + [stage.GetIndexQuantityVariable(p, t, w)
                   for t in self.ForwardStage.RangePeriodQty
                   for p in self.Instance.ProductSet] \
@@ -126,16 +130,21 @@ class SDDPCut(object):
 
         coeff = self.GetCutVariablesCoefficientAtStage()
 
-        righthandside = [self.GetRHS()]
+        righthandside = self.GetRHS()
+        lin_exprs = []
+        senses =[]
+        rhss = []
+        namess =[]
         for w in stage.FixedScenarioSet:
-
             vars = self.GetCutVariablesAtStage(stage, w)
-            stage.Cplex.linear_constraints.add(lin_expr=[cplex.SparsePair(vars, coeff)],
-                                                        senses=["G"],
-                                                        rhs=righthandside)#,
-                                                        #names =[self.Name])
+            lin_exprs.append(cplex.SparsePair(vars, coeff))
+            senses.append("G")
+            rhss.append(righthandside)
+
+
 
             stage.IndexCutConstraint.append(stage.LastAddedConstraintIndex)
+            stage.IndexCutConstraintPerScenario[w].append(stage.LastAddedConstraintIndex)
 
             if forward:
                 self.IndexForward.append(stage.LastAddedConstraintIndex)
@@ -143,11 +152,18 @@ class SDDPCut(object):
                 self.IndexBackward.append(stage.LastAddedConstraintIndex)
 
             if Constants.Debug:
-                stage.Cplex.linear_constraints.set_names(stage.LastAddedConstraintIndex, self.Name)
+                namess.append( self.Name)
 
+            stage.ConcernedScenarioCutConstraint.append(w)
             stage.LastAddedConstraintIndex += 1
 
             stage.ConcernedCutinConstraint.append(self)
+
+
+        stage.Cplex.linear_constraints.add(lin_expr=lin_exprs,
+                                           senses=senses,
+                                           rhs=rhss,
+                                           names=namess)
 
     def RemoveTheCut(self):
         self.RemoveCut(self.ForwardStage, True)
@@ -169,7 +185,7 @@ class SDDPCut(object):
             stage.Cplex.linear_constraints.delete(i)
 
         stage.LastAddedConstraintIndex -= nrcutremoved
-        stage.IndexCutConstraint = self.Stage.IndexCutConstraint[0:-nrcutremoved]
+        stage.IndexCutConstraint = stage.IndexCutConstraint[0:-nrcutremoved]
         # renumber other cuts
         reindex = False
         for c in stage.ConcernedCutinConstraint:

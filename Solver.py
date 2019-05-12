@@ -219,7 +219,7 @@ class Solver( object ):
 
         if self.TestIdentifier.Method == Constants.SDDP:
              self.TestIdentifier.Model = Constants.ModelHeuristicYFix
-             self.SDDPSolver = SDDP(self.Instance, self.TestIdentifier)
+             self.SDDPSolver = SDDP(self.Instance, self.TestIdentifier, self.TreeStructure)
              self.SDDPSolver.HasFixedSetup = True
              self.SDDPSolver.HeuristicSetupValue = self.GivenSetup
              self.SDDPSolver.Run()
@@ -269,7 +269,8 @@ class Solver( object ):
             solution, mipsolver = self.MRP(self.TreeStructure, averagescenario=False, recordsolveinfo=True, warmstart=True)
 
         if self.TestIdentifier.Method == Constants.SDDP:
-             self.SDDPSolver = SDDP(self.Instance, self.TestIdentifier)
+             self.TreeStructure = self.GetTreeStructure()
+             self.SDDPSolver = SDDP(self.Instance, self.TestIdentifier, self.TreeStructure)
              self.SDDPSolver.HeuristicSetupValue = self.GivenSetup
              self.SDDPSolver.Run()
              if Constants.PrintOnlyFirstStageDecision:
@@ -290,8 +291,11 @@ class Solver( object ):
             self.TreeStructure = self.GetTreeStructure()
 
             self.Hybrid = Hybrid_PH_SDDP(self.Instance, self.TestIdentifier, self.TreeStructure, self)
-            solution = self.Hybrid.Run()
-
+            self.Hybrid.Run()
+            if Constants.PrintOnlyFirstStageDecision:
+                solution = self.Hybrid.SDDPSolver.CreateSolutionAtFirstStage()
+            else:
+                 solution = self.Hybrid.SDDPSolver.CreateSolutionOfAllInSampleScenario()
         if self.TestIdentifier.Method == Constants.MLLocalSearch:
             self.MLLocalSearch = MLLocalSearch(self.Instance, self.TestIdentifier, self.TreeStructure, self)
 
@@ -368,6 +372,9 @@ class Solver( object ):
             if self.TestIdentifier.NrScenario == "all20":
                 stochasticparttreestructure = [20]*nrtimebucketstochastic
 
+            if self.TestIdentifier.NrScenario == "all50":
+                stochasticparttreestructure = [50] * nrtimebucketstochastic
+
             if self.TestIdentifier.NrScenario == "allDIX":
                 stochasticparttreestructure = [10]*nrtimebucketstochastic
 
@@ -411,11 +418,23 @@ class Solver( object ):
                 if nrtimebucketstochastic == 15:
                     stochasticparttreestructure = [50, 8, 4, 4, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
 
-            if self.TestIdentifier.NrScenario == "10000":
+            if self.TestIdentifier.NrScenario == "1000":
+                stochasticparttreestructure = [25, 10, 2, 2] + [1]*(nrtimebucketstochastic-3)
+
+            if self.TestIdentifier.NrScenario == "50-50-10-5":
                 if nrtimebucketstochastic == 3:
-                    stochasticparttreestructure = [100, 10, 10]
-                if nrtimebucketstochastic == 4:
-                    stochasticparttreestructure = [10, 10, 10, 10]
+                    stochasticparttreestructure = [50, 50, 10]
+                if nrtimebucketstochastic >= 4:
+                    stochasticparttreestructure = [50, 50, 10] + [5]*(nrtimebucketstochastic-3)
+
+            if self.TestIdentifier.NrScenario == "50-50-10":
+                stochasticparttreestructure = [50, 50] + [10] * (nrtimebucketstochastic - 2)
+
+            if self.TestIdentifier.NrScenario == "50-10-10-5":
+                if nrtimebucketstochastic == 3:
+                    stochasticparttreestructure = [50, 10, 10]
+                if nrtimebucketstochastic >= 4:
+                    stochasticparttreestructure = [50, 10, 10] + [5] * (nrtimebucketstochastic - 3)
 
             #if not self.TestIdentifier.PolicyGeneration == Constants.RollingHorizon:
             k = 0

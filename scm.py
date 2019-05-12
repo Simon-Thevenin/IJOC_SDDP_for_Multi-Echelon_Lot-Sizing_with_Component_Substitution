@@ -89,7 +89,7 @@ def Solve(instance):
     LastFoundSolution = solution
     evaluator = Evaluator(instance, TestIdentifier, EvaluatorIdentifier, solver)
     evaluator.RunEvaluation()
-    if Constants.LauchEvalAfterSolve:
+    if Constants.LauchEvalAfterSolve and EvaluatorIdentifier.NrEvaluation>0:
         evaluator.GatherEvaluation()
 
 
@@ -111,28 +111,30 @@ def GenerateInstances():
     instance = Instance()
     #instance.DefineAsSuperSmallIntance()
     # instance.ReadFromFile("K0011525", "NonStationary", "Normal")
-    instance.ReadFromFile("01", "NonStationary", "Normal")
-    instance.SaveCompleteInstanceInExelFile()
-    instancecreated = instancecreated + [instance.InstanceName]
+    #instance.ReadFromFile("10", "Lumpy", "Normal")
+    #instance.SaveCompleteInstanceInExelFile()
+    #instancecreated = instancecreated + [instance.InstanceName]
     #
-    instance.ReadFromFile("02", "NonStationary", "Normal")
-    instance.SaveCompleteInstanceInExelFile()
-    instancecreated = instancecreated + [instance.InstanceName]
-    #
-    instance.ReadFromFile("03", "NonStationary", "Normal")
-    instance.SaveCompleteInstanceInExelFile()
-    instancecreated = instancecreated + [instance.InstanceName]
-    #
-    instance.ReadFromFile("04", "NonStationary", "Normal")
-    instance.SaveCompleteInstanceInExelFile()
-    instancecreated = instancecreated + [instance.InstanceName]
-    #
-    instance.ReadFromFile("05", "NonStationary", "Normal")
-    instance.SaveCompleteInstanceInExelFile()
-    instancecreated = instancecreated + [instance.InstanceName]
+    for sc in ["01", "02", "03", "04", "05"]:
+        for addtime in [0,1,2]:
+            instance.ReadFromFile(sc, "Lumpy", "Normal", addtime)
+            instance.SaveCompleteInstanceInExelFile()
+            instancecreated = instancecreated + [instance.InstanceName]
+    # #
+    # instance.ReadFromFile("03", "Lumpy", "Normal")
+    # instance.SaveCompleteInstanceInExelFile()
+    # instancecreated = instancecreated + [instance.InstanceName]
+    # #
+    # instance.ReadFromFile("04", "Lumpy", "Normal")
+    # instance.SaveCompleteInstanceInExelFile()
+    # instancecreated = instancecreated + [instance.InstanceName]
+    # #
+    # instance.ReadFromFile("05", "Lumpy", "Normal")
+    # instance.SaveCompleteInstanceInExelFile()
+    # instancecreated = instancecreated + [instance.InstanceName]
 
 
-    # for name in ["G0041111", "K0017311"]: #["K0011525", "G0041421", "K0011111", "G0041111","K0017311", "G0041523","K0014432"]:
+    # for name in ["G"0041111", "K0017311"]: #["K0011525", "G0041421", "K0011111", "G0041111","K0017311", "G0041523","K0014432"]:
     #     for distribution in ["Lumpy", "NonStationary"]:
     #         instance.ReadFromFile(name, distribution, "Normal")
     #         instance.SaveCompleteInstanceInExelFile()

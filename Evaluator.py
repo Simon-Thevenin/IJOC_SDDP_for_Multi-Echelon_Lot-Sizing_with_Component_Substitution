@@ -24,7 +24,7 @@ class Evaluator( object ):
         self.InSampleTestResult =[]
         if Constants.IsSDDPBased(self.TestIdentifier.Method):
             if Constants.SDDPSaveInExcel:
-                self.Solver.SDDPSolver = SDDP(instance, self.TestIdentifier)
+                self.Solver.SDDPSolver = SDDP(instance, self.TestIdentifier, self.Solver.GetTreeStructure())
                 self.Solver.SDDPSolver.LoadCuts()
             Constants.SDDPGenerateCutWith2Stage = False
             Constants.SDDPRunSigleTree = False
@@ -100,7 +100,7 @@ class Evaluator( object ):
         MIPModel = self.TestIdentifier.Model
         if Constants.IsDeterministic(self.TestIdentifier.Model):
             MIPModel = Constants.ModelYQFix
-        if  self.TestIdentifier.Model == Constants.ModelHeuristicYFix:
+        if self.TestIdentifier.Model == Constants.ModelHeuristicYFix:
             MIPModel = Constants.ModelYFix
             self.TestIdentifier.Model = Constants.ModelYFix
             self.AttentionModelInTestIdentifierChanged = True
@@ -131,12 +131,12 @@ class Evaluator( object ):
                                         evaluatoridentificator=self.EvalutorIdentificator,
                                         treestructure=self.Solver.GetTreeStructure(),
                                         model=MIPModel)
-
+        self.TestIdentifier.Model = tmpmodel
         self.OutOfSampleTestResult = evaluator.EvaluateYQFixSolution(saveevaluatetab=True,
                                                                      filename=self.GetEvaluationFileName(),
                                                                      evpi=self.TestIdentifier.EVPI)
 
-        self.TestIdentifier.Model = tmpmodel
+
         self.GatherEvaluation()
 
     def GatherEvaluation(self):
@@ -152,8 +152,9 @@ class Evaluator( object ):
         #Creat the evaluation table
         currentseedvalue = self.TestIdentifier.ScenarioSeed
         for seed in [self.TestIdentifier.ScenarioSeed]:#SeedArray:
+            filename = self.GetEvaluationFileName()
             try:
-                filename = self.GetEvaluationFileName()
+
                 self.TestIdentifier.ScenarioSeed = seed
                 #print "open file %rEvaluator.txt"%filename
                 with open(filename + "Evaluator.txt", 'rb') as f:
@@ -169,8 +170,8 @@ class Evaluator( object ):
                     KPIStats.append(list)
                     nrfile =nrfile +1
             except IOError:
-                if Constants.Debug:
-                    print("No evaluation file found for seed %d" % seed)
+               # if Constants.Debug:
+                    print("No evaluation file found for seed %d %r" %(seed, filename))
 
         if nrfile >= 1:
             KPIStat = [sum(e) / len(e) for e in zip(*KPIStats)]
@@ -200,7 +201,7 @@ class Evaluator( object ):
 
     #This function runs the evaluation for the just completed test :
     def RunEvaluation(self):
-        if Constants.LauchEvalAfterSolve:
+        if Constants.LauchEvalAfterSolve and self.EvalutorIdentificator.NrEvaluation >0:
             policyset = ["Re-solve"]
 
             perfectsenarioset = [0]

@@ -82,7 +82,7 @@ def CreatHeaderNantes(file):
 #SBATCH --ntasks-per-node=1
 #
 # Temps de presence du job
-#SBATCH --time=05:00:00
+#SBATCH --time=06:00:00
 #
 # Adresse mel de l'utilisateur
 #SBATCH --mail-user=simon.thevenin@imt-atlantique.fr
@@ -116,7 +116,7 @@ def CreateSDDPJob(instance, nrback, nrforward, setting, model = "YFix"):
     qsub_file = open(qsub_filename, 'w')
     CreatHeader(qsub_file )
     qsub_file.write("""
-srun python scm.py  Solve %s %s %s RQMC -n 5000 -p Re-solve -m SDDP --mipsetting %s --nrforward %s  > /home/LS2N/thevenin-s/log/output-${SLURM_JOB_ID}.txt 
+srun python scm.py  Solve %s %s %s RQMC -n 0 -p Re-solve -m SDDP --mipsetting %s --nrforward %s  > /home/LS2N/thevenin-s/log/output-${SLURM_JOB_ID}.txt 
 """ % (instance, model, nrback, setting, nrforward))
     return qsub_filename
 
@@ -125,10 +125,18 @@ def CreateMLLocalSearchJob(instance, nrback, nrforward, setting, model = "YFix")
     qsub_file = open(qsub_filename, 'w')
     CreatHeader(qsub_file )
     qsub_file.write("""
-srun python scm.py  Solve %s %s %s RQMC -n 5000 -p Re-solve -m MLLocalSearch --mipsetting %s --nrforward %s >/home/LS2N/thevenin-s/log/output-${SLURM_JOB_ID}.txt
+srun python scm.py  Solve %s %s %s RQMC -n 0 -p Re-solve -m MLLocalSearch --mipsetting %s --nrforward %s >/home/LS2N/thevenin-s/log/output-${SLURM_JOB_ID}.txt
 """ % (instance, model, nrback, setting, nrforward))
     return qsub_filename
 
+def CreateHybridSearchJob(instance, nrback, nrforward, setting, model = "YFix"):
+    qsub_filename = "./Jobs/job_mllocalsearch_%s_%s_%s_%s_%s" % (instance, nrback, nrforward, setting, model)
+    qsub_file = open(qsub_filename, 'w')
+    CreatHeader(qsub_file )
+    qsub_file.write("""
+srun python scm.py  Solve %s %s %s RQMC -n 0 -p Re-solve -m Hybrid --mipsetting %s --nrforward %s >/home/LS2N/thevenin-s/log/output-${SLURM_JOB_ID}.txt
+""" % (instance, model, nrback, setting, nrforward))
+    return qsub_filename
 
 def CreateMIPJob(instance, scenariotree, model = "YFix"):
     qsub_filename = "./Jobs/job_mip_%s_%s_%s" % (instance, scenariotree, model)
@@ -169,13 +177,6 @@ if __name__ == "__main__":
 #
 """)
 
-        InstanceSet = ["01_NonStationary_b2_fe25_en_rk50_ll0_l20_HFalse10_c2",
-                       "02_NonStationary_b2_fe25_en_rk50_ll0_l20_HFalse10_c2",
-                       "03_NonStationary_b2_fe25_en_rk50_ll0_l20_HFalse10_c2",
-                       "04_NonStationary_b2_fe25_en_rk50_ll0_l20_HFalse10_c2",
-                       "05_NonStationary_b2_fe25_en_rk50_ll0_l20_HFalse10_c2"]
-
-        InstanceSet = ["05_NonStationary_b2_fe25_en_rk50_ll0_l20_HFalse10_c2"]
 
         for instance in InstanceSet:
             for nrback in sddpnrbackset:
@@ -183,40 +184,56 @@ if __name__ == "__main__":
                     nrforward = 1
                     jobname = CreateSDDPJob(instance, nrback, nrforward, setting, model="HeuristicYFix")
                     fileheur.write("sbatch %s \n" % (jobname))
-                    jobname = CreateSDDPJob(instance, nrback, nrforward, setting, model = "YFix")
+                    jobname = CreateSDDPJob(instance, nrback, nrforward, setting, model="YFix")
                     fileheur.write("sbatch %s \n" % (jobname))
                     jobname = CreateMLLocalSearchJob(instance, nrback, nrforward, setting, model="YFix")
                     fileheur.write("sbatch %s \n" % (jobname))
+                    jobname = CreateHybridSearchJob(instance, nrback, nrforward, setting, model="YFix")
+                    fileheur.write("sbatch %s \n" % (jobname))
+
 
 
             jobname = CreateMIPJob(instance, 100, model="YQFix")
             fileheur.write("sbatch %s \n" % (jobname))
 
-            for scenariotree in scenariotreeset:
-                     jobname = CreateMIPJob(instance, scenariotree, model = "HeuristicYFix")
-                     fileheur.write("sbatch %s \n" % (jobname))
+            # for scenariotree in scenariotreeset:
+            #          jobname = CreateMIPJob(instance, scenariotree, model="HeuristicYFix")
+            #          fileheur.write("sbatch %s \n" % (jobname))
              #   jobname = CreatePHJob(instance, scenariotree, model = "HeuristicYFix")
              #   fileheur.write("sbatch %s \n" % (jobname))
 
 
 
     if sys.argv[1] == "SDDP":
-        #settings = ["Default", "NoFirstCuts", "NoEVPI", "NoStongCut"]
-        # Create the sh file for resolution
         filesddpname = "runallsddp.sh"
         filesddp = open(filesddpname, 'w')
         filesddp.write("""
-#!/bin/bash -l
-#
-""")
+        #!/bin/bash -l
+        #
+        """)
+
+        InstanceSet = ["01_Lumpy_b2_fe25_en_rk50_ll0_l20_HFalse10_c2",
+                       "02_Lumpy_b2_fe25_en_rk50_ll0_l20_HFalse10_c2",
+                       "03_Lumpy_b2_fe25_en_rk50_ll0_l20_HFalse10_c2",
+                       "04_Lumpy_b2_fe25_en_rk50_ll0_l20_HFalse10_c2",
+                       "05_Lumpy_b2_fe25_en_rk50_ll0_l20_HFalse10_c2"]
 
         for instance in InstanceSet:
-           for nrback in sddpnrbackset:
-                for setting in [ "Default", "NoFirstCuts", "NoEVPI", "NoStongCut", "NoSingleTree", "WithLPTree", "WithFixedSetups", "WithFixedSetupsNoScenarioTree" ]:
-
+            for nrback in sddpnrbackset:
+                for setting in ["Default"]:
                     nrforward = 1
-                    jobname = CreateSDDPJob(instance, nrback, nrforward, setting)
-                    filesddp.write("qsub %s \n" % (jobname) )
+                    jobname = CreateSDDPJob(instance, nrback, nrforward, setting, model="HeuristicYFix")
+                    filesddp.write("sbatch %s \n" % (jobname))
+
+
+
+        # for instance in InstanceSet:
+        #    for nrback in sddpnrbackset:
+        #         for setting in [ "Default", "NoFirstCuts", "NoEVPI", "NoStongCut", "NoSingleTree", "WithLPTree", "WithFixedSetups", "WithFixedSetupsNoScenarioTree" ]:
+        #
+        #             nrforward = 1
+        #             jobname = CreateSDDPJob(instance, nrback, nrforward, setting)
+        #             filesddp.write("qsub %s \n" % (jobname) )
 
 
     if sys.argv[1] == "MIP":

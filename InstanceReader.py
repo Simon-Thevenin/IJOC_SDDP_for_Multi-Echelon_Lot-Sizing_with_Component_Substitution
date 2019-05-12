@@ -22,7 +22,7 @@ class InstanceReader(object):
     # b and lostsale are the cost structure (backlog cost are b*instentory costs, lost sale costs are lostsale*instentory costs
     # is the echelon inventory cost (n: normal, l: large increase at each echelon)
     # forecasterror and rateknown are parameter used to build the NonStationary distribution
-    def ReadFromFile(self, instancename, distribution="NonStationary", longtimehoizon=False, largetimehorizonperiod = 10, alternatetype = "Normal"):
+    def ReadFromFile(self, instancename, distribution="NonStationary", longtimehoizon=False, largetimehorizonperiod = 10, alternatetype = "Normal", additionaltimehorizon = 0):
             backlogcostmultiplier = 2
             forcasterror = 25
             e = "n"
@@ -49,7 +49,7 @@ class InstanceReader(object):
             self.CreateLeadTime(leadtimestructure)
             self.GenerateHoldingCostCost(e)
             self.Instance.ComputeMaxLeadTime()
-            self.GenerateTimeHorizon(longtimehoizon, largetimehorizonperiod=largetimehorizonperiod)
+            self.GenerateTimeHorizon(longtimehoizon, largetimehorizonperiod=largetimehorizonperiod, additionaltimehorizon= additionaltimehorizon)
             self.GenerateDistribution(float(forcasterror / 100.0), float(rateknown / 100.0),
                                       longtimehorizon=longtimehoizon)
             self.ComputeAverageDependentDemand()

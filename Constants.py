@@ -54,20 +54,22 @@ class Constants( object ):
     RunEvaluationInSeparatedJob = False
     PrintScenarios = False
     PrintSolutionFileInTMP = False
-    LauchEvalAfterSolve = False
+    LauchEvalAfterSolve = True
 
     #Code parameter
     Infinity = 9999999999999
-    AlgorithmTimeLimit = 10000
+    AlgorithmTimeLimit = 10#10800
     MIPBasedOnSymetricTree = True
 
     #SDDPparameters
     AlgorithmOptimalityTolerence = 0.01#0.0005
-    SDDPIterationLimit = 100000
+    SDDPIterationLimit = 5
     SDDPPrintDebugLPFiles = False
     PrintSDDPTrace = True
     GenerateStrongCut = True
     SDDPRunSigleTree = False
+
+    SDDPModifyBackwardScenarioAtEachIteration = False
 
     #SDDPNrScenarioForwardPass = 10
     #SDDPNrScenarioBackwardPass = 10

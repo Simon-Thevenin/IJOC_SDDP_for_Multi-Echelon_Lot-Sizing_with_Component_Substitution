@@ -49,9 +49,9 @@ class InstanceReaderGrave(InstanceReader):
          result = [self.Datasheetdf.get_value(self.Instance.ProductName[p], 'relDepth') for p in self.Instance.ProductSet]
          return result
 
-    def GenerateTimeHorizon(self, largetimehorizon = False, largetimehorizonperiod = 10):
+    def GenerateTimeHorizon(self, largetimehorizon = False, largetimehorizonperiod = 10, additionaltimehorizon = 0):
         # Consider a time horizon of 20 days plus the total lead time
-        self.Instance.NrTimeBucket = self.Instance.MaxLeadTime + 3
+        self.Instance.NrTimeBucket = self.Instance.MaxLeadTime + additionaltimehorizon
 
         if largetimehorizon:
             self.Instance.NrTimeBucket = largetimehorizonperiod
