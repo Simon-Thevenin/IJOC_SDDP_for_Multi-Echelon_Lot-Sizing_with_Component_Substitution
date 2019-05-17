@@ -177,18 +177,24 @@ class ScenarioTreeNode(object):
     @staticmethod
     def Aggregate(points, probabilities):
        # get the set of difflerent value in points
-        newpoints = points
+        if Constants.RQMCAggregate:
+            newpoints = points
 
-        newpoints = map(list, zip(*newpoints))
-        newpoints = list(set(map(tuple,newpoints)))
 
-        newpoints = [list(t) for t in newpoints]
-        tpoint = map(list, zip(*points))
-        newprobaba = [sum(probabilities[i] for i in range(len(tpoint)) if tpoint[i] == newpoints[p]) for p in range(len(newpoints))]
+            #newprobaba = probabilities
+            newpoints = map(list, zip(*newpoints))
+            newpoints = list(set(map(tuple,newpoints)))
+            #
+            newpoints = [list(t) for t in newpoints]
+            tpoint = map(list, zip(*points))
+            newprobaba = [sum(probabilities[i] for i in range(len(tpoint)) if tpoint[i] == newpoints[p]) for p in range(len(newpoints))]
 
-        newpoints = map(list, zip(*newpoints))
 
-        return newpoints, newprobaba
+            newpoints = map(list, zip(*newpoints))
+
+            return newpoints, newprobaba
+        else:
+            return points, probabilities
 
     #This method generate a set of points in [0,1] using RQMC. The points are generated with the library given on the website of P. Lecuyer
     # Apply the inverse of  the given distribution for each point (generated in [0,1]) in the set.

@@ -155,7 +155,6 @@ class SDDP(object):
         self.IterationSetupFixed = 0
         self.CurrentToleranceForSameLB = 0.00001
 
-        self.RegulizerGammar = 1
 
 
     #This function make the forward pass of SDDP
@@ -287,13 +286,12 @@ class SDDP(object):
 
         #This function generates the scenarios for the current iteration of the algorithm
     def GenerateTrialScenarios(self):
+        if self.IsIterationWithConvergenceTest:
+            self.CurrentNrScenario = self.SDDPNrScenarioTest
+        else:
+            self.CurrentNrScenario = self.CurrentForwardSampleSize
+
         if Constants.SDDPForwardPassInSAATree:
-            if self.IsIterationWithConvergenceTest:
-                self.CurrentNrScenario = self.SDDPNrScenarioTest
-            else:
-                self.CurrentNrScenario = self.CurrentForwardSampleSize
-
-
             self.CurrentSetOfTrialScenarios =[]
             for w in range(self.CurrentNrScenario):
                     selected = self.CreateRandomScenarioFromSAA()
@@ -303,10 +301,6 @@ class SDDP(object):
             self.CurrentNrScenario = len(self.CurrentSetOfTrialScenarios)
            # self.SDDPNrScenarioTest = self.CurrentNrScenario
         else:
-            if self.IsIterationWithConvergenceTest:
-                   self.CurrentNrScenario = self.SDDPNrScenarioTest
-            else:
-                    self.CurrentNrScenario = self.CurrentForwardSampleSize
             self.CurrentSetOfTrialScenarios = self.GenerateScenarios(self.CurrentNrScenario, average=Constants.SDDPDebugSolveAverage)
             self.TrialScenarioNrSet = range(len(self.CurrentSetOfTrialScenarios))
             self.CurrentNrScenario = len(self.CurrentSetOfTrialScenarios)
@@ -362,7 +356,7 @@ class SDDP(object):
 
          SymetricDemand = [[] for t in self.Instance.TimeBucketSet]
          SymetricProba = [[] for t in self.Instance.TimeBucketSet]
-         np.random.seed(self.CurrentScenarioSeed)
+         np.random.seed(self.TestIdentifier.ScenarioSeed)
 
          for t in self.Instance.TimeBucketSet:
               SymetricDemand[t], SymetricProba[t] = \
@@ -391,14 +385,14 @@ class SDDP(object):
                 self.BackwardStage[stage].FixedScenarioSet = [0]
                 self.BackwardStage[stage].FixedScenarioPobability = [1]
                 self.BackwardStage[stage].SAAStageCostPerScenarioWithoutCostoGopertrial = [0 for w in self.TrialScenarioNrSet]
-
+         for stage in self.StagesSet:
             if not self.BackwardStage[stage].IsLastStage():
                 nextstage= stage + 1
                 nextstagetime = self.BackwardStage[nextstage].TimeDecisionStage -1
-                self.BackwardStage[stage].FuturScenarProba = [ self.Saascenarioproba[nextstagetime][w] for w in   self.SAAScenarioNrSetInPeriod[nextstagetime]]
-                self.BackwardStage[stage].FuturScenario = self.SAAScenarioNrSetInPeriod[nextstagetime]
-                self.ForwardStage[stage].FuturScenarProba = [ self.Saascenarioproba[nextstagetime][w] for w in  self.SAAScenarioNrSetInPeriod[nextstagetime]]
-                self.ForwardStage[stage].FuturScenario = self.SAAScenarioNrSetInPeriod[nextstagetime]
+                self.BackwardStage[stage].FuturScenarProba = self.BackwardStage[nextstage].FixedScenarioPobability #FixedScenarioPobability [ self.Saascenarioproba[nextstagetime][w] for w in self.SAAScenarioNrSetInPeriod[nextstagetime]]
+                self.BackwardStage[stage].FuturScenario = self.BackwardStage[nextstage].FixedScenarioSet #self.SAAScenarioNrSetInPeriod[nextstagetime]
+                self.ForwardStage[stage].FuturScenarProba = self.BackwardStage[nextstage].FixedScenarioPobability # [ self.Saascenarioproba[nextstagetime][w] for w in self.SAAScenarioNrSetInPeriod[nextstagetime]]
+                self.ForwardStage[stage].FuturScenario = self.BackwardStage[nextstage].FixedScenarioSet
 
             self.ForwardStage[stage].ComputeVariableIndices()
             self.BackwardStage[stage].ComputeVariableIndices()
@@ -427,7 +421,7 @@ class SDDP(object):
             x = random.randint(0, self.NrSAAScenarioInPeriod[self.ForwardStage[s].TimeObservationStage]-1)
             for tau in self.ForwardStage[s].RangePeriodEndItemInv:
                     t = self.ForwardStage[s].TimeObservationStage + tau
-                    w.Demands[t] = self.SetOfSAAScenario[t][x]
+                    w.Demands[t] = copy.deepcopy(self.SetOfSAAScenario[t][x])
                     w.Probability *= self.Saascenarioproba[t][x]
 
         return w
@@ -629,23 +623,23 @@ class SDDP(object):
     def SolveTwoStageHeuristic(self):
 
 
-        if Constants.SDDPForwardPassInSAATree:
-            subsetofscenario =[]
-            for w in range(200):
-                selected = self.CreateRandomScenarioFromSAA()
-                selected.Probability = 1/200.0
-                subsetofscenario.append(selected)
-
-
-            treestructure = [1, len(subsetofscenario)] + [1] * (self.Instance.NrTimeBucket - 1) + [0]
-
-            scenariotree = ScenarioTree(self.Instance, treestructure, 0,
-                                        CopyscenariofromYFIX=True,
-                                        givenscenarioset=subsetofscenario)
-
-        else:
-            treestructur = [1, 200] + [1] * (self.Instance.NrTimeBucket - 1) + [0]
-            scenariotree = ScenarioTree(self.Instance, treestructur, 0,
+        # if Constants.SDDPForwardPassInSAATree:
+        #     subsetofscenario =[]
+        #     for w in range(200):
+        #         selected = self.CreateRandomScenarioFromSAA()
+        #         selected.Probability = 1/200.0
+        #         subsetofscenario.append(selected)
+        #
+        #
+        #     treestructure = [1, len(subsetofscenario)] + [1] * (self.Instance.NrTimeBucket - 1) + [0]
+        #
+        #     scenariotree = ScenarioTree(self.Instance, treestructure, 0,
+        #                                 CopyscenariofromYFIX=True,
+        #                                 givenscenarioset=subsetofscenario)
+        #
+        # else:
+        treestructur = [1, 200] + [1] * (self.Instance.NrTimeBucket - 1) + [0]
+        scenariotree = ScenarioTree(self.Instance, treestructur, 0,
                                         scenariogenerationmethod=Constants.RQMC )
 
 
@@ -659,6 +653,8 @@ class SDDP(object):
         self.HeuristicSetupValue = [[self.TwoStageSolution.Production[0][t][p]
                                      for p in self.Instance.ProductSet]
                                     for t in self.Instance.TimeBucketSet]
+
+
 
         self.CurrentBestSetups = self.HeuristicSetupValue
 
@@ -679,6 +675,11 @@ class SDDP(object):
        # print("Attention SDDP solve average")
 
         self.GenerateSAAScenarios2()
+        if Constants.Debug:
+            print("********************Scenarios SAA*********************")
+            for t in self.Instance.TimeBucketSet:
+                for w in self.SAAScenarioNrSetInPeriod[t]:
+                    print("SAA demand at stage %r in scenario %r: %r" % (t, w, self.SetOfSAAScenario[t][w]))
 
         #if Constants.SDDPGenerateCutWith2Stage:
 
@@ -692,7 +693,8 @@ class SDDP(object):
         else:
             self.SolveTwoStageHeuristic()
 
-
+        if Constants.Debug:
+            print("Heuristic Setup: %r" % self.HeuristicSetupValue)
         createpreliminarycuts = Constants.SolveRelaxationFirst or Constants.SDDPGenerateCutWith2Stage
         phase = 1
         if not Constants.SolveRelaxationFirst:
@@ -758,7 +760,6 @@ class SDDP(object):
             self.BackwardPass()
             self.CurrentIteration = self.CurrentIteration + 1
 
-            self.RegulizerGammar=0.9 * self.RegulizerGammar
 
 
             if not createpreliminarycuts:# and (not self.HasFixedSetup or self.TestIdentifier.Model == Constants.ModelHeuristicYFix):

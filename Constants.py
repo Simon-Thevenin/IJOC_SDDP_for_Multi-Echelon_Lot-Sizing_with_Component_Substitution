@@ -60,20 +60,20 @@ class Constants( object ):
     Infinity = 9999999999999
     AlgorithmTimeLimit = 7200
     MIPBasedOnSymetricTree = True
-
+    RQMCAggregate = False
     #SDDPparameters
     AlgorithmOptimalityTolerence = 0.01#0.0005
     SDDPIterationLimit = 5
     SDDPPrintDebugLPFiles = False
     PrintSDDPTrace = True
-    GenerateStrongCut = True
+    GenerateStrongCut = False
     SDDPRunSigleTree = False
 
     SDDPModifyBackwardScenarioAtEachIteration = False
 
     #SDDPNrScenarioForwardPass = 10
     #SDDPNrScenarioBackwardPass = 10
-    SDDPForwardPassInSAATree = True
+    SDDPForwardPassInSAATree = False
     SDDPPerformConvergenceTestDuringRun = False
     SDDPIncreaseNrScenarioTest = 100
     SDDPInitNrScenarioTest = 1000

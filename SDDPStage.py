@@ -1180,7 +1180,6 @@ class SDDPStage(object):
             if Constants.SolveRelaxationFirst:
                 self.Cplex.variables.add(obj=[math.pow(self.Instance.Gamma, t)
                                                        * self.Instance.SetupCosts[p]
-
                                               for p in self.Instance.ProductSet
                                               for t in self.Instance.TimeBucketSet],
                                          lb=[0.0] * self.NrProductionVariable,
@@ -1244,7 +1243,7 @@ class SDDPStage(object):
                                       ub=[self.M] * self.NrBackOrderVariable)
 
         if not self.IsLastStage():
-            costtogoproba = [ self.FuturScenarProba[f] for w in self.FixedScenarioSet for f in self.FuturScenario ]
+            costtogoproba = [ self.FuturScenarProba[f] for w in self.FixedScenarioSet for f in self.FuturScenario] # *
             self.Cplex.variables.add(obj=costtogoproba,
                                      lb=[0.0]*self.NrCostToGo,
                                      ub=[self.M]*self.NrCostToGo)
@@ -1264,9 +1263,6 @@ class SDDPStage(object):
                 productionrhs = [self.GetProductionConstrainRHS(p, t)
                                  for t in self.TimePeriodToGo
                                  for p in self.Instance.ProductSet]
-
-
-
             else:
                 productionrhs = [self.GetProductionConstrainRHS(p, self.GetTimePeriodAssociatedToQuantityVariable(p, t))
                                  for t in self.RangePeriodQty
@@ -1475,9 +1471,11 @@ class SDDPStage(object):
             for t in self.Instance.TimeBucketSet:
                 for p in self.Instance.ProductWithExternalDemand:
 
-                    scenario.Demands[t][p] = sum(self.SDDPOwner.SetOfSAAScenario[t][w][p]
-                                                 for w in self.SDDPOwner.SAAScenarioNrSetInPeriod[t]) \
-                                             / len(self.SDDPOwner.SAAScenarioNrSetInPeriod[t])
+                            scenario.Demands[t][p] = sum(self.SDDPOwner.SetOfSAAScenario[t][w][p]
+                                                for w in self.SDDPOwner.SAAScenarioNrSetInPeriod[t]) \
+                                            / len(self.SDDPOwner.SAAScenarioNrSetInPeriod[t])
+
+
             #        for w in self.SDDPOwner.SetOfSAAScenario:
             #            print("________________________________________")
             #            print(w.Demands[t][p])

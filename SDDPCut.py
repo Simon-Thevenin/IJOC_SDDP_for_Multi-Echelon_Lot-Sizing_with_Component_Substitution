@@ -84,8 +84,7 @@ class SDDPCut(object):
 
     # This function return the coefficient variables of the cut in its stage (do ot include the variable fixed at previous stage)
     def GetCutVariablesCoefficientAtStage(self):
-        coeff = [1] \
-                + [self.CoefficientQuantityVariable[self.BackwarStage.GetTimePeriodAssociatedToQuantityVariable(p, t)][p]
+        coeff =  [self.CoefficientQuantityVariable[self.BackwarStage.GetTimePeriodAssociatedToQuantityVariable(p, t)][p]
                    for t in self.ForwardStage.RangePeriodQty
                    for p in self.Instance.ProductSet] \
                 + [self.CoefficientStockVariable[self.BackwarStage.GetTimePeriodAssociatedToInventoryVariable(p, t)][p]
@@ -137,7 +136,8 @@ class SDDPCut(object):
         namess =[]
         for w in stage.FixedScenarioSet:
             vars = self.GetCutVariablesAtStage(stage, w)
-            lin_exprs.append(cplex.SparsePair(vars, coeff))
+            coeffs = [1.0] + coeff
+            lin_exprs.append(cplex.SparsePair(vars, coeffs))
             senses.append("G")
             rhss.append(righthandside)
 
