@@ -1493,6 +1493,9 @@ class MIPSolver(object):
 
         # Handle the results
         sol = self.Cplex.solution
+
+
+
         #sol.write("SolutionSol")
         if sol.is_primal_feasible():
             if Constants.Debug:

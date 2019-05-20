@@ -51,11 +51,11 @@ class InstanceReaderGrave(InstanceReader):
 
     def GenerateTimeHorizon(self, largetimehorizon = False, largetimehorizonperiod = 10, additionaltimehorizon = 0):
         # Consider a time horizon of 20 days plus the total lead time
-        self.Instance.NrTimeBucket = self.Instance.MaxLeadTime + additionaltimehorizon
+        self.Instance.NrTimeBucket = 2 * self.Instance.MaxLeadTime + additionaltimehorizon
 
         if largetimehorizon:
             self.Instance.NrTimeBucket = largetimehorizonperiod
-        self.Instance.NrTimeBucketWithoutUncertaintyBefore = 0
+        self.Instance.NrTimeBucketWithoutUncertaintyBefore = self.Instance.MaxLeadTime
         self.Instance.NrTimeBucketWithoutUncertaintyAfter = 0
         self.Instance.ComputeIndices()
 
@@ -92,6 +92,8 @@ class InstanceReaderGrave(InstanceReader):
             #                                for t in  self.Instance.TimeBucketSet ]
             # self.Instance.RateOfKnownDemand = 0.0
         else:
+
+            self.GenerateNonStationary()
             self.Instance.ForecastError = [forecasterror for p in self.Instance.ProductSet]
             self.Instance.RateOfKnownDemand = [math.pow(rateknown, t + 1) for t in self.Instance.TimeBucketSet]
             self.Instance.ForecastedAverageDemand = [[np.floor(np.random.normal(self.Instance.YearlyAverageDemand[p],
@@ -107,6 +109,64 @@ class InstanceReaderGrave(InstanceReader):
                                                            else 0.0
                                                             for p in self.Instance.ProductSet]
                                                          for t in self.Instance.TimeBucketSet]
+
+
+
+
+
+
+    def GenerateNonStationary(self, forecasterror, rateknown):
+
+
+        self.Instance.ForecastError = [forecasterror for p in self.Instance.ProductSet]
+        self.Instance.RateOfKnownDemand = [
+            math.pow(rateknown, (t - self.Instance.NrTimeBucketWithoutUncertaintyBefore + 1))
+            for t in self.Instance.TimeBucketSet]
+        self.Instance.ForecastedAverageDemand = [[0.0 for p in self.Instance.ProductSet]
+                                                 for t in self.Instance.TimeBucketSet]
+
+        prodindex = 0
+        finishproduct = self.GetfinishProduct()
+        for p in range(len(finishproduct)):
+                prodindex = finishproduct[p]
+                timeindex = 0
+                stochastictime = range(self.Instance.NrTimeBucketWithoutUncertaintyBefore,
+                                       self.Instance.NrTimeBucket - self.Instance.NrTimeBucketWithoutUncertaintyAfter)
+                for t in stochastictime:
+                    timeindex += 1
+
+                    if t <> self.Instance.NrTimeBucketWithoutUncertaintyBefore + int(self.DTFile[timeindex][0]) - 1:
+                        raise NameError("Wrong time %d - %d -%d" % (t, int(self.DTFile[timeindex][0]) - 1, timeindex))
+
+                    self.Instance.ForecastedAverageDemand[t][prodindex] = float(self.DTFile[timeindex][p + 1])
+
+                for t in range(self.Instance.NrTimeBucket - self.Instance.NrTimeBucketWithoutUncertaintyAfter,
+                               self.Instance.NrTimeBucket):
+                    self.Instance.ForecastedAverageDemand[t][prodindex] = sum(
+                        self.Instance.ForecastedAverageDemand[t2][prodindex]
+                        for t2 in stochastictime) / len(stochastictime)
+
+                self.Instance.YearlyAverageDemand = [sum(self.Instance.ForecastedAverageDemand[t][p]
+                                                         for t in self.Instance.TimeBucketSet
+                                                         if t >= self.Instance.NrTimeBucketWithoutUncertaintyBefore)
+                                                     / (
+                                                                 self.Instance.NrTimeBucket - self.Instance.NrTimeBucketWithoutUncertaintyBefore)
+                                                     for p in self.Instance.ProductSet]
+
+        self.Instance.ForcastedStandardDeviation = [[(1 - self.Instance.RateOfKnownDemand[t])
+                                                     * self.Instance.ForecastError[p]
+                                                     * self.Instance.ForecastedAverageDemand[t][p]
+                                                     if t < (
+                    self.Instance.NrTimeBucket - self.Instance.NrTimeBucketWithoutUncertaintyAfter)
+                                                     else 0.0
+                                                     for p in self.Instance.ProductSet]
+                                                    for t in self.Instance.TimeBucketSet]
+
+        self.Instance.YearlyStandardDevDemands = [sum(self.Instance.ForcastedStandardDeviation[t][p]
+                                                      for t in self.Instance.TimeBucketSet) / self.Instance.NrTimeBucket
+                                                  for p in self.Instance.ProductSet]
+
+
 
         #This function generate the starting inventory
     def GenerateStartinInventory(self):

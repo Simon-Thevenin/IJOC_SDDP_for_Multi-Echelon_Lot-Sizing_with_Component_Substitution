@@ -58,7 +58,7 @@ class SDDP(object):
                 stage.TimeDecisionStage = prevstage.TimeDecisionStage + len(prevstage.RangePeriodQty)
 
             if stage.DecisionStage == 1:
-                stage.TimeObservationStage = 0
+                stage.TimeObservationStage = self.Instance.NrTimeBucketWithoutUncertaintyBefore
             if stage.DecisionStage >= 2:
                 stage.TimeObservationStage = prevstage.TimeObservationStage + len(prevstage.RangePeriodEndItemInv)
 
@@ -119,9 +119,9 @@ class SDDP(object):
         self.ForwardStage = [SDDPStage(owner=self, decisionstage=t, fixedccenarioset=[0], isforward=True, futurscenarioset =range(self.NrSAAScenarioInPeriod[t])) for t in range(nrstage)] \
                              + [SDDPLastStage(owner=self, decisionstage=nrstage, fixedccenarioset=[0], isforward=True)]
 
-      #  backwardstagescenarioset = range(self.NrScenarioSAA)
-        self.BackwardStage = [SDDPStage(owner=self, decisionstage=t, fixedccenarioset=range(self.NrSAAScenarioInPeriod[t-1]), forwardstage=self.ForwardStage[t], isforward=False ,  futurscenarioset = range(self.NrSAAScenarioInPeriod[t])) for t in range(nrstage)] \
-                             + [SDDPLastStage(owner=self, decisionstage=nrstage, fixedccenarioset= range(self.NrSAAScenarioInPeriod[t-1]), forwardstage=self.ForwardStage[nrstage], isforward=False)]
+        backwardstagescenarioset = [[0]] + [range(self.NrSAAScenarioInPeriod[t-1 + self.Instance.NrTimeBucketWithoutUncertaintyBefore]) for t in range(1,nrstage+1)]
+        self.BackwardStage = [SDDPStage(owner=self, decisionstage=t, fixedccenarioset=backwardstagescenarioset[t], forwardstage=self.ForwardStage[t], isforward=False ,  futurscenarioset = range(self.NrSAAScenarioInPeriod[t])) for t in range(nrstage)] \
+                             + [SDDPLastStage(owner=self, decisionstage=nrstage, fixedccenarioset= backwardstagescenarioset[nrstage], forwardstage=self.ForwardStage[nrstage], isforward=False)]
 
         self.DefineBakwarMip = False
         self.LinkStages()
@@ -385,18 +385,20 @@ class SDDP(object):
                 self.BackwardStage[stage].FixedScenarioSet = [0]
                 self.BackwardStage[stage].FixedScenarioPobability = [1]
                 self.BackwardStage[stage].SAAStageCostPerScenarioWithoutCostoGopertrial = [0 for w in self.TrialScenarioNrSet]
-         for stage in self.StagesSet:
-            if not self.BackwardStage[stage].IsLastStage():
-                nextstage= stage + 1
-                nextstagetime = self.BackwardStage[nextstage].TimeDecisionStage -1
-                self.BackwardStage[stage].FuturScenarProba = self.BackwardStage[nextstage].FixedScenarioPobability #FixedScenarioPobability [ self.Saascenarioproba[nextstagetime][w] for w in self.SAAScenarioNrSetInPeriod[nextstagetime]]
-                self.BackwardStage[stage].FuturScenario = self.BackwardStage[nextstage].FixedScenarioSet #self.SAAScenarioNrSetInPeriod[nextstagetime]
-                self.ForwardStage[stage].FuturScenarProba = self.BackwardStage[nextstage].FixedScenarioPobability # [ self.Saascenarioproba[nextstagetime][w] for w in self.SAAScenarioNrSetInPeriod[nextstagetime]]
-                self.ForwardStage[stage].FuturScenario = self.BackwardStage[nextstage].FixedScenarioSet
+            for stage in self.StagesSet:
+                if not self.BackwardStage[stage].IsLastStage():
+                    nextstage = stage + 1
+                    nextstagetime = self.BackwardStage[nextstage].TimeDecisionStage - 1
+                    self.BackwardStage[stage].FuturScenarProba = self.BackwardStage[
+                        nextstage].FixedScenarioPobability  # FixedScenarioPobability [ self.Saascenarioproba[nextstagetime][w] for w in self.SAAScenarioNrSetInPeriod[nextstagetime]]
+                    self.BackwardStage[stage].FuturScenario = self.BackwardStage[
+                        nextstage].FixedScenarioSet  # self.SAAScenarioNrSetInPeriod[nextstagetime]
+                    self.ForwardStage[stage].FuturScenarProba = self.BackwardStage[
+                        nextstage].FixedScenarioPobability  # [ self.Saascenarioproba[nextstagetime][w] for w in self.SAAScenarioNrSetInPeriod[nextstagetime]]
+                    self.ForwardStage[stage].FuturScenario = self.BackwardStage[nextstage].FixedScenarioSet
 
-            self.ForwardStage[stage].ComputeVariableIndices()
-            self.BackwardStage[stage].ComputeVariableIndices()
-            #else:
+                self.ForwardStage[stage].ComputeVariableIndices()
+                self.BackwardStage[stage].ComputeVariableIndices()
             #    self.BackwardStage[stage].FixedScenarioSet = [0]
             #    self.BackwardStage[stage].FixedScenarioPobability = [1]
          #Compute the value of big M
@@ -418,7 +420,10 @@ class SDDP(object):
         w.Demands = [[] for t in self.Instance.TimeBucketSet]
         for s in range(len(self.StagesSet)):# in self.Instance.TimeBucketSet:
 
-            x = random.randint(0, self.NrSAAScenarioInPeriod[self.ForwardStage[s].TimeObservationStage]-1)
+            if self.ForwardStage[s].TimeObservationStage >= 0:
+                x = random.randint(0, self.NrSAAScenarioInPeriod[self.ForwardStage[s].TimeObservationStage]-1)
+            else:
+                x = 0
             for tau in self.ForwardStage[s].RangePeriodEndItemInv:
                     t = self.ForwardStage[s].TimeObservationStage + tau
                     w.Demands[t] = copy.deepcopy(self.SetOfSAAScenario[t][x])

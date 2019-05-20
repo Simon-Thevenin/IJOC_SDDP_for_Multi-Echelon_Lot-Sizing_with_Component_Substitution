@@ -219,6 +219,7 @@ class Solver( object ):
 
         if self.TestIdentifier.Method == Constants.SDDP:
              self.TestIdentifier.Model = Constants.ModelHeuristicYFix
+
              self.SDDPSolver = SDDP(self.Instance, self.TestIdentifier, self.TreeStructure)
              self.SDDPSolver.HasFixedSetup = True
              self.SDDPSolver.HeuristicSetupValue = self.GivenSetup
