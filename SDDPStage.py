@@ -1695,7 +1695,7 @@ class SDDPStage(object):
             self.Cplex.parameters.lpmethod = 4  # Berriere
             self.Cplex.parameters.threads.set(1)
             self.Cplex.parameters.barrier.convergetol.set(0.000000000001)
-            self.Cplex.parameters.simplex.tolerances.feasibility.set(0.001)
+            self.Cplex.parameters.simplex.tolerances.feasibility.set(0.00001)
 
             self.Cplex.solve()
             if Constants.Debug:

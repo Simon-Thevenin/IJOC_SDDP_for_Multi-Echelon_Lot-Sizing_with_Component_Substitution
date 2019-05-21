@@ -24,14 +24,21 @@ class Hybrid_PH_SDDP(object):
 
 
         OldNrScenar =self.TestIdentifier.NrScenario
-        self.TestIdentifier.NrScenario = "1000"
+        self.TestIdentifier.NrScenario = "all5"
         PHTreestructure = solver.GetTreeStructure()
+        # treestructure = [1, 200] + [1] * (self.Instance.NrTimeBucket - 1) + [0]
+        # self.TestIdentifier.Model = Constants.ModelYQFix
+        # chosengeneration = self.TestIdentifier.ScenarioSampling
+        # self.ScenarioGeneration = "RQMC"
+        # solution, mipsolver = self.Solver.MRP(treestructure, False, recordsolveinfo=True)
+        # givensetup = [[solution.Production[0][t][p] for p in self.Instance.ProductSet]
+        #                                       for t in self.Instance.TimeBucketSet]
         self.ProgressiveHedging = ProgressiveHedging(self.Instance, self.TestIdentifier, PHTreestructure)
 
         self.TestIdentifier.NrScenario = OldNrScenar
     def Run(self):
 
-        #self.GetHeuristicSetup()
+        self.GetHeuristicSetup()
 
         #solution = self.RunPH()
 
@@ -42,25 +49,61 @@ class Hybrid_PH_SDDP(object):
         if Constants.PrintOnlyFirstStageDecision:
             Constants.PrintOnlyFirstStageDecision = False
 
-
-        while self.ProgressiveHedging.CurrentIteration < 1 or not self.ProgressiveHedging.ComputeConvergenceY() <= 1.0:
+        self.ProgressiveHedging.CurrentIteration = 0
+        while self.ProgressiveHedging.CurrentIteration < 5 or not self.ProgressiveHedging.ComputeConvergenceY() <= 1.0:
             self.ProgressiveHedging.SolveScenariosIndependently()
-            solution = self.ProgressiveHedging.CreateImplementableSolution()
+            if self.ProgressiveHedging.CurrentIteration == -1:
+                treestructure = [1, 200] + [1] * (self.Instance.NrTimeBucket - 1) + [0]
+                self.TestIdentifier.Model = Constants.ModelYQFix
+                chosengeneration = self.TestIdentifier.ScenarioSampling
+                self.ScenarioGeneration = "RQMC"
+                solution, mipsolver = self.Solver.MRP(treestructure, False, recordsolveinfo=True)
+                self.ProgressiveHedging.GivenSetup = [[solution.Production[0][t][p] for p in self.Instance.ProductSet]
+                                                      for t in self.Instance.TimeBucketSet]
 
+                self.ProgressiveHedging.CurrentImplementableSolution= Solution.GetEmptySolution(self.Instance)
+
+                self.ProgressiveHedging.CurrentImplementableSolution.ProductionQuantity = \
+                                [[[solution.ProductionQuantity[0][t][p] for p in self.Instance.ProductSet]
+                                                                      for t in self.Instance.TimeBucketSet]
+                                                                     for w in self.ProgressiveHedging.ScenarioNrSet]
+
+                self.ProgressiveHedging.CurrentImplementableSolution.Production = \
+                    [[[solution.Production[0][t][p] for p in self.Instance.ProductSet]
+                      for t in self.Instance.TimeBucketSet]
+                     for w in self.ProgressiveHedging.ScenarioNrSet]
+
+
+                self.ProgressiveHedging.CurrentImplementableSolution.Consumption = \
+                    [ [[[solution.Consumption[0][t][p][q] for q in self.Instance.ProductSet]
+                            for p in self.Instance.ProductSet]
+                      for t in self.Instance.TimeBucketSet]
+                     for w in self.ProgressiveHedging.ScenarioNrSet]
+                solution= self.ProgressiveHedging.CurrentImplementableSolution
+
+            else:
+                solution = self.ProgressiveHedging.CreateImplementableSolution()
+                self.ProgressiveHedging.CurrentImplementableSolution = solution
 
 
             self.ProgressiveHedging.PreviousImplementableSolution = copy.deepcopy(self.ProgressiveHedging.CurrentImplementableSolution)
-            self.ProgressiveHedging.CurrentImplementableSolution = solution
 
-            if Constants.Debug:
-                self.ProgressiveHedging.PrintCurrentIteration()
+
+
 
 
             self.ProgressiveHedging.CurrentIteration += 1
             if self.ProgressiveHedging.CurrentIteration == 1:
                 self.ProgressiveHedging.LagrangianMultiplier = 0.0001
-
+            # if self.ProgressiveHedging.CurrentIteration >= 2:
+            #     self.ProgressiveHedging.UpdateMultipler()
             self.ProgressiveHedging.UpdateLagragianMultipliers()
+
+            #Just for the printing:
+            self.ProgressiveHedging.CheckStopingCriterion()
+
+            if Constants.Debug:
+                self.ProgressiveHedging.PrintCurrentIteration()
 
         self.GivenSetup = [[solution.Production[0][t][p] for p in self.Instance.ProductSet] for t in
                            self.Instance.TimeBucketSet]  # solution.Production[0][t][p]

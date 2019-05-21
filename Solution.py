@@ -296,7 +296,6 @@ class Solution(object):
             for t in timerange:
                 for p in self.Instance.ProductSet:
 
-
                     inventorycost += self.InventoryLevel[w][t][p] \
                                           * self.Instance.InventoryCosts[p] \
                                           * gammas[t] \

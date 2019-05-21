@@ -100,6 +100,7 @@ class EvaluationSimulator(object):
                 if Constants.IsSDDPBased( self.TestIdentificator.Method ) : #== Constants.SDDP:
                      self.ForwardPassOnScenarios(sddp, evaluatoinscenarios, sol)
 
+
                 firstscenario = True
                 self.IsDefineMIPResolveTime = [False for t in self.Instance.TimeBucketSet]
                 self.IsDefinePHResolve = [False for t in self.Instance.TimeBucketSet]
@@ -341,6 +342,7 @@ class EvaluationSimulator(object):
         #              for t in range(self.Instance.NrTimeBucket - self.Instance.NrTimeBucketWithoutUncertainty)]
         givenquantty = [[0 for p in self.Instance.ProductSet] for t in self.Instance.TimeBucketSet]
         givenconsumption = [[0 for c in range(len(self.Instance.ConsumptionSet))] for t in self.Instance.TimeBucketSet]
+
 
         #givenquantty=[]
         #Copy the quantity from the last stage

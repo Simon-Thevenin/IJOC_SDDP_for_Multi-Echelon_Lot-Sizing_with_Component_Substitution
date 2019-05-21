@@ -51,7 +51,7 @@ class InstanceReaderGrave(InstanceReader):
 
     def GenerateTimeHorizon(self, largetimehorizon = False, largetimehorizonperiod = 10, additionaltimehorizon = 0):
         # Consider a time horizon of 20 days plus the total lead time
-        self.Instance.NrTimeBucket = 2 * self.Instance.MaxLeadTime + additionaltimehorizon
+        self.Instance.NrTimeBucket = (2 * self.Instance.MaxLeadTime) + additionaltimehorizon
 
         if largetimehorizon:
             self.Instance.NrTimeBucket = largetimehorizonperiod

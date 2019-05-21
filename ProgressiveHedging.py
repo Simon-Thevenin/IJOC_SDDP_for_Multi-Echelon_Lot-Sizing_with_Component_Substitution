@@ -456,9 +456,9 @@ class ProgressiveHedging(object):
                                  / sumprob, 4)
                            for p in self.Instance.ProductWithExternalDemand]
 
-                    prod = [sum(self.ScenarioSet[w].Probability
+                    prod = [round(sum(self.ScenarioSet[w].Probability
                                 * self.CurrentSolution[self.BatchofScenario[w]].Production[self.NewIndexOfScenario[w]][time][p] for w in scenarios)\
-                           / sumprob
+                           / sumprob,4)
                              for p in self.Instance.ProductSet]
 
                     cons = [[round(sum(self.ScenarioSet[w].Probability
@@ -565,7 +565,7 @@ class ProgressiveHedging(object):
         print("----------------Independent solutions--------------")
         for w in self.ScenarioNrSet:
             #self.CurrentSolution[w].Print()
-            print("Scena %r: %r"%(w, self.CurrentSolution[self.BatchofScenario[w]].ProductionQuantity))
+            print("Scena %r: %r"%(w, self.CurrentSolution[self.BatchofScenario[w]].ProductionQuantity[self.NewIndexOfScenario[w]]))
 
         print("Implementable: %r" % ( self.CurrentImplementableSolution.ProductionQuantity))
         print("-----------IMPLEMENTABLE: -------------------------")
@@ -619,24 +619,28 @@ class ProgressiveHedging(object):
 
         teta = self.GetDualConvergenceIndice()
         delta = self.GetPrimalConvergenceIndice() + teta
-        if self.CurrentIteration == 2:
+        if self.CurrentIteration <= 2:
             tau = 1
         else:
+            if self.PrevioudDualConvIndice == 0:
+                self.PrevioudDualConvIndice = 0.000001
             tau = delta/self.PrevioudDualConvIndice
 
         self.PrevioudDualConvIndice = delta
         gamma = max(0.1, min(0.9, tau - 0.6))
 
-        if self.CurrentIteration == 2:
+        if self.CurrentIteration <= 2:
             sigma = 1
         else:
             sigma = (1-gamma) * self.PrevioudSigma + gamma * tau
         self.PrevioudSigma = sigma
         g = math.sqrt(1.1*sigma)
 
-        if self.CurrentIteration == 2:
+        if self.CurrentIteration <= 2:
             alpha = (teta / delta)
         else:
+            if delta == 0:
+                delta = 0.0001
             alpha = 0.8 * self.PreviouAlpha + 0.2 * (teta / delta)
 
         self.PreviouAlpha = alpha
@@ -893,7 +897,7 @@ class ProgressiveHedging(object):
             self.CurrentIteration += 1
 
             if self.CurrentIteration == 1:
-                    self.LagrangianMultiplier = 0.01
+                    self.LagrangianMultiplier = 0.00001
 
 
 
