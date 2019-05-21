@@ -170,36 +170,36 @@ class InstanceReaderGrave(InstanceReader):
 
         #This function generate the starting inventory
     def GenerateStartinInventory(self):
-
-        sumdemand = [sum(self.Actualdepdemand[t][p] for t in range(self.TimeBetweenOrder)) if self.Instance.YearlyAverageDemand[p] > 0
-                     else sum(self.Actualdepdemand[t][p] for t in range(self.TimeBetweenOrder, min(2 * self.TimeBetweenOrder, self.Instance.NrTimeBucket)))
-                     for p in self.Instance.ProductSet]
-
-        sumstd = [sum(self.Actualstd[t][p] for t in range(self.TimeBetweenOrder)) if self.Instance.YearlyAverageDemand[p] > 0
-                  else sum(self.Actualstd[t][p] for t in range(self.TimeBetweenOrder, min(2 * self.TimeBetweenOrder, self.Instance.NrTimeBucket)))
-                  for p in self.Instance.ProductSet]
-
-        servicelevel = 0.5
-
-        print("Level of product %r" % self.Level)
-        if self.Instance.Distribution == Constants.Lumpy:
-            servicelevel = 0.75
-
-        self.Instance.StartingInventories = [ScenarioTreeNode.TransformInverse([[servicelevel]],
-                                                                       1,
-                                                                       1,
-                                                                       self.Instance.Distribution,
-                                                                       [sumdemand[p]],
-                                                                       [sumstd[p]])[0][0]
-                                                if ((self.Level[p]) % self.TimeBetweenOrder == 0)
-                                                else 0.0
-                                               for p in self.Instance.ProductSet]
-
-        if self.Instance.Distribution == Constants.Binomial:
-            self.StartingInventories = [scipy.stats.binom.ppf(servicelevel, 2 * sumdemand[p], 0.5)
-                                        if ((self.Level[p]) % self.TimeBetweenOrder == 1)
-                                        else 0.0
-                                        for p in self.Instance.ProductSet]
+        self.Instance.StartingInventories = [0.0 for p in self.Instance.ProductSet]
+        # sumdemand = [sum(self.Actualdepdemand[t][p] for t in range(self.TimeBetweenOrder)) if self.Instance.YearlyAverageDemand[p] > 0
+        #              else sum(self.Actualdepdemand[t][p] for t in range(self.TimeBetweenOrder, min(2 * self.TimeBetweenOrder, self.Instance.NrTimeBucket)))
+        #              for p in self.Instance.ProductSet]
+        #
+        # sumstd = [sum(self.Actualstd[t][p] for t in range(self.TimeBetweenOrder)) if self.Instance.YearlyAverageDemand[p] > 0
+        #           else sum(self.Actualstd[t][p] for t in range(self.TimeBetweenOrder, min(2 * self.TimeBetweenOrder, self.Instance.NrTimeBucket)))
+        #           for p in self.Instance.ProductSet]
+        #
+        # servicelevel = 0.5
+        #
+        # print("Level of product %r" % self.Level)
+        # if self.Instance.Distribution == Constants.Lumpy:
+        #     servicelevel = 0.75
+        #
+        # self.Instance.StartingInventories = [ScenarioTreeNode.TransformInverse([[servicelevel]],
+        #                                                                1,
+        #                                                                1,
+        #                                                                self.Instance.Distribution,
+        #                                                                [sumdemand[p]],
+        #                                                                [sumstd[p]])[0][0]
+        #                                         if ((self.Level[p]) % self.TimeBetweenOrder == 0)
+        #                                         else 0.0
+        #                                        for p in self.Instance.ProductSet]
+        #
+        # if self.Instance.Distribution == Constants.Binomial:
+        #     self.StartingInventories = [scipy.stats.binom.ppf(servicelevel, 2 * sumdemand[p], 0.5)
+        #                                 if ((self.Level[p]) % self.TimeBetweenOrder == 1)
+        #                                 else 0.0
+        #                                 for p in self.Instance.ProductSet]
 
     def GenerateSetup(self, echelonstocktype):
         # Assume a starting inventory is the average demand during the lead time

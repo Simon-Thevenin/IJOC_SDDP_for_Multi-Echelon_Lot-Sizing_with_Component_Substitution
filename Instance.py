@@ -7,10 +7,10 @@ from InstanceReaderGrave import InstanceReaderGrave
 from InstanceReaderTemplemeier import InstanceReaderTemplemeier
 from InstanceReaderJDA import InstanceReaderJDA
 from Constants import Constants
-import networkx as nx
+#import networkx as nx
 
 
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 
 class Instance(object):
 
@@ -318,51 +318,51 @@ class Instance(object):
                     if self.Alternates[p][prod]:
                         return p
 
-    def DrawSupplyChain(self):
-         G = nx.DiGraph()
-         labels = {}
-         for p in self.ProductSet:
-             G.add_node(p)
-             labels[p] = self.ProductName[p]
-             # node.append( G.add_nodes_from(p) )
-
-         for p in self.ProductSet:
-             for q in self.ProductSet:
-                 if self.Requirements[q][p]:
-                     G.add_edge(p, q, color='b')
-
-                     for i in self.ProductSet:
-                         if self.Alternates[p][i] and p != i:
-                             G.add_edge(i, q, color='g')
-
-         pos = nx.spring_layout(G)
-
-         print(pos)
-         maxl = max(self.Level)
-         for p in self.ProductSet:
-             pos[p] += (10 * (maxl - self.Level[p]), 0)
-             # node.append(G.add_nodes_from(p))
-
-         levels = set(self.Level)
-         for l in levels:
-             prodinlevel = [q for q in self.ProductSet if self.Level[q] == l]
-             prodname = [self.ProductName[q] for q in prodinlevel]
-             prodname = sorted(prodname)
-
-             for k in range(len(prodinlevel)):
-                 ind = self.ProductName.index(prodname[k])
-                 pos[ind] += (0, 100 * k / len(prodinlevel))
-         edges = G.edges()
-         colors = [G[u][v]['color'] for u, v in edges]
-         nx.draw(G, pos, edge_color=colors, node_shape='s',
-                 node_color='b', node_size=500, node_height=300,
-                 width=2,
-                 alpha=0.4)
-
-         nx.draw_networkx_labels(G, pos, labels, font_size=12)
-
-         plt.axis('off')
-         return plt
+    # def DrawSupplyChain(self):
+    #      G = nx.DiGraph()
+    #      labels = {}
+    #      for p in self.ProductSet:
+    #          G.add_node(p)
+    #          labels[p] = self.ProductName[p]
+    #          # node.append( G.add_nodes_from(p) )
+    #
+    #      for p in self.ProductSet:
+    #          for q in self.ProductSet:
+    #              if self.Requirements[q][p]:
+    #                  G.add_edge(p, q, color='b')
+    #
+    #                  for i in self.ProductSet:
+    #                      if self.Alternates[p][i] and p != i:
+    #                          G.add_edge(i, q, color='g')
+    #
+    #      pos = nx.spring_layout(G)
+    #
+    #      print(pos)
+    #      maxl = max(self.Level)
+    #      for p in self.ProductSet:
+    #          pos[p] += (10 * (maxl - self.Level[p]), 0)
+    #          # node.append(G.add_nodes_from(p))
+    #
+    #      levels = set(self.Level)
+    #      for l in levels:
+    #          prodinlevel = [q for q in self.ProductSet if self.Level[q] == l]
+    #          prodname = [self.ProductName[q] for q in prodinlevel]
+    #          prodname = sorted(prodname)
+    #
+    #          for k in range(len(prodinlevel)):
+    #              ind = self.ProductName.index(prodname[k])
+    #              pos[ind] += (0, 100 * k / len(prodinlevel))
+    #      edges = G.edges()
+    #      colors = [G[u][v]['color'] for u, v in edges]
+    #      nx.draw(G, pos, edge_color=colors, node_shape='s',
+    #              node_color='b', node_size=500, node_height=300,
+    #              width=2,
+    #              alpha=0.4)
+    #
+    #      nx.draw_networkx_labels(G, pos, labels, font_size=12)
+    #
+    #      plt.axis('off')
+    #      return plt
 
     # This function compute the additional data used in the modes
     # ( indices of the variable,  level in the supply chain, .... )
