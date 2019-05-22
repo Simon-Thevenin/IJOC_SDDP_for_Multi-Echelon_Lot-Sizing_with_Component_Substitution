@@ -115,9 +115,9 @@ def GenerateInstances():
     #instance.SaveCompleteInstanceInExelFile()
     #instancecreated = instancecreated + [instance.InstanceName]
     #
-    for sc in ["01", "02", "03", "04", "05"]:
+    for sc in ["01", "02", "03"]:#, "04", "05"]:
         for addtime in [0,1,2]:
-            instance.ReadFromFile(sc, "Lumpy", "Normal", addtime)
+            instance.ReadFromFile(sc, "Lumpy", "Normal", additionaltimehorizon=addtime)
             instance.SaveCompleteInstanceInExelFile()
             instancecreated = instancecreated + [instance.InstanceName]
     # #
@@ -194,7 +194,7 @@ if __name__ == '__main__':
         #instance.DefineAsTwoItemIntance()
         # instance.ReadFromFile("K0011525", "NonStationary", "Normal")
 
-        #GenerateInstances()
+        GenerateInstances()
 
         instance.ReadInstanceFromExelFile(TestIdentifier.InstanceName)
         #instance.DrawSupplyChain()

@@ -34,7 +34,7 @@ class InstanceReader(object):
             self.Instance.InstanceName = "%s_%s_b%s_fe%s_e%s_rk%s_ll%s_l%s_H%s%s_c%s" % (
                                                     instancename, distribution, backlogcostmultiplier, forcasterror,
                                                     e, rateknown, leadtimestructure, lostsalecostmultiplier,
-                                                    longtimehoizon, largetimehorizonperiod, capacityfactor)
+                                                    additionaltimehorizon, largetimehorizonperiod, capacityfactor)
             self.Instance.Distribution = distribution
             self.Filename = instancename
             # Open the file, and read the product, requirement, and resources

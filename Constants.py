@@ -63,10 +63,10 @@ class Constants( object ):
     RQMCAggregate = False
     #SDDPparameters
     AlgorithmOptimalityTolerence = 0.01#0.0005
-    SDDPIterationLimit = 5
+    SDDPIterationLimit = 500
     SDDPPrintDebugLPFiles = False
     PrintSDDPTrace = True
-    GenerateStrongCut = False
+    GenerateStrongCut = True
     SDDPRunSigleTree = False
 
     SDDPModifyBackwardScenarioAtEachIteration = False

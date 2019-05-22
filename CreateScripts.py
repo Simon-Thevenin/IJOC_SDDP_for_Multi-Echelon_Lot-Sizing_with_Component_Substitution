@@ -168,7 +168,7 @@ if __name__ == "__main__":
 
     scenariotreeset = ["6400b"] #["all2", "all5"]#, "allDIX", "all20"]
     #sddpnrbackset = ["allDIX", "all20", "50-50-10", "all50" ]#,10,20] #[2, 5], 10, 20]
-    sddpnrbackset = ["all20"]
+    sddpnrbackset = ["all50"]
     if sys.argv[1] == "H":
         fileheurname = "runallheur.sh"
         fileheur = open(fileheurname, 'w')
@@ -186,8 +186,8 @@ if __name__ == "__main__":
                     fileheur.write("sbatch %s \n" % (jobname))
                     jobname = CreateSDDPJob(instance, nrback, nrforward, setting, model="YFix")
                     fileheur.write("sbatch %s \n" % (jobname))
-                    jobname = CreateMLLocalSearchJob(instance, nrback, nrforward, setting, model="YFix")
-                    fileheur.write("sbatch %s \n" % (jobname))
+                   # jobname = CreateMLLocalSearchJob(instance, nrback, nrforward, setting, model="YFix")
+                   # fileheur.write("sbatch %s \n" % (jobname))
                     jobname = CreateHybridSearchJob(instance, nrback, nrforward, setting, model="YFix")
                     fileheur.write("sbatch %s \n" % (jobname))
 

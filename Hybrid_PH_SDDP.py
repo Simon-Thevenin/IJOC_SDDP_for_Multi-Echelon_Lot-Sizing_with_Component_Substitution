@@ -24,7 +24,7 @@ class Hybrid_PH_SDDP(object):
 
 
         OldNrScenar =self.TestIdentifier.NrScenario
-        self.TestIdentifier.NrScenario = "all5"
+        self.TestIdentifier.NrScenario = "1000"
         PHTreestructure = solver.GetTreeStructure()
         # treestructure = [1, 200] + [1] * (self.Instance.NrTimeBucket - 1) + [0]
         # self.TestIdentifier.Model = Constants.ModelYQFix
