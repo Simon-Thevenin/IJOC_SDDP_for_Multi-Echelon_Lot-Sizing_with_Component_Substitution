@@ -194,7 +194,7 @@ if __name__ == '__main__':
         #instance.DefineAsTwoItemIntance()
         # instance.ReadFromFile("K0011525", "NonStationary", "Normal")
 
-        GenerateInstances()
+        #GenerateInstances()
 
         instance.ReadInstanceFromExelFile(TestIdentifier.InstanceName)
         #instance.DrawSupplyChain()
