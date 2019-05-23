@@ -1,6 +1,7 @@
 from __future__ import absolute_import, division, print_function
 import cplex
 import math
+import sys
 from Constants import Constants
 from SDDPCut import SDDPCut
 #from SDDPMLCut import SDDPMLCut
@@ -1685,11 +1686,18 @@ class SDDPStage(object):
                 self.Cplex.write("./Temp/stage_%d_iter_%d_scenar_%d.lp" % (self.DecisionStage, self.SDDPOwner.CurrentIteration, w))
             else:
                 # name = "mrp_log%r_%r_%r" % ( self.Instance.InstanceName, self.Model, self.DemandScenarioTree.Seed )
-                if True or not Constants.Debug:
+                if  not Constants.Debug:
                     self.Cplex.set_log_stream(None)
                     self.Cplex.set_results_stream(None)
                     self.Cplex.set_warning_stream(None)
                     self.Cplex.set_error_stream(None)
+            if self.IsFirstStage():
+                self.Cplex.set_results_stream("./CPLEXLog/log")
+                self.Cplex.write("yo.lp")
+                self.Cplex.set_log_stream("./CPLEXLog/log")
+                self.Cplex.set_results_stream("./CPLEXLog/log")
+                self.Cplex.set_warning_stream("./CPLEXLog/log")
+                self.Cplex.set_error_stream("./CPLEXLog/log")
             self.Cplex.parameters.advance = 1
             self.Cplex.parameters.lpmethod = 2 # Dual primal cplex.CPX_ALG_DUAL
             self.Cplex.parameters.lpmethod = 4  # Berriere
@@ -1698,6 +1706,10 @@ class SDDPStage(object):
             self.Cplex.parameters.simplex.tolerances.feasibility.set(0.00001)
 
             self.Cplex.solve()
+            print("Solution status:%r - %r " %(self.Cplex.solution.get_status(), self.Cplex.solution.get_objective_value()))
+            if self.SDDPOwner.CurrentIteration == 5 and self.IsFirstStage():
+                self.Cplex.write("fuckinmodel.lp")
+                sys.exit()
             if Constants.Debug:
                  print("Solution status:%r"%self.Cplex.solution.get_status())
                  if Constants.SDDPPrintDebugLPFiles:  # or self.IsFirstStage():
@@ -2223,6 +2235,8 @@ class SDDPStage(object):
 
         if makecontinuous:
             self.Cplex.variables.set_types(zip(indexarray, ["C"] * len(indexarray)))
+            self.Cplex.set_problem_type(self.Cplex.problem_type.LP)
+
         self.Cplex.variables.set_lower_bounds(lbtuple)
         self.Cplex.variables.set_upper_bounds(ubtuples)
 
