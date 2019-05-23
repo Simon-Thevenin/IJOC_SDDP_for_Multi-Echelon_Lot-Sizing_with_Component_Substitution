@@ -1685,13 +1685,13 @@ class SDDPStage(object):
                 self.Cplex.write("./Temp/stage_%d_iter_%d_scenar_%d.lp" % (self.DecisionStage, self.SDDPOwner.CurrentIteration, w))
             else:
                 # name = "mrp_log%r_%r_%r" % ( self.Instance.InstanceName, self.Model, self.DemandScenarioTree.Seed )
-                if not Constants.Debug:
+                if True or not Constants.Debug:
                     self.Cplex.set_log_stream(None)
                     self.Cplex.set_results_stream(None)
                     self.Cplex.set_warning_stream(None)
                     self.Cplex.set_error_stream(None)
             self.Cplex.parameters.advance = 1
-            self.Cplex.parameters.lpmethod = 2  # Dual primal cplex.CPX_ALG_DUAL
+            self.Cplex.parameters.lpmethod = 2 # Dual primal cplex.CPX_ALG_DUAL
             self.Cplex.parameters.lpmethod = 4  # Berriere
             self.Cplex.parameters.threads.set(1)
             self.Cplex.parameters.barrier.convergetol.set(0.000000000001)
