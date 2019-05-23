@@ -1706,10 +1706,10 @@ class SDDPStage(object):
             self.Cplex.parameters.simplex.tolerances.feasibility.set(0.00001)
 
             self.Cplex.solve()
-            print("Solution status:%r - %r " %(self.Cplex.solution.get_status(), self.Cplex.solution.get_objective_value()))
-            if self.SDDPOwner.CurrentIteration == 10 and self.IsFirstStage():
-                self.Cplex.write("fuckinmodel.lp")
-                sys.exit()
+            # print("Solution status:%r - %r " %(self.Cplex.solution.get_status(), self.Cplex.solution.get_objective_value()))
+            # if self.SDDPOwner.CurrentIteration == 10 and self.IsFirstStage():
+            #     self.Cplex.write("fuckinmodel.lp")
+            #     sys.exit()
             if Constants.Debug:
                  print("Solution status:%r"%self.Cplex.solution.get_status())
                  if Constants.SDDPPrintDebugLPFiles:  # or self.IsFirstStage():

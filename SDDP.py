@@ -739,9 +739,7 @@ class SDDP(object):
             #print("Attention uncomment")
             self.IsIterationWithConvergenceTest = False
 
-            self.GenerateTrialScenarios()
-            for s in self.CurrentSetOfTrialScenarios:
-                print("Demands: %r" % s.Demands)
+
             if Constants.Debug:
                 print("********************Scenarios Trial*********************")
                 for s in self.CurrentSetOfTrialScenarios:
