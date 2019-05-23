@@ -146,7 +146,7 @@ class InstanceReaderTemplemeier(InstanceReader):
 
 
 
-    def GenerateTimeHorizon(self, largetimehorizon = False, largetimehorizonperiod=10):
+    def GenerateTimeHorizon(self, largetimehorizon = False, largetimehorizonperiod=10, additionaltimehorizon = -1):
         self.Instance.ComputeLevel()
         self.Instance.ComputeMaxLeadTime()
         self.Instance.ComputeIndices()

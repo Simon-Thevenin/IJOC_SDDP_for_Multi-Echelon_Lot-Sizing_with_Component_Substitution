@@ -115,11 +115,11 @@ def GenerateInstances():
     #instance.SaveCompleteInstanceInExelFile()
     #instancecreated = instancecreated + [instance.InstanceName]
     #
-    for sc in ["01", "02", "03"]:#, "04", "05"]:
-        for addtime in [0,1,2]:
-            instance.ReadFromFile(sc, "Lumpy", "Normal", additionaltimehorizon=addtime)
-            instance.SaveCompleteInstanceInExelFile()
-            instancecreated = instancecreated + [instance.InstanceName]
+    # for sc in ["01", "02", "03"]:#, "04", "05"]:
+    #     for addtime in [0,1,2]:
+    #         instance.ReadFromFile(sc, "Lumpy", "Normal", additionaltimehorizon=addtime)
+    #         instance.SaveCompleteInstanceInExelFile()
+    #         instancecreated = instancecreated + [instance.InstanceName]
     # #
     # instance.ReadFromFile("03", "Lumpy", "Normal")
     # instance.SaveCompleteInstanceInExelFile()
@@ -134,15 +134,11 @@ def GenerateInstances():
     # instancecreated = instancecreated + [instance.InstanceName]
 
 
-    # for name in ["G"0041111", "K0017311"]: #["K0011525", "G0041421", "K0011111", "G0041111","K0017311", "G0041523","K0014432"]:
-    #     for distribution in ["Lumpy", "NonStationary"]:
-    #         instance.ReadFromFile(name, distribution, "Normal")
-    #         instance.SaveCompleteInstanceInExelFile()
-    #         instancecreated = instancecreated + [instance.InstanceName]
-    #
-    #         instance.ReadFromFile(name, distribution, "Normal", longtimehoizon=True, longtimehorizonperiod = 6)
-    #         instance.SaveCompleteInstanceInExelFile()
-    #         instancecreated = instancecreated + [instance.InstanceName]
+    for name in ["G0041111", "K0017311"]: #["K0011525", "G0041421", "K0011111", "G0041111","K0017311", "G0041523","K0014432"]:
+        for horizon in [1, 2, 3, 4, 5]:
+            instance.ReadFromFile(name, "Lumpy", "Normal", longtimehoizon=True, longtimehorizonperiod = horizon)
+            instance.SaveCompleteInstanceInExelFile()
+            instancecreated = instancecreated + [instance.InstanceName]
 
 
     csvfile = open("./Instances/InstancesToSolve.csv", 'wb')

@@ -25,8 +25,8 @@ class InstanceReader(object):
     def ReadFromFile(self, instancename, distribution="NonStationary", longtimehoizon=False, largetimehorizonperiod = 10, alternatetype = "Normal", additionaltimehorizon = 0):
             backlogcostmultiplier = 2
             forcasterror = 25
-            e = "n"
-            rateknown = 50
+            e = "l"
+            rateknown = 25
             leadtimestructure = 0
             lostsalecostmultiplier = 20
             capacityfactor = 2
