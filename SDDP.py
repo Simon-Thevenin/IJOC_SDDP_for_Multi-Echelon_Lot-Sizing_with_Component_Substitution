@@ -739,6 +739,7 @@ class SDDP(object):
             #print("Attention uncomment")
             self.IsIterationWithConvergenceTest = False
 
+            self.GenerateTrialScenarios()
 
             if Constants.Debug:
                 print("********************Scenarios Trial*********************")
