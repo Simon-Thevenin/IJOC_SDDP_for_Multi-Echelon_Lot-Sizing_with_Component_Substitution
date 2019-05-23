@@ -1707,7 +1707,7 @@ class SDDPStage(object):
 
             self.Cplex.solve()
             print("Solution status:%r - %r " %(self.Cplex.solution.get_status(), self.Cplex.solution.get_objective_value()))
-            if self.SDDPOwner.CurrentIteration == 5 and self.IsFirstStage():
+            if self.SDDPOwner.CurrentIteration == 10 and self.IsFirstStage():
                 self.Cplex.write("fuckinmodel.lp")
                 sys.exit()
             if Constants.Debug:
