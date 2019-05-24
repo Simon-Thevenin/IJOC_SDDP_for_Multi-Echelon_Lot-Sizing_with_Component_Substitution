@@ -306,6 +306,10 @@ class Solver( object ):
 
             solution = self.MLLocalSearch.Run()
             self.SDDPSolver = self.MLLocalSearch.SDDPSolver
+            if Constants.PrintOnlyFirstStageDecision:
+                solution = self.SDDPSolver.CreateSolutionAtFirstStage()
+            else:
+                solution = self.SDDPSolver.CreateSolutionOfAllInSampleScenario()
             if Constants.SDDPSaveInExcel:
                 self.SDDPSolver.SaveSolver()
         #self.SDDPSolver = SDDP(self.Instance, self.TestIdentifier)

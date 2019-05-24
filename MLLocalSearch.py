@@ -7,7 +7,7 @@ from sklearn import datasets, linear_model
 from sklearn.preprocessing import PolynomialFeatures
 from sklearn.linear_model import LinearRegression
 from sklearn.neural_network import MLPRegressor
-
+import sys
 from sklearn.metrics import mean_absolute_error
 import random
 
@@ -35,7 +35,9 @@ class MLLocalSearch(object):
         self.BestSolution = None
         self.BestSolutionCost = Constants.Infinity
         self.BestSolutionSafeUperBound = Constants.Infinity
-        self.SDDPSolver = SDDP(self.Instance, self.TestIdentifier, treestructure)
+        self.TestIdentifier.NrScenario = "all5"
+        MLTreestructure = solver.GetTreeStructure()
+        self.SDDPSolver = SDDP(self.Instance, self.TestIdentifier, MLTreestructure)
         self.SDDPSolver.HasFixedSetup = True
         self.SDDPSolver.IsIterationWithConvergenceTest = False
         # self.SDDPSolver.Run()
@@ -60,7 +62,7 @@ class MLLocalSearch(object):
     def updateRecord(self, solution):
         if solution.TotalCost < self.BestSolutionCost:
             self.BestSolutionCost = solution.TotalCost
-            self.BestSolutionSafeUperBound = max( self.SDDPSolver.CurrentSafeUpperBound, self.SDDPSolver.CurrentLowerBound)
+            self.BestSolutionSafeUperBound = max( self.SDDPSolver.CurrentExpvalueUpperBound, self.SDDPSolver.CurrentLowerBound)
             self.BestSolution = solution
 
     def trainML(self):
@@ -105,15 +107,15 @@ class MLLocalSearch(object):
         self.Start = time.time()
         duration = 0
         #Initialization
-        for i in range(1,2):
-            self.GivenSetup1D, self.GivenSetup2D = self.GetRandomSetups()
-            self.RunSDDPAndAddToTraining()
-
-        self.trainML()
+        # for i in range(1,2):
+        #     self.GivenSetup1D, self.GivenSetup2D = self.GetRandomSetups()
+        #     self.RunSDDPAndAddToTraining()
+        #
+        # self.trainML()
         self.GenerateOutSample()
 
         self.CurrentTolerance = Constants.AlgorithmOptimalityTolerence
-        self.SDDPSolver.CurrentToleranceForSameLB = 0.01
+       # self.SDDPSolver.CurrentToleranceForSameLB = 0.01
         self.BestSolutionCost = Constants.Infinity
         self.BestSolutionSafeUperBound = Constants.Infinity
 
@@ -121,12 +123,16 @@ class MLLocalSearch(object):
         curentsolution = copy.deepcopy(self.BestSolution)
 
         while( duration < Constants.AlgorithmTimeLimit):
-            if(self.Iteration >= 1):
-
-                self.GivenSetup2D = self.Descent(curentsolution)
-            else:
+            if(self.Iteration == 0):
                 self.WriteInTraceFile("use heuristic setups")
                 self.GivenSetup2D = self.GetHeuristicSetup()
+
+
+            else:
+                if( self.Iteration<= 50):
+                    self.GivenSetup2D = self.GetSetupWithMIP()
+                else:
+                    self.GivenSetup2D = self.Descent(curentsolution)
 
             self.GivenSetup1D = [self.GivenSetup2D[t][p] for p in self.Instance.ProductSet for t in
                                  self.Instance.TimeBucketSet]
@@ -192,17 +198,27 @@ class MLLocalSearch(object):
             duration = end - self.Start
 
         self.GivenSetup2D = self.BestSolution.Production[0]
+
+
+
+        self.SDDPSolver = SDDP(self.Instance, self.TestIdentifier, self.TreeStructure)
+        self.SDDPSolver.HasFixedSetup = True
+        self.SDDPSolver.HeuristicSetupValue = self.GivenSetup2D
         self.SDDPSolver.IsIterationWithConvergenceTest = False
 
+        #self.SDDPSolver.GenerateSAAScenarios2()
+
+        # Mke sure SDDP do not unter in preliminary stage (at the end of the preliminary stage, SDDP would change the setup to bynary)
+        Constants.SDDPGenerateCutWith2Stage = False
+        Constants.SolveRelaxationFirst = False
+        Constants.SDDPRunSigleTree = False
         self.SDDPSolver.CurrentToleranceForSameLB = 0.000001
         self.Start = 0
-        self.BestSolution = self.RunSDDP()
-
-        self.BestSolution.LocalSearchIteration = self.Iteration
-
-        self.SDDPSolver.SDDPNrScenarioTest = 1000
-        random.seed = 9876
-        self.SDDPSolver.ComputeUpperBound()
+        self.SDDPSolver.Run()
+        self.BestSolution = self.SDDPSolver.CreateSolutionAtFirstStage()
+        #self.SDDPSolver.SDDPNrScenarioTest = 1000
+        #random.seed = 9876
+        #self.SDDPSolver.ComputeUpperBound()
 
         return self.BestSolution
 
@@ -227,13 +243,13 @@ class MLLocalSearch(object):
 
         iterationtabu = [[0 for p in self.Instance.ProductSet] for t in self.Instance.TimeBucketSet]
         curentiterationLS = 0
-        while ( not self.UseTabu and self.DescentBestMove[0] <> "") or (self.UseTabu and (self.TabuBestSol is None or curentiterationLS < 100)):
+        while ( not self.UseTabu and self.DescentBestMove[0] <> "") or (self.UseTabu and (self.TabuBestSol is None or curentiterationLS < 10)):
                 self.TabuCurrentPredictedUB = Constants.Infinity
                 self.TabuCurrentSolLB = Constants.Infinity
                 self.DescentBestMove = ("", -1, -1)
                 for p in self.Instance.ProductSet:
                      for t in self.Instance.TimeBucketSet:
-                        if iterationtabu[t][p] <= curentiterationLS:
+                        if iterationtabu[t][p] <= curentiterationLS and random.uniform(0, 1) < 0.1:
 
                             if currentsolution.Production[0][t][p] == 1:
                                 #Move earlier
@@ -277,7 +293,7 @@ class MLLocalSearch(object):
                 lb = self.GetCurrentLowerBound(currentsolution.Production[0])
                 newrecord = False
               #  print(cost)
-              #  print(self.GetCurrentLowerBound(currentsolution.Production[0]))
+               # print(self.GetCurrentLowerBound(currentsolution.Production[0]))
 
                 if self.TabuBestSolLB < self.BestSolutionSafeUperBound:
                     if lb < self.BestSolutionSafeUperBound and cost < self.TabuBestCost:
@@ -363,13 +379,19 @@ class MLLocalSearch(object):
         return cost
 
     def PredictForSetups(self, setups):
-        setupcost = sum(setups[t][p] * self.Instance.SetupCosts[p] for t in self.Instance.TimeBucketSet  for p in self.Instance.ProductSet)
 
-        setups1D = [[setups[t][p] for p in self.Instance.ProductSet for t in
-                             self.Instance.TimeBucketSet]]
-        approxcosttogo = self.GetCostBasedML(setups1D)
+
+        if self.Iteration < 50:
+                return -1;
+        else:
+            setupcost = sum(setups[t][p] * self.Instance.SetupCosts[p] for t in self.Instance.TimeBucketSet for p in
+                            self.Instance.ProductSet)
+
+            setups1D = [[setups[t][p] for p in self.Instance.ProductSet for t in
+                         self.Instance.TimeBucketSet]]
+            approxcosttogo = self.GetCostBasedML(setups1D)
+
         return setupcost + approxcosttogo
-
 
 
 
@@ -441,6 +463,24 @@ class MLLocalSearch(object):
         self.ScenarioGeneration = chosengeneration
         self.TestIdentifier.Model = Constants.ModelYFix
         self.TestIdentifier.Method = Constants.MLLocalSearch
+        return GivenSetup
+
+
+
+    def GetSetupWithMIP(self):
+        self.SDDPSolver.ForwardStage[0].ChangeSetupToBinary()
+        self.SDDPSolver.ForwardStage[0].Cplex.solve()
+        sol = self.SDDPSolver.ForwardStage[0].Cplex.solution
+        indexarray = [self.SDDPSolver.ForwardStage[0].GetIndexProductionVariable(p, t) for t in self.Instance.TimeBucketSet
+                      for p in self.Instance.ProductSet]
+        values = sol.get_values(indexarray)
+
+        GivenSetup = [[max(values[t * self.Instance.NrProduct + p], 0.0)
+                                                      for p in self.Instance.ProductSet]
+                                                     for t in self.Instance.TimeBucketSet]
+
+
+
         return GivenSetup
 
 
