@@ -1839,6 +1839,15 @@ class SDDPStage(object):
         else:
             self.Cplex.write("InfeasibleLP_stage_%d_iter_%d_scenar_%d.lp" % (
             self.DecisionStage, self.SDDPOwner.CurrentIteration, self.CurrentTrialNr))
+            self.Cplex.conflict.refine(self.Cplex.conflict.all_constraints())
+            conflict = self.Cplex.conflict.get()
+            conflicting = [i for i in range(len(conflict)) if conflict[i] == 3]
+            groups = self.Cplex.conflict.get_groups(conflicting)
+            print("Conflicts: %r" % groups, conflicting)
+            for i in groups:
+                (a, ((b, c),)) = i
+                print("Constraint %r, %r:" % (c, self.Cplex.linear_constraints.get_names([c])))
+
             raise NameError("Infeasible sub-problem!!!!")
 
     def SaveSolutionFromSol(self, sol):

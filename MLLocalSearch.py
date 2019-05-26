@@ -35,6 +35,7 @@ class MLLocalSearch(object):
         self.BestSolution = None
         self.BestSolutionCost = Constants.Infinity
         self.BestSolutionSafeUperBound = Constants.Infinity
+        self.NrScenarioOnceYIsFix = self.TestIdentifier.NrScenario
         self.TestIdentifier.NrScenario = "all5"
         MLTreestructure = solver.GetTreeStructure()
         self.SDDPSolver = SDDP(self.Instance, self.TestIdentifier, MLTreestructure)
@@ -60,7 +61,7 @@ class MLLocalSearch(object):
         self.InitTrace()
 
     def updateRecord(self, solution):
-        if solution.TotalCost < self.BestSolutionCost:
+        if solution.TotalCost < self.BestSolutionCost and self.BestSolutionSafeUperBound  > self.SDDPSolver.CurrentExpvalueUpperBound:
             self.BestSolutionCost = solution.TotalCost
             self.BestSolutionSafeUperBound = max( self.SDDPSolver.CurrentExpvalueUpperBound, self.SDDPSolver.CurrentLowerBound)
             self.BestSolution = solution
@@ -112,7 +113,7 @@ class MLLocalSearch(object):
         #     self.RunSDDPAndAddToTraining()
         #
         # self.trainML()
-        self.GenerateOutSample()
+        #self.GenerateOutSample()
 
         self.CurrentTolerance = Constants.AlgorithmOptimalityTolerence
        # self.SDDPSolver.CurrentToleranceForSameLB = 0.01
@@ -178,17 +179,17 @@ class MLLocalSearch(object):
 
 
             insamplepredictionNN = self.clf.predict(self.TestedSetup)
-            outsamplepredictionNN = self.clf.predict(self.outofsampletest)
+#            outsamplepredictionNN = self.clf.predict(self.outofsampletest)
             if Constants.Debug:
                 print("-------------------------Neural net-----------------------------")
                 print("self.TestedSetup : %r " % self.TestedSetup)
                 print("self.CostToGoOfTestedSetup : %r " % self.CostToGoOfTestedSetup)
                 print("insampleprediction : %r " % insamplepredictionNN)
                 print("insample absolute error %r" % mean_absolute_error(self.CostToGoOfTestedSetup, insamplepredictionNN))
-                print("outsampleprediction : %r " % outsamplepredictionNN)
-                print("outsample absolute error %r" % mean_absolute_error(self.outofsamplecost, outsamplepredictionNN))
+ #               print("outsampleprediction : %r " % outsamplepredictionNN)
+#                print("outsample absolute error %r" % mean_absolute_error(self.outofsamplecost, outsamplepredictionNN))
 
-            self.WriteInTraceFile( "outsample absolute error %r" % mean_absolute_error(self.outofsamplecost, outsamplepredictionNN) )
+#            self.WriteInTraceFile( "outsample absolute error %r" % mean_absolute_error(self.outofsamplecost, outsamplepredictionNN) )
 
 
 
@@ -199,8 +200,7 @@ class MLLocalSearch(object):
 
         self.GivenSetup2D = self.BestSolution.Production[0]
 
-
-
+        self.TestIdentifier.NrScenario = self.NrScenarioOnceYIsFix
         self.SDDPSolver = SDDP(self.Instance, self.TestIdentifier, self.TreeStructure)
         self.SDDPSolver.HasFixedSetup = True
         self.SDDPSolver.HeuristicSetupValue = self.GivenSetup2D
@@ -398,7 +398,7 @@ class MLLocalSearch(object):
     def RunSDDP(self):
        ## print("RUN SDDP")
 
-        self.SDDPSolver.WriteInTraceFile("__________________New run of SDDP ____________________ \n")
+        self.SDDPSolver.WriteInTraceFile("__________________New run of SDDP ______________best ub: %r______ \n"%self.BestSolutionSafeUperBound)
 
         self.SDDPSolver.HeuristicSetupValue = self.GivenSetup2D
 
@@ -556,7 +556,7 @@ class MLLocalSearch(object):
 
 
         #return (convergencecriterion <= 1 and delta > self.CurrentTolerance and  self.SDDPSolver.NrIterationWithoutLBImprovment>5)
-        return self.SDDPSolver.NrIterationWithoutLBImprovment > 5 or self.SDDPSolver.CurrentLowerBound > self.BestSolutionSafeUperBound
+        return self.SDDPSolver.NrIterationWithoutLBImprovment > 10 or self.SDDPSolver.CurrentLowerBound > self.BestSolutionSafeUperBound
 
     #self.SDDPSolver.CurrentLowerBound > self.BestSolutionSafeUperBound \
             #    or (convergencecriterion <= 1 and delta <= self.CurrentTolerance)#
