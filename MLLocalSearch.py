@@ -61,7 +61,9 @@ class MLLocalSearch(object):
         self.InitTrace()
 
     def updateRecord(self, solution):
-        if solution.TotalCost < self.BestSolutionCost and self.BestSolutionSafeUperBound  > self.SDDPSolver.CurrentExpvalueUpperBound:
+        if solution.TotalCost < self.BestSolutionCost \
+                and self.SDDPSolver.CurrentExpvalueUpperBound <  self.BestSolutionSafeUperBound\
+                and self.SDDPSolver.CurrentLowerBound < self.BestSolutionSafeUperBound:
             self.BestSolutionCost = solution.TotalCost
             self.BestSolutionSafeUperBound = max( self.SDDPSolver.CurrentExpvalueUpperBound, self.SDDPSolver.CurrentLowerBound)
             self.BestSolution = solution
@@ -99,6 +101,7 @@ class MLLocalSearch(object):
         self.CostToGoOfTestedSetup.append(solution.TotalCost - solution.SetupCost)
 
         self.updateRecord(solution)
+
     def Run(self):
 
         #self.GetHeuristicSetup()
@@ -127,12 +130,13 @@ class MLLocalSearch(object):
             if(self.Iteration == 0):
                 self.WriteInTraceFile("use heuristic setups")
                 self.GivenSetup2D = self.GetHeuristicSetup()
-
-
             else:
-                if( self.Iteration<= 50):
+                if( self.Iteration<= 2):
                     self.GivenSetup2D = self.GetSetupWithMIP()
+
                 else:
+                    if self.Iteration == 3:
+                        curentsolution = copy.deepcopy(self.BestSolution)
                     self.GivenSetup2D = self.Descent(curentsolution)
 
             self.GivenSetup1D = [self.GivenSetup2D[t][p] for p in self.Instance.ProductSet for t in
