@@ -1105,12 +1105,15 @@ class SDDPStage(object):
                                               rhs=[0.0])
             self.LastAddedConstraintIndex = self.LastAddedConstraintIndex + 1
 
-
-
             var = [self.GetIndexEVPICostToGo(w)]
-            var = var + [self.GetIndexCostToGo(w, futrescenario) for futrescenario in self.FuturScenario]
+            if Constants.SDDPUseMultiCut:
 
-            coeff = [-1.0] + [self.FuturScenarProba[futrescenario] for futrescenario in self.FuturScenario]
+                coeff = [-1.0] + [self.FuturScenarProba[futrescenario] for futrescenario in self.FuturScenario]
+                var = var + [self.GetIndexCostToGo(w, futrescenario) for futrescenario in self.FuturScenario]
+
+            else:
+                coeff = [-1.0] + [1]
+                var = var + [self.GetIndexCostToGo(w, 0) ]
 
             self.Cplex.linear_constraints.add(lin_expr=[cplex.SparsePair(var, coeff)],
                                               senses=["G"],
@@ -1360,8 +1363,12 @@ class SDDPStage(object):
             costtogovars = []
             if not self.IsLastStage():
                 for w in self.FixedScenarioSet:
-                    for futurscenario in range(self.NrFutureCostScenario):
-                        costtogovars.append((self.GetIndexCostToGo(w, futurscenario), "E%d_%d_%d"%(self.TimeDecisionStage + 1, w, futurscenario)))
+                    if Constants.SDDPUseMultiCut:
+                        for futurscenario in range(self.NrFutureCostScenario):
+                            costtogovars.append((self.GetIndexCostToGo(w, futurscenario), "E%d_%d_%d"%(self.TimeDecisionStage + 1, w, futurscenario)))
+                    else:
+                        costtogovars.append((self.GetIndexCostToGo(w, 0),
+                                             "E%d_%d_%d" % (self.TimeDecisionStage + 1, w, 0)))
 
             piquantityvar = []
             pibacklogvar = []
@@ -1856,8 +1863,12 @@ class SDDPStage(object):
             self.StageCostPerScenarioWithoutCostoGo[self.CurrentTrialNr] = self.StageCostPerScenarioWithCostoGo[self.CurrentTrialNr]
 
             if not self.IsLastStage():
-                self.StageCostPerScenarioWithoutCostoGo[self.CurrentTrialNr] = self.StageCostPerScenarioWithCostoGo[self.CurrentTrialNr] - sum(self.FuturScenarProba[w] * sol.get_values([self.GetIndexCostToGo(w, futurescenario)])[0]
+                if Constants.SDDPUseMultiCut:
+                    self.StageCostPerScenarioWithoutCostoGo[self.CurrentTrialNr] = self.StageCostPerScenarioWithCostoGo[self.CurrentTrialNr] - sum(self.FuturScenarProba[w] * sol.get_values([self.GetIndexCostToGo(w, futurescenario)])[0]
                                                                                                                                                    for w in self.FixedScenarioSet for futurescenario in self.FuturScenario)
+                else:
+                    self.StageCostPerScenarioWithoutCostoGo[self.CurrentTrialNr] = self.StageCostPerScenarioWithCostoGo[self.CurrentTrialNr] - sum(   sol.get_values([self.GetIndexCostToGo(w, 0)])[0] for w in self.FixedScenarioSet )
+
             if self.IsFirstStage():
                 self.PartialCostPerScenario[self.CurrentTrialNr] = self.StageCostPerScenarioWithoutCostoGo[self.CurrentTrialNr]
             else:
@@ -1888,7 +1899,8 @@ class SDDPStage(object):
 
         if not self.IsLastStage():
             self.IncreaseCutWithProductionDual(cuts, solution)
-            self.IncreaseCutWithCapacityDual(cuts, solution)
+            if self.Instance.NrResource>0:
+              self.IncreaseCutWithCapacityDual(cuts, solution)
             self.IncreaseCutWithCutDuals(cuts, solution)
 
             if Constants.SDDPUseEVPI:
@@ -1896,7 +1908,8 @@ class SDDPStage(object):
 
                 if len(self.TimePeriodToGoQty) >= 1:
                     self.IncreaseCutWithPIProductionDual(cuts, solution)
-                    self.IncreaseCutWithPICapacityDual(cuts, solution)
+                    if self.Instance.NrResource>0:
+                        self.IncreaseCutWithPICapacityDual(cuts, solution)
 
 
     #Generate the bender cut
@@ -1945,33 +1958,61 @@ class SDDPStage(object):
 
                     self.SAAStageCostPerScenarioWithoutCostoGopertrial[trial] = sol.get_objective_value()
                     if not self.IsLastStage():
-                        self.SAAStageCostPerScenarioWithoutCostoGopertrial[trial] -= sum(self.FuturScenarProba[futurescenario]
+                        if Constants.SDDPUseMultiCut:
+                             self.SAAStageCostPerScenarioWithoutCostoGopertrial[trial] -= sum(self.FuturScenarProba[futurescenario]
                                                                                          * sol.get_values([self.GetIndexCostToGo(w, futurescenario)])[0]
                                                                                          for w in self.FixedScenarioSet for futurescenario in self.FuturScenario)
+                        else:
+                            self.SAAStageCostPerScenarioWithoutCostoGopertrial[trial] -= sum(
+                                sol.get_values([self.GetIndexCostToGo(w, 0)])[0]
+                                for w in self.FixedScenarioSet)
 
                     if Constants.SDDPPrintDebugLPFiles:
                         sol.write("./Temp/bacward_mrpsolution_stage_%d_iter_%d.sol" % (self.DecisionStage, self.SDDPOwner.CurrentIteration))
 
-                    cuts = [SDDPCut(self.PreviousSDDPStage, self.PreviousSDDPStage.CorrespondingForwardStage, trial, backwardscenario) for  backwardscenario in self.FixedScenarioSet]
+                    if Constants.SDDPUseMultiCut:
+                        cuts = [SDDPCut(self.PreviousSDDPStage, self.PreviousSDDPStage.CorrespondingForwardStage, trial, backwardscenario) for  backwardscenario in self.FixedScenarioSet]
 
-                    self.ImproveCutFromSolution(cuts, sol)
+                        self.ImproveCutFromSolution(cuts, sol)
 
-                        #Average by the number of scenario
-                    for backwardscenario in self.FixedScenarioSet:
-                        cut = cuts[backwardscenario]
+                            #Average by the number of scenario
+                        for backwardscenario in self.FixedScenarioSet:
+                            cut = cuts[backwardscenario]
+                            if Constants.Debug:
+                                print("cur RHS after scenario %s" % (cut.DemandAVGRHS + cut.DemandRHS + cut.CapacityRHS + cut.PreviousCutRHS + cut.InitialInventoryRHS))
+
+                            cut.UpdateRHS()
+                            if Constants.Debug:
+                               #print("THERE IS NO CHECK That cuts are well generated!!!!!!!!!!!!!!")
+                               self.checknewcut(cut, averagecostofthesubproblem,  self.PreviousSDDPStage.Cplex.solution, trial)
+                            cut.AddCut()
+
+                            if Constants.SDDPPrintDebugLPFiles:
+                                self.PreviousSDDPStage.Cplex.write("./Temp/PreviousstageWithCut_stage_%d_iter_%d.lp" % (self.DecisionStage, self.SDDPOwner.CurrentIteration))
+                            cutsets.append(cut)
+
+                    else:
+
+                        cut = SDDPCut(self.PreviousSDDPStage, self.PreviousSDDPStage.CorrespondingForwardStage, trial, 0)
+                        cuts = [cut for backwardscenario in self.FixedScenarioSet]
+
+                        self.ImproveCutFromSolution(cuts, sol)
                         if Constants.Debug:
-                            print("cur RHS after scenario %s" % (
-                                        cut.DemandAVGRHS + cut.DemandRHS + cut.CapacityRHS + cut.PreviousCutRHS + cut.InitialInventoryRHS))
+                            print("cur RHS after scenario %s" % (cut.DemandAVGRHS + cut.DemandRHS + cut.CapacityRHS + cut.PreviousCutRHS + cut.InitialInventoryRHS))
 
+                        # Average by the number of scenario
                         cut.UpdateRHS()
                         if Constants.Debug:
-                           #print("THERE IS NO CHECK That cuts are well generated!!!!!!!!!!!!!!")
-                           self.checknewcut(cut, averagecostofthesubproblem,  self.PreviousSDDPStage.Cplex.solution, trial)
+                            self.checknewcut(cut, averagecostofthesubproblem, self.PreviousSDDPStage.Cplex.solution,
+                                             trial)
                         cut.AddCut()
 
                         if Constants.SDDPPrintDebugLPFiles:
-                            self.PreviousSDDPStage.Cplex.write("./Temp/PreviousstageWithCut_stage_%d_iter_%d.lp" % (self.DecisionStage, self.SDDPOwner.CurrentIteration))
+                            self.PreviousSDDPStage.Cplex.write("./Temp/PreviousstageWithCut_stage_%d_iter_%d.lp" % (
+                            self.DecisionStage, self.SDDPOwner.CurrentIteration))
                         cutsets.append(cut)
+
+
                     avgcostssubprob.append(averagecostofthesubproblem)
 
 

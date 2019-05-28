@@ -4,7 +4,7 @@ from __future__ import absolute_import, division, print_function
 class TestIdentificator( object ):
 
     # Constructor
-    def __init__(self, instancename, model, method, sampling, nrscenario, scenarioseed, useevpi, nrscenarioforward,mipsetting):
+    def __init__(self, instancename, model, method, sampling, nrscenario, scenarioseed, useevpi, nrscenarioforward,mipsetting, sddpsetting):
         self.InstanceName = instancename
         self.Model = model
         self.Method = method
@@ -14,6 +14,8 @@ class TestIdentificator( object ):
         self.EVPI = useevpi
         self.MIPSetting = mipsetting
         self.NrScenarioForward = nrscenarioforward
+        self.SDDPSetting = sddpsetting
+
 
     def GetAsStringList(self):
         result = [self.InstanceName,
@@ -24,7 +26,8 @@ class TestIdentificator( object ):
                   "%s"%self.ScenarioSeed,
                   "%s"%self.EVPI,
                   "%s"%self.NrScenarioForward,
-                  self.MIPSetting]
+                  self.MIPSetting,
+                  self.SDDPSetting]
         return result
 
     def GetAsString(self):
@@ -36,5 +39,6 @@ class TestIdentificator( object ):
                            "%s"%self.ScenarioSeed,
                            "%s"%self.EVPI,
                            "%s"%self.NrScenarioForward,
-                           self.MIPSetting])
+                           self.MIPSetting,
+                           self.SDDPSetting])
         return result

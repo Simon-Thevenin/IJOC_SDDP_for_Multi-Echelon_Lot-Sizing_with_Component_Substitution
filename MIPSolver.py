@@ -1709,7 +1709,10 @@ class MIPSolver(object):
         mdem = MIPSolver.GetBigMDemValue(instance, scenarioset, p, totaldemandatt, ssgrave)
 
         #compute m based on the capacity of the resource
-        mres = min(instance.Capacity[k] / instance.ProcessingTime[p][k] if instance.ProcessingTime[p][k] > 0  else Constants.Infinity for k in range( instance.NrResource ) )
+        if instance.NrResource > 0:
+            mres = min(instance.Capacity[k] / instance.ProcessingTime[p][k] if instance.ProcessingTime[p][k] > 0  else Constants.Infinity for k in range( instance.NrResource ) )
+        else:
+            mres = Constants.Infinity
         m = min([mdem, mres])
         return float(m)
 

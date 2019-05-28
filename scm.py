@@ -51,7 +51,7 @@ def parseArguments():
     parser.add_argument("-t", "--timehorizon", help="the time horizon used in shiting window.", type=int, default=1)
     parser.add_argument("-a", "--allscenario", help="generate all possible scenario.", type=int, default=0)
     parser.add_argument("-w", "--nrforward", help="number of scenario in the forward pass of sddp.", type=int, default=0)
-
+    parser.add_argument("-d", "--sddpsetting", help="test a specific sddp parameter", default="")
 
     # Print version
     parser.add_argument("--version", action="version", version='%(prog)s - Version 1.0')
@@ -77,7 +77,8 @@ def parseArguments():
                                        Constants.SeedArray[args.ScenarioSeed],
                                        args.evpi,
                                        args.nrforward,
-                                       args.mipsetting)
+                                       args.mipsetting,
+                                       args.sddpsetting)
     EvaluatorIdentifier = EvaluatorIdentificator(policygeneration,  args.nrevaluation, args.timehorizon, args.allscenario)
 
 def Solve(instance):
@@ -134,8 +135,8 @@ def GenerateInstances():
     # instancecreated = instancecreated + [instance.InstanceName]
 
 
-    for name in ["G0041111", "K0017311"]: #["K0011525", "G0041421", "K0011111", "G0041111","K0017311", "G0041523","K0014432"]:
-        for horizon in [1, 2, 3, 4, 5]:
+    for name in ["G0041111","G0041311","K0011111","K0011311","G0041131","G0041331","K0011131","K0011331"]:
+        for horizon in [2, 4, 6, 8, 10]:
             instance.ReadFromFile(name, "Lumpy", "Normal", longtimehoizon=True, longtimehorizonperiod = horizon)
             instance.SaveCompleteInstanceInExelFile()
             instancecreated = instancecreated + [instance.InstanceName]
@@ -195,6 +196,7 @@ if __name__ == '__main__':
         instance.ReadInstanceFromExelFile(TestIdentifier.InstanceName)
         #instance.DrawSupplyChain()
     except KeyError:
+        print(KeyError.message)
         print("This instance does not exist.")
 
     if Action == Constants.Solve:

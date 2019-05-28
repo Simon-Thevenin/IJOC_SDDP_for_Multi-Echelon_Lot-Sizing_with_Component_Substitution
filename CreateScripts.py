@@ -115,9 +115,12 @@ def CreateSDDPJob(instance, nrback, nrforward, setting, model = "YFix"):
     qsub_filename = "./Jobs/job_sddp_%s_%s_%s_%s_%s" % (instance, nrback, nrforward, setting, model)
     qsub_file = open(qsub_filename, 'w')
     CreatHeader(qsub_file )
+    scengen = "RQMC"
+    if setting == "MC":
+        scengen = "MC"
     qsub_file.write("""
-srun python scm.py  Solve %s %s %s RQMC -n 5000 -p Re-solve -m SDDP --mipsetting %s --nrforward %s  > /home/LS2N/thevenin-s/log/output-${SLURM_JOB_ID}.txt 
-""" % (instance, model, nrback, setting, nrforward))
+srun python scm.py  Solve %s %s %s %s -n 5000 -p Re-solve -m SDDP --sddpsetting %s --nrforward %s  > /home/LS2N/thevenin-s/log/output-${SLURM_JOB_ID}.txt 
+""" % (instance, model, nrback, scengen, setting, nrforward))
     return qsub_filename
 
 def CreateMLLocalSearchJob(instance, nrback, nrforward, setting, model = "YFix"):
@@ -202,6 +205,22 @@ if __name__ == "__main__":
              #   jobname = CreatePHJob(instance, scenariotree, model = "HeuristicYFix")
              #   fileheur.write("sbatch %s \n" % (jobname))
 
+    if sys.argv[1] == "SDDPScenario":
+        filesddpname = "runallsddp.sh"
+        filesddp = open(filesddpname, 'w')
+        filesddp.write("""
+        #!/bin/bash -l
+        #
+        """)
+
+        nrforward = 1
+        sddpnrbackset = ["all5", "all20", "all50", "all100"]
+        for instance in InstanceSet:
+            for nrback in sddpnrbackset:
+                for setting in ["Default"]:
+                    jobname = CreateSDDPJob(instance, nrback, nrforward, setting, model="HeuristicYFix")
+                    filesddp.write("sbatch %s \n" % (jobname))
+
 
 
     if sys.argv[1] == "SDDP":
@@ -212,18 +231,15 @@ if __name__ == "__main__":
         #
         """)
 
-        InstanceSet = ["01_Lumpy_b2_fe25_en_rk50_ll0_l20_HFalse10_c2",
-                       "02_Lumpy_b2_fe25_en_rk50_ll0_l20_HFalse10_c2",
-                       "03_Lumpy_b2_fe25_en_rk50_ll0_l20_HFalse10_c2",
-                       "04_Lumpy_b2_fe25_en_rk50_ll0_l20_HFalse10_c2",
-                       "05_Lumpy_b2_fe25_en_rk50_ll0_l20_HFalse10_c2"]
-
+        nrforward = 1
+        nrback = "all20"
         for instance in InstanceSet:
-            for nrback in sddpnrbackset:
-                for setting in ["Default"]:
-                    nrforward = 1
+                for setting in ["Default", "NoEVPI", "NoStrongCut", "SingleCut", "MC" ]:
                     jobname = CreateSDDPJob(instance, nrback, nrforward, setting, model="HeuristicYFix")
                     filesddp.write("sbatch %s \n" % (jobname))
+
+                jobname = CreateSDDPJob(instance, nrback, nrforward, setting, model="YFix")
+                filesddp.write("sbatch %s \n" % (jobname))
 
 
 

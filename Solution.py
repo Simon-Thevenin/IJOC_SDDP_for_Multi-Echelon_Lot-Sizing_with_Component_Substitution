@@ -664,7 +664,7 @@ class Solution(object):
             variablecost, \
             consumptioncost= self.GetCostInInterval( stochasticperiod )
         nrsetups = self.GetNrSetup()
-#        averagecoverage = self.GetAverageCoverage()
+#       averagecoverage = self.GetAverageCoverage()
 
 
         kpistat = [ self.CplexCost,

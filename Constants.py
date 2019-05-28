@@ -59,7 +59,7 @@ class Constants( object ):
     #Code parameter
     Infinity = 9999999999999
     AlgorithmTimeLimit = 7200
-    MIPBasedOnSymetricTree = True
+    MIPBasedOnSymetricTree = False
     RQMCAggregate = False
     #SDDPparameters
     AlgorithmOptimalityTolerence = 0.01#0.0005
@@ -68,6 +68,7 @@ class Constants( object ):
     PrintSDDPTrace = True
     GenerateStrongCut = True
     SDDPRunSigleTree = False
+    SDDPUseMultiCut = True
 
     SDDPModifyBackwardScenarioAtEachIteration = False
 

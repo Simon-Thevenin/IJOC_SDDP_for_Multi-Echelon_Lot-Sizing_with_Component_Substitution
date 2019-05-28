@@ -95,6 +95,15 @@ class SDDP(object):
     def __init__(self, instance, testidentifier, treestructure):
         self.Instance = instance
         self.TestIdentifier = testidentifier
+        if self.TestIdentifier.SDDPSetting == "SingleCut":
+            Constants.SDDPUseMultiCut = False
+
+        if self.TestIdentifier.SDDPSetting == "NoStrongCut":
+            Constants.GenerateStrongCut = False
+
+        if self.TestIdentifier.SDDPSetting == "NoEVPI":
+            Constants.SDDPUseEVPI = False
+
         self.MaxNrStage = 30#self.Instance.NrTimeBucketWithoutUncertainty
         nrstage = min(self.Instance.NrTimeBucket - self.Instance.NrTimeBucketWithoutUncertainty, self.MaxNrStage-1) #
         self.StagesSet = range(nrstage + 1)
@@ -675,6 +684,7 @@ class SDDP(object):
             self.TraceFile.write("Generate  cuts with two-stage solution: %r \n" % Constants.SolveRelaxationFirst)
             self.TraceFile.write("Use valid inequalities: %r \n"%Constants.SDDPUseValidInequalities)
             self.TraceFile.write("Run SDDP in a single tree: %r \n"%Constants.SDDPRunSigleTree)
+            self.TraceFile.write("SDDP setting: %r \n"%self.TestIdentifier.SDDPSetting )
             self.TraceFile.close()
         self.StartOfAlsorithm = time.time()
        # print("Attention SDDP solve average")
