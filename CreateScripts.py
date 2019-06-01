@@ -214,7 +214,7 @@ if __name__ == "__main__":
         """)
 
         nrforward = 1
-        sddpnrbackset = ["all5", "all20", "all50", "all100"]
+        sddpnrbackset = ["all5", "all10", "all20", "all50", "all100"]
         for instance in InstanceSet:
             for nrback in sddpnrbackset:
                 for setting in ["SingleCut"]:
