@@ -19,11 +19,11 @@ class Hybrid_PH_SDDP(object):
         self.TreeStructure = treestructure
 
 
-        if self.HybridPHSetting == "Multiplier01":
+        if self.TestIdentifier.HybridPHSetting == "Multiplier01":
             Constants.PHMultiplier = 0.1
-        if self.HybridPHSetting == "Multiplier00001":
+        if self.TestIdentifier.HybridPHSetting == "Multiplier00001":
             Constants.PHMultiplier = 0.0001
-        if self.HybridPHSetting == "Multiplier000001":
+        if self.TestIdentifier.HybridPHSetting == "Multiplier000001":
             Constants.PHMultiplier = 0.000001
 
  #       self.TraceFileName = "./Temp/SDDPPHtrace_%s.txt" % (self.TestIdentifier.GetAsString())

@@ -27,29 +27,29 @@ class MLLocalSearch(object):
 
 
 
-        if self.MLLocalSearchSetting == "NrIterationBeforeTabu10":
+        if self.TestIdentifier.MLLocalSearchSetting == "NrIterationBeforeTabu10":
             Constants.MLLSNrIterationBeforeTabu = 10
-        if self.MLLocalSearchSetting == "NrIterationBeforeTabu50":
+        if self.TestIdentifier.MLLocalSearchSetting == "NrIterationBeforeTabu50":
             Constants.MLLSNrIterationBeforeTabu = 50
-        if self.MLLocalSearchSetting == "NrIterationBeforeTabu100":
+        if self.TestIdentifier.MLLocalSearchSetting == "NrIterationBeforeTabu100":
             Constants.MLLSNrIterationBeforeTabu = 100
-        if self.MLLocalSearchSetting == "NrIterationBeforeTabu1000":
+        if self.TestIdentifier.MLLocalSearchSetting == "NrIterationBeforeTabu1000":
             Constants.MLLSNrIterationBeforeTabu = 1000
-        if self.MLLocalSearchSetting == "TabuList0":
+        if self.TestIdentifier.MLLocalSearchSetting == "TabuList0":
             Constants.MLLSTabuList = 0
-        if self.MLLocalSearchSetting == "TabuList2":
+        if self.TestIdentifier.MLLocalSearchSetting == "TabuList2":
             Constants.MLLSTabuList = 2
-        if self.MLLocalSearchSetting == "TabuList5":
+        if self.TestIdentifier.MLLocalSearchSetting == "TabuList5":
             Constants.MLLSTabuList = 5
-        if self.MLLocalSearchSetting == "TabuList10":
+        if self.TestIdentifier.MLLocalSearchSetting == "TabuList10":
             Constants.MLLSTabuList = 10
-        if self.MLLocalSearchSetting == "TabuList50":
+        if self.TestIdentifier.MLLocalSearchSetting == "TabuList50":
             Constants.MLLSTabuList = 50
 
-        if self.MLLocalSearchSetting == "IterationTabu10":
+        if self.TestIdentifier.MLLocalSearchSetting == "IterationTabu10":
             Constants.MLLSNrIterationTabu = 10
 
-        if self.MLLocalSearchSetting == "PercentFilter":
+        if self.TestIdentifier.MLLocalSearchSetting == "PercentFilter":
             Constants.MLLSPercentFilter = 5
 
 
