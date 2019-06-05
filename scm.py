@@ -52,6 +52,9 @@ def parseArguments():
     parser.add_argument("-a", "--allscenario", help="generate all possible scenario.", type=int, default=0)
     parser.add_argument("-w", "--nrforward", help="number of scenario in the forward pass of sddp.", type=int, default=0)
     parser.add_argument("-d", "--sddpsetting", help="test a specific sddp parameter", default="")
+    parser.add_argument("-y", "--hybridphsetting", help="test a specific hybridph parameter", default="")
+    parser.add_argument("-z", "--mllocalsearchsetting", help="test a specific mllocalsearch parameter", default="")
+
 
     # Print version
     parser.add_argument("--version", action="version", version='%(prog)s - Version 1.0')
@@ -78,7 +81,11 @@ def parseArguments():
                                        args.evpi,
                                        args.nrforward,
                                        args.mipsetting,
-                                       args.sddpsetting)
+                                       args.sddpsetting,
+                                       args.hybridphsetting,
+                                       args.mllocalsearchsetting)
+
+
     EvaluatorIdentifier = EvaluatorIdentificator(policygeneration,  args.nrevaluation, args.timehorizon, args.allscenario)
 
 def Solve(instance):

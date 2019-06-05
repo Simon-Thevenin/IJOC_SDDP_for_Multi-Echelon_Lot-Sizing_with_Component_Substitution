@@ -18,6 +18,14 @@ class Hybrid_PH_SDDP(object):
         self.TestIdentifier = testidentifier
         self.TreeStructure = treestructure
 
+
+        if self.HybridPHSetting == "Multiplier01":
+            Constants.PHMultiplier = 0.1
+        if self.HybridPHSetting == "Multiplier00001":
+            Constants.PHMultiplier = 0.0001
+        if self.HybridPHSetting == "Multiplier000001":
+            Constants.PHMultiplier = 0.000001
+
  #       self.TraceFileName = "./Temp/SDDPPHtrace_%s.txt" % (self.TestIdentifier.GetAsString())
 #
         self.Solver = solver
@@ -94,7 +102,7 @@ class Hybrid_PH_SDDP(object):
 
             self.ProgressiveHedging.CurrentIteration += 1
             if self.ProgressiveHedging.CurrentIteration == 1:
-                self.ProgressiveHedging.LagrangianMultiplier = 0.0001
+                self.ProgressiveHedging.LagrangianMultiplier = Constants.PHMultiplier #0.0001
             # if self.ProgressiveHedging.CurrentIteration >= 2:
             #     self.ProgressiveHedging.UpdateMultipler()
             self.ProgressiveHedging.UpdateLagragianMultipliers()

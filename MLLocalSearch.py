@@ -24,6 +24,35 @@ class MLLocalSearch(object):
     def __init__(self, instance, testidentifier, treestructure, solver):
         self.Instance = instance
         self.TestIdentifier = testidentifier
+
+
+
+        if self.MLLocalSearchSetting == "NrIterationBeforeTabu10":
+            Constants.MLLSNrIterationBeforeTabu = 10
+        if self.MLLocalSearchSetting == "NrIterationBeforeTabu50":
+            Constants.MLLSNrIterationBeforeTabu = 50
+        if self.MLLocalSearchSetting == "NrIterationBeforeTabu100":
+            Constants.MLLSNrIterationBeforeTabu = 100
+        if self.MLLocalSearchSetting == "NrIterationBeforeTabu1000":
+            Constants.MLLSNrIterationBeforeTabu = 1000
+        if self.MLLocalSearchSetting == "TabuList0":
+            Constants.MLLSTabuList = 0
+        if self.MLLocalSearchSetting == "TabuList2":
+            Constants.MLLSTabuList = 2
+        if self.MLLocalSearchSetting == "TabuList5":
+            Constants.MLLSTabuList = 5
+        if self.MLLocalSearchSetting == "TabuList10":
+            Constants.MLLSTabuList = 10
+        if self.MLLocalSearchSetting == "TabuList50":
+            Constants.MLLSTabuList = 50
+
+        if self.MLLocalSearchSetting == "IterationTabu10":
+            Constants.MLLSNrIterationTabu = 10
+
+        if self.MLLocalSearchSetting == "PercentFilter":
+            Constants.MLLSPercentFilter = 5
+
+
         self.TreeStructure = treestructure
 
         self.TraceFileName = "./Temp/MLLocalSearch%s.txt" % (self.TestIdentifier.GetAsString())
@@ -131,11 +160,11 @@ class MLLocalSearch(object):
                 self.WriteInTraceFile("use heuristic setups")
                 self.GivenSetup2D = self.GetHeuristicSetup()
             else:
-                if( self.Iteration<= 2):
+                if( self.Iteration <= Constants.MLLSNrIterationBeforeTabu):
                     self.GivenSetup2D = self.GetSetupWithMIP()
 
                 else:
-                    if self.Iteration == 3:
+                    if self.Iteration == Constants.MLLSNrIterationBeforeTabu+1:
                         curentsolution = copy.deepcopy(self.BestSolution)
                     self.GivenSetup2D = self.Descent(curentsolution)
 
@@ -247,13 +276,13 @@ class MLLocalSearch(object):
 
         iterationtabu = [[0 for p in self.Instance.ProductSet] for t in self.Instance.TimeBucketSet]
         curentiterationLS = 0
-        while ( not self.UseTabu and self.DescentBestMove[0] <> "") or (self.UseTabu and (self.TabuBestSol is None or curentiterationLS < 10)):
+        while ( not self.UseTabu and self.DescentBestMove[0] <> "") or (self.UseTabu and (self.TabuBestSol is None or curentiterationLS < Constants.MLLSNrIterationTabu)):
                 self.TabuCurrentPredictedUB = Constants.Infinity
                 self.TabuCurrentSolLB = Constants.Infinity
                 self.DescentBestMove = ("", -1, -1)
                 for p in self.Instance.ProductSet:
                      for t in self.Instance.TimeBucketSet:
-                        if iterationtabu[t][p] <= curentiterationLS and random.uniform(0, 1) < 0.1:
+                        if iterationtabu[t][p] <= curentiterationLS and random.uniform(0, 1) < (float(Constants.MLLSPercentFilter) / 100.0):
 
                             if currentsolution.Production[0][t][p] == 1:
                                 #Move earlier
@@ -274,7 +303,7 @@ class MLLocalSearch(object):
                 t = self.DescentBestMove[1]
                 p = self.DescentBestMove[2]
 
-                tabulistsize = 5
+                tabulistsize = Constants.MLLSTabuList
               #  print("Move: %r %r %r"%(self.DescentBestMove[0], t, p))
                 if self.DescentBestMove[0] == "E":
                     currentsolution.Production[0][t][p] = 0

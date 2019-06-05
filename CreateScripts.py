@@ -123,22 +123,22 @@ srun python scm.py  Solve %s %s %s %s -n 5000 -p Re-solve -m SDDP --sddpsetting 
 """ % (instance, model, nrback, scengen, setting, nrforward))
     return qsub_filename
 
-def CreateMLLocalSearchJob(instance, nrback, nrforward, setting, model = "YFix"):
-    qsub_filename = "./Jobs/job_mllocalsearch_%s_%s_%s_%s_%s" % (instance, nrback, nrforward, setting, model)
+def CreateMLLocalSearchJob(instance, nrback, nrforward, setting, model = "YFix", mlsetting = "Defuault"):
+    qsub_filename = "./Jobs/job_mllocalsearch_%s_%s_%s_%s_%s_%s" % (instance, nrback, nrforward, setting, model, mlsetting)
     qsub_file = open(qsub_filename, 'w')
     CreatHeader(qsub_file )
     qsub_file.write("""
-srun python scm.py  Solve %s %s %s RQMC -n 5000 -p Re-solve -m MLLocalSearch --mipsetting %s --nrforward %s >/home/LS2N/thevenin-s/log/output-${SLURM_JOB_ID}.txt
-""" % (instance, model, nrback, setting, nrforward))
+srun python scm.py  Solve %s %s %s RQMC -n 5000 -p Re-solve -m MLLocalSearch --mipsetting %s --mllocalsearchsetting %s --nrforward %s >/home/LS2N/thevenin-s/log/output-${SLURM_JOB_ID}.txt
+""" % (instance, model, nrback, setting, mlsetting, nrforward))
     return qsub_filename
 
-def CreateHybridSearchJob(instance, nrback, nrforward, setting, model = "YFix"):
-    qsub_filename = "./Jobs/job_hybrid_%s_%s_%s_%s_%s" % (instance, nrback, nrforward, setting, model)
+def CreateHybridSearchJob(instance, nrback, nrforward, setting, model = "YFix", phsetting = "Default"):
+    qsub_filename = "./Jobs/job_hybrid_%s_%s_%s_%s_%s_%s" % (instance, nrback, nrforward, setting, model, phsetting)
     qsub_file = open(qsub_filename, 'w')
     CreatHeader(qsub_file )
     qsub_file.write("""
-srun python scm.py  Solve %s %s %s RQMC -n 5000 -p Re-solve -m Hybrid --mipsetting %s --nrforward %s >/home/LS2N/thevenin-s/log/output-${SLURM_JOB_ID}.txt
-""" % (instance, model, nrback, setting, nrforward))
+srun python scm.py  Solve %s %s %s RQMC -n 5000 -p Re-solve -m Hybrid --mipsetting %s  --hybridphsetting %s --nrforward %s   >/home/LS2N/thevenin-s/log/output-${SLURM_JOB_ID}.txt
+""" % (instance, model, nrback, setting, phsetting, nrforward))
     return qsub_filename
 
 def CreateMIPJob(instance, scenariotree, model = "YFix"):
@@ -189,10 +189,15 @@ if __name__ == "__main__":
                     #fileheur.write("sbatch %s \n" % (jobname))
                     #jobname = CreateSDDPJob(instance, nrback, nrforward, setting, model="YFix")
                     #fileheur.write("sbatch %s \n" % (jobname))
-                    jobname = CreateMLLocalSearchJob(instance, nrback, nrforward, setting, model="YFix")
-                    fileheur.write("sbatch %s \n" % (jobname))
-                    #jobname = CreateHybridSearchJob(instance, nrback, nrforward, setting, model="YFix")
-                    #fileheur.write("sbatch %s \n" % (jobname))
+
+
+
+                    for mlsetting in ["NrIterationBeforeTabu10", "NrIterationBeforeTabu50", "NrIterationBeforeTabu100", "NrIterationBeforeTabu1000"]:
+                        jobname = CreateMLLocalSearchJob(instance, nrback, nrforward, setting, model="YFix", mlsetting =  mlsetting)
+                        fileheur.write("sbatch %s \n" % (jobname))
+                    for phsetting in ["Multiplier01", "Multiplier00001", "Multiplier000001"]:
+                        jobname = CreateHybridSearchJob(instance, nrback, nrforward, setting, model="YFix", phsetting = phsetting)
+                        fileheur.write("sbatch %s \n" % (jobname))
 
 
 
@@ -202,8 +207,9 @@ if __name__ == "__main__":
             # for scenariotree in scenariotreeset:
             #          jobname = CreateMIPJob(instance, scenariotree, model="HeuristicYFix")
             #          fileheur.write("sbatch %s \n" % (jobname))
-             #   jobname = CreatePHJob(instance, scenariotree, model = "HeuristicYFix")
-             #   fileheur.write("sbatch %s \n" % (jobname))
+
+                #    jobname = CreatePHJob(instance, scenariotree, model = "HeuristicYFix")
+            #    fileheur.write("sbatch %s \n" % (jobname))
 
     if sys.argv[1] == "SDDPScenario":
         filesddpname = "runallsddp.sh"

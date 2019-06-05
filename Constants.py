@@ -103,6 +103,13 @@ class Constants( object ):
 
     PHIterationLimit = 10000
     PHConvergenceTolerence = 0.0001
+    PHMultiplier= 0.0001
+
+    MLLSNrIterationBeforeTabu = 50
+    MLLSTabuList = 5
+    MLLSNrIterationTabu = 10
+    MLLSPercentFilter  =10
+    MLType = "NN"
 
     @staticmethod
     def IsDeterministic(s):
