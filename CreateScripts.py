@@ -182,7 +182,6 @@ if __name__ == "__main__":
 
 
         for instance in InstanceSet:
-            if instance.NrTimeBucket>4:
                 for nrback in sddpnrbackset:
                     for setting in ["Default"]:
                         nrforward = 1
