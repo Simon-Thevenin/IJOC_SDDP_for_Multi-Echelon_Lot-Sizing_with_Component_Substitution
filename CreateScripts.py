@@ -74,7 +74,7 @@ def CreatHeaderNantes(file):
 #SBATCH -J MON_JOB_MPI
 #
 # Partition visee
-#SBATCH --partition=MPI-short
+#SBATCH --partition=SMP-short
 #
 # Nombre de noeuds
 #SBATCH --nodes=1
@@ -82,7 +82,7 @@ def CreatHeaderNantes(file):
 #SBATCH --ntasks-per-node=1
 #
 # Temps de presence du job
-#SBATCH --time=06:00:00
+#SBATCH --time=20:00:00
 #
 # Adresse mel de l'utilisateur
 #
@@ -182,22 +182,23 @@ if __name__ == "__main__":
 
 
         for instance in InstanceSet:
-            for nrback in sddpnrbackset:
-                for setting in ["Default"]:
-                    nrforward = 1
-                    #jobname = CreateSDDPJob(instance, nrback, nrforward, setting, model="HeuristicYFix")
-                    #fileheur.write("sbatch %s \n" % (jobname))
-                    #jobname = CreateSDDPJob(instance, nrback, nrforward, setting, model="YFix")
-                    #fileheur.write("sbatch %s \n" % (jobname))
+            if instance.NrTimeBucket>4:
+                for nrback in sddpnrbackset:
+                    for setting in ["Default"]:
+                        nrforward = 1
+                        #jobname = CreateSDDPJob(instance, nrback, nrforward, setting, model="HeuristicYFix")
+                        #fileheur.write("sbatch %s \n" % (jobname))
+                        #jobname = CreateSDDPJob(instance, nrback, nrforward, setting, model="YFix")
+                        #fileheur.write("sbatch %s \n" % (jobname))
 
 
 
-                    for mlsetting in ["NrIterationBeforeTabu10", "NrIterationBeforeTabu50", "NrIterationBeforeTabu100", "NrIterationBeforeTabu1000"]:
-                        jobname = CreateMLLocalSearchJob(instance, nrback, nrforward, setting, model="YFix", mlsetting =  mlsetting)
-                        fileheur.write("sbatch %s \n" % (jobname))
-                    for phsetting in ["Multiplier01", "Multiplier00001", "Multiplier000001"]:
-                        jobname = CreateHybridSearchJob(instance, nrback, nrforward, setting, model="YFix", phsetting = phsetting)
-                        fileheur.write("sbatch %s \n" % (jobname))
+                        for mlsetting in ["NrIterationBeforeTabu10", "NrIterationBeforeTabu50", "NrIterationBeforeTabu100", "NrIterationBeforeTabu1000"]:
+                            jobname = CreateMLLocalSearchJob(instance, nrback, nrforward, setting, model="YFix", mlsetting =  mlsetting)
+                            fileheur.write("sbatch %s \n" % (jobname))
+                        for phsetting in ["Multiplier01", "Multiplier00001", "Multiplier000001"]:
+                            jobname = CreateHybridSearchJob(instance, nrback, nrforward, setting, model="YFix", phsetting = phsetting)
+                            fileheur.write("sbatch %s \n" % (jobname))
 
 
 
