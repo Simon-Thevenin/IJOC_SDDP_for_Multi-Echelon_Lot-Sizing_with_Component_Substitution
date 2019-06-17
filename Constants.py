@@ -103,7 +103,7 @@ class Constants( object ):
 
     PHIterationLimit = 10000
     PHConvergenceTolerence = 0.0001
-    PHMultiplier= 0.0001
+    PHMultiplier= 0.1
 
     MLLSNrIterationBeforeTabu = 50
     MLLSTabuList = 5

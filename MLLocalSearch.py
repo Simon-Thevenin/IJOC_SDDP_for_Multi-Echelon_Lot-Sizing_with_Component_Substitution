@@ -49,8 +49,24 @@ class MLLocalSearch(object):
         if self.TestIdentifier.MLLocalSearchSetting == "IterationTabu10":
             Constants.MLLSNrIterationTabu = 10
 
-        if self.TestIdentifier.MLLocalSearchSetting == "PercentFilter":
+        if self.TestIdentifier.MLLocalSearchSetting == "IterationTabu100":
+            Constants.MLLSNrIterationTabu = 100
+
+        if self.TestIdentifier.MLLocalSearchSetting == "IterationTabu1000":
+            Constants.MLLSNrIterationTabu = 1000
+
+
+        if self.TestIdentifier.MLLocalSearchSetting == "PercentFilter1":
+            Constants.MLLSPercentFilter = 1
+
+        if self.TestIdentifier.MLLocalSearchSetting == "PercentFilter5":
             Constants.MLLSPercentFilter = 5
+
+        if self.TestIdentifier.MLLocalSearchSetting == "PercentFilter10":
+            Constants.MLLSPercentFilter = 10
+
+        if self.TestIdentifier.MLLocalSearchSetting == "PercentFilter25":
+            Constants.MLLSPercentFilter = 25
 
 
         self.TreeStructure = treestructure
