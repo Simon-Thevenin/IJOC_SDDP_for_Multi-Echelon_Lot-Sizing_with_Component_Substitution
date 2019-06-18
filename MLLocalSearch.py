@@ -114,20 +114,20 @@ class MLLocalSearch(object):
             self.BestSolution = solution
 
     def trainML(self):
-        self.Regr = linear_model.LinearRegression()
-        self.Regr.fit(self.TestedSetup, self.CostToGoOfTestedSetup)
-        self.poly = PolynomialFeatures(degree=2)
-        X_poly = self.poly.fit_transform(self.TestedSetup)
+        #self.Regr = linear_model.LinearRegression()
+        #self.Regr.fit(self.TestedSetup, self.CostToGoOfTestedSetup)
+        #self.poly = PolynomialFeatures(degree=2)
+        #X_poly = self.poly.fit_transform(self.TestedSetup)
 
         # poly.fit(X_poly, self.CostToGoOfTestedSetup)
-        self.lin2 = LinearRegression()
-        self.lin2.fit(X_poly, self.CostToGoOfTestedSetup)
+        #self.lin2 = LinearRegression()
+        #self.lin2.fit(X_poly, self.CostToGoOfTestedSetup)
 
         self.clf = MLPRegressor(solver='lbfgs', alpha=1e-5, hidden_layer_sizes=(15))
         self.clf.fit(self.TestedSetup, self.CostToGoOfTestedSetup)
 
-        self.reg = linear_model.Ridge(alpha=.5)
-        self.reg.fit(self.TestedSetup, self.CostToGoOfTestedSetup)
+        #self.reg = linear_model.Ridge(alpha=.5)
+        #self.reg.fit(self.TestedSetup, self.CostToGoOfTestedSetup)
 
     def GenerateOutSample(self):
         self.outofsampletest = []

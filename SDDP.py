@@ -630,9 +630,10 @@ class SDDP(object):
         return solution
 
     def WriteInTraceFile(self, string):
-        self.TraceFile = open(self.TraceFileName, "a")
-        self.TraceFile.write(string)
-        self.TraceFile.close()
+        if Constants.PrintSDDPTrace:
+            self.TraceFile = open(self.TraceFileName, "a")
+            self.TraceFile.write(string)
+            self.TraceFile.close()
 
     def SolveTwoStageHeuristic(self):
 

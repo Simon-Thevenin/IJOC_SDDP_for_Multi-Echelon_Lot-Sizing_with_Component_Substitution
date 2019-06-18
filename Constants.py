@@ -65,7 +65,7 @@ class Constants( object ):
     AlgorithmOptimalityTolerence = 0.01#0.0005
     SDDPIterationLimit = 500
     SDDPPrintDebugLPFiles = False
-    PrintSDDPTrace = True
+    PrintSDDPTrace = False
     GenerateStrongCut = True
     SDDPRunSigleTree = False
     SDDPUseMultiCut = True
@@ -107,8 +107,8 @@ class Constants( object ):
 
     MLLSNrIterationBeforeTabu = 50
     MLLSTabuList = 5
-    MLLSNrIterationTabu = 10
-    MLLSPercentFilter  =10
+    MLLSNrIterationTabu = 500
+    MLLSPercentFilter  = 50
     MLType = "NN"
 
     @staticmethod
