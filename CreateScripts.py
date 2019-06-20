@@ -80,6 +80,7 @@ def CreatHeaderNantes(file):
 #SBATCH --nodes=1
 # Nombre de processus MPI par noeud
 #SBATCH --ntasks-per-node=1
+#SBATCH --mem 20000
 #
 # Temps de presence du job
 #SBATCH --time=20:00:00
@@ -185,16 +186,21 @@ if __name__ == "__main__":
                 for nrback in sddpnrbackset:
                     for setting in ["Default"]:
                         nrforward = 1
-                        jobname = CreateSDDPJob(instance, nrback, nrforward, setting, model="HeuristicYFix")
+
+                        #jobname = CreateSDDPJob(instance, nrback, nrforward, setting, model="HeuristicYFix")
+                        #fileheur.write("sbatch %s \n" % (jobname))
+                        #jobname = CreateSDDPJob(instance, nrback, nrforward, setting, model="YFix")
+                        #fileheur.write("sbatch %s \n" % (jobname))
+                        #jobname = CreateMLLocalSearchJob(instance, nrback, nrforward, setting, model="YFix")
+                        #fileheur.write("sbatch %s \n" % (jobname))
+                        jobname = CreateMLLocalSearchJob(instance, nrback, nrforward, setting, model="YFix",mlsetting="NrIterationBeforeTabu1000")
                         fileheur.write("sbatch %s \n" % (jobname))
-                        jobname = CreateSDDPJob(instance, nrback, nrforward, setting, model="YFix")
-                        fileheur.write("sbatch %s \n" % (jobname))
-                        jobname = CreateMLLocalSearchJob(instance, nrback, nrforward, setting, model="YFix")
-                        fileheur.write("sbatch %s \n" % (jobname))
-                        jobname = CreateMIPJob(instance, 100, model="YQFix")
-                        fileheur.write("sbatch %s \n" % (jobname))
-                        jobname = CreateHybridSearchJob(instance, nrback, nrforward, setting, model="YFix")
-                        fileheur.write("sbatch %s \n" % (jobname))
+                        #jobname = CreateMIPJob(instance, 100, model="YQFix")
+                        #fileheur.write("sbatch %s \n" % (jobname))
+                        #jobname = CreateHybridSearchJob(instance, nrback, nrforward, setting, model="YFix")
+                        #fileheur.write("sbatch %s \n" % (jobname))
+
+
                         #    fileheur.write("sbatch %s \n" % (jobname))
                         #for mlsetting in ["NrIterationBeforeTabu10", "NrIterationBeforeTabu50", "NrIterationBeforeTabu100", "NrIterationBeforeTabu1000"]:
                         #    jobname = CreateMLLocalSearchJob(instance, nrback, nrforward, setting, model="YFix", mlsetting =  mlsetting)
