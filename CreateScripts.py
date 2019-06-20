@@ -162,7 +162,7 @@ srun python scm.py  Solve %s %s %s RQMC -n 5000 -p Re-solve -m PH  >/home/LS2N/t
     return qsub_filename
 
 if __name__ == "__main__":
-    csvfile = open("./Instances/InstancesToSolveM.csv", 'rb')
+    csvfile = open("./Instances/InstancesToSolveS.csv", 'rb')
     data_reader = csv.reader(csvfile, delimiter=",", skipinitialspace=True)
     instancenameslist = []
     for row in data_reader:
@@ -187,12 +187,12 @@ if __name__ == "__main__":
                     for setting in ["Default"]:
                         nrforward = 1
 
-                        #jobname = CreateSDDPJob(instance, nrback, nrforward, setting, model="HeuristicYFix")
-                        #fileheur.write("sbatch %s \n" % (jobname))
+                        jobname = CreateSDDPJob(instance, nrback, nrforward, setting, model="HeuristicYFix")
+                        fileheur.write("sbatch %s \n" % (jobname))
                         #jobname = CreateSDDPJob(instance, nrback, nrforward, setting, model="YFix")
                         #fileheur.write("sbatch %s \n" % (jobname))
-                        jobname = CreateMLLocalSearchJob(instance, nrback, nrforward, setting, model="YFix")
-                        fileheur.write("sbatch %s \n" % (jobname))
+                        #jobname = CreateMLLocalSearchJob(instance, nrback, nrforward, setting, model="YFix")
+                        #fileheur.write("sbatch %s \n" % (jobname))
                         #jobname = CreateMLLocalSearchJob(instance, nrback, nrforward, setting, model="YFix",mlsetting="NrIterationBeforeTabu1000")
                         #fileheur.write("sbatch %s \n" % (jobname))
                         #jobname = CreateMIPJob(instance, 100, model="YQFix")
