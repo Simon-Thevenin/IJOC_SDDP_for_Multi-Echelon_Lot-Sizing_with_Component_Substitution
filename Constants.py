@@ -65,7 +65,7 @@ class Constants( object ):
     AlgorithmOptimalityTolerence = 0.01#0.0005
     SDDPIterationLimit = 500
     SDDPPrintDebugLPFiles = False
-    PrintSDDPTrace = False
+    PrintSDDPTrace = True
     GenerateStrongCut = True
     SDDPRunSigleTree = False
     SDDPUseMultiCut = True
