@@ -81,7 +81,7 @@ class MLLocalSearch(object):
         self.BestSolutionCost = Constants.Infinity
         self.BestSolutionSafeUperBound = Constants.Infinity
         self.NrScenarioOnceYIsFix = self.TestIdentifier.NrScenario
-        self.TestIdentifier.NrScenario = "all20"
+        self.TestIdentifier.NrScenario = "all5"
         MLTreestructure = solver.GetTreeStructure()
         self.SDDPSolver = SDDP(self.Instance, self.TestIdentifier, MLTreestructure)
         self.SDDPSolver.HasFixedSetup = True
