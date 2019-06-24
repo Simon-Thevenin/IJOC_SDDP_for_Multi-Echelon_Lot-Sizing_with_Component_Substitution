@@ -74,7 +74,7 @@ def CreatHeaderNantes(file):
 #SBATCH -J MON_JOB_MPI
 #
 # Partition visee
-#SBATCH --partition=MPI-medium
+#SBATCH --partition=SMP-short
 #
 # Nombre de noeuds
 #SBATCH --nodes=1
