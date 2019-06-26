@@ -107,7 +107,7 @@ class Constants( object ):
 
     MLLSNrIterationBeforeTabu = 50
     MLLSTabuList = 5
-    MLLSNrIterationTabu = 500
+    MLLSNrIterationTabu = 50
     MLLSPercentFilter  = 50
     MLType = "NN"
 

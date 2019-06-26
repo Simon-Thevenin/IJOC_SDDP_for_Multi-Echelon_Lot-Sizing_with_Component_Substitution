@@ -248,13 +248,17 @@ class MLLocalSearch(object):
             duration = end - self.Start
 
         self.GivenSetup2D = self.BestSolution.Production[0]
-
+        self.GivenSetup2D = [[round(self.GivenSetup2D[t][p]) for p in self.Instance.ProductSet] for t in
+                             self.Instance.TimeBucketSet]
         self.TestIdentifier.NrScenario = self.NrScenarioOnceYIsFix
+        self.TestIdentifier.Model = Constants.ModelHeuristicYFix
         self.SDDPSolver = SDDP(self.Instance, self.TestIdentifier, self.TreeStructure)
         self.SDDPSolver.HasFixedSetup = True
         self.SDDPSolver.HeuristicSetupValue = self.GivenSetup2D
         self.SDDPSolver.IsIterationWithConvergenceTest = False
 
+        self.GivenSetup1D = [self.GivenSetup2D[t][p] for p in self.Instance.ProductSet for t in
+                             self.Instance.TimeBucketSet]
         #self.SDDPSolver.GenerateSAAScenarios2()
 
         # Mke sure SDDP do not unter in preliminary stage (at the end of the preliminary stage, SDDP would change the setup to bynary)
@@ -268,7 +272,7 @@ class MLLocalSearch(object):
         #self.SDDPSolver.SDDPNrScenarioTest = 1000
         #random.seed = 9876
         #self.SDDPSolver.ComputeUpperBound()
-
+        self.TestIdentifier.Model = Constants.ModelYFix
         return self.BestSolution
 
     def GetCostBasedML(self, setups):
