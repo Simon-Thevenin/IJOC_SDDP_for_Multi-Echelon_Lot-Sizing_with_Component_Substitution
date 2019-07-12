@@ -162,7 +162,7 @@ srun python scm.py  Solve %s %s %s RQMC -n 5000 -p Re-solve -m PH  >/home/LS2N/t
     return qsub_filename
 
 if __name__ == "__main__":
-    csvfile = open("./Instances/InstancesToSolve.csv", 'rb')
+    csvfile = open("./Instances/InstancesToSolveS.csv", 'rb')
     data_reader = csv.reader(csvfile, delimiter=",", skipinitialspace=True)
     instancenameslist = []
     for row in data_reader:
