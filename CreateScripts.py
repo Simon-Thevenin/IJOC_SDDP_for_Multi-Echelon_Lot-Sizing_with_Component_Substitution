@@ -271,7 +271,7 @@ if __name__ == "__main__":
                 #    jobname = CreateSDDPJob(instance, nrback, nrforward, setting, model="HeuristicYFix")
                 # filesddp.write("sbatch %s \n" % (jobname))
 
-                jobname = CreateSDDPJob(instance, nrback, nrforward, setting, model="YFix")
+                jobname = CreateSDDPJob(instance, nrback, nrforward, "Default", model="YFix")
                 filesddp.write("sbatch %s \n" % (jobname))
 
 
