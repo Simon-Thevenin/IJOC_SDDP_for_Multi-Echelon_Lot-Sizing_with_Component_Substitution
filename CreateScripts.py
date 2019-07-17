@@ -80,7 +80,7 @@ def CreatHeaderNantes(file):
 #SBATCH --nodes=1
 # Nombre de processus MPI par noeud
 #SBATCH --ntasks-per-node=1
-#SBATCH --mem 20000
+#SBATCH --mem 40000
 #
 # Temps de presence du job
 #SBATCH --time=20:00:00
@@ -267,9 +267,9 @@ if __name__ == "__main__":
         nrforward = 1
         nrback = "all20"
         for instance in InstanceSet:
-                for setting in ["Default", "NoEVPI", "NoStrongCut", "SingleCut", "MC" ]:
-                    jobname = CreateSDDPJob(instance, nrback, nrforward, setting, model="HeuristicYFix")
-                    filesddp.write("sbatch %s \n" % (jobname))
+                #for setting in ["Default", "NoEVPI", "NoStrongCut", "SingleCut", "MC" ]:
+                #    jobname = CreateSDDPJob(instance, nrback, nrforward, setting, model="HeuristicYFix")
+                # filesddp.write("sbatch %s \n" % (jobname))
 
                 jobname = CreateSDDPJob(instance, nrback, nrforward, setting, model="YFix")
                 filesddp.write("sbatch %s \n" % (jobname))
