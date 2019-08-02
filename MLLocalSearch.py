@@ -34,7 +34,7 @@ class MLLocalSearch(object):
         if self.TestIdentifier.MLLocalSearchSetting == "NrIterationBeforeTabu100":
             Constants.MLLSNrIterationBeforeTabu = 100
         if self.TestIdentifier.MLLocalSearchSetting == "NrIterationBeforeTabu1000":
-            Constants.MLLSNrIterationBeforeTabu = 1000
+            Constants.MLLSNrIterationBeforeTabu = 9999999
         if self.TestIdentifier.MLLocalSearchSetting == "TabuList0":
             Constants.MLLSTabuList = 0
         if self.TestIdentifier.MLLocalSearchSetting == "TabuList2":

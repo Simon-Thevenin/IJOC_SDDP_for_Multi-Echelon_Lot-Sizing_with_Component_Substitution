@@ -285,6 +285,20 @@ if __name__ == "__main__":
         #             filesddp.write("qsub %s \n" % (jobname) )
 
 
+    if sys.argv[1] == "COMP":
+
+        filecompname = "runcompselect.sh"
+        filecomp = open(filecompname, 'w')
+        filecomp.write("""
+        #!/bin/bash -l
+        #
+        """)
+        instance = "ComponentSubs"
+        jobname = CreateMLLocalSearchJob(instance, "all20", 1, "Default", model="YFix",  mlsetting="NrIterationBeforeTabu1000")
+        filecomp.write("sbatch %s \n" % (jobname))
+        jobname = CreateMIPJob(instance, 100, model="YQFix")
+        filecomp.write("sbatch %s \n" % (jobname))
+
     if sys.argv[1] == "MIP":
        # Create the sh file for resolution
         filemipname = "runallmip.sh"
