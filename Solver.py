@@ -402,7 +402,34 @@ class Solver( object ):
             if self.TestIdentifier.NrScenario == "all2":
                 stochasticparttreestructure = [2] * nrtimebucketstochastic
 
+
+            if self.TestIdentifier.NrScenario == "DependOnH":
+                if nrtimebucketstochastic == 1:
+                    stochasticparttreestructure = [100] * nrtimebucketstochastic
+                if nrtimebucketstochastic == 2:
+                    stochasticparttreestructure = [100] * nrtimebucketstochastic
+                if nrtimebucketstochastic == 3:
+                    stochasticparttreestructure = [100] * nrtimebucketstochastic
+                if nrtimebucketstochastic == 4:
+                    stochasticparttreestructure = [50] * nrtimebucketstochastic
+                if nrtimebucketstochastic == 5:
+                    stochasticparttreestructure = [50] * nrtimebucketstochastic
+                if nrtimebucketstochastic == 6:
+                    stochasticparttreestructure = [20] * nrtimebucketstochastic
+                if nrtimebucketstochastic == 7:
+                    stochasticparttreestructure = [20] * nrtimebucketstochastic
+                if nrtimebucketstochastic == 8:
+                    stochasticparttreestructure = [5] * nrtimebucketstochastic
+                if nrtimebucketstochastic == 9:
+                    stochasticparttreestructure = [5] * nrtimebucketstochastic
+                if nrtimebucketstochastic == 10:
+                    stochasticparttreestructure = [5] * nrtimebucketstochastic
+
             if self.TestIdentifier.NrScenario == "6400b":
+                if nrtimebucketstochastic == 1:
+                    stochasticparttreestructure = [6400]
+                if nrtimebucketstochastic == 2:
+                    stochasticparttreestructure = [100, 64]
                 if nrtimebucketstochastic == 3:
                     stochasticparttreestructure = [50, 32, 4]
                 if nrtimebucketstochastic == 4:

@@ -162,7 +162,7 @@ srun python scm.py  Solve %s %s %s RQMC -n 5000 -p Re-solve -m PH  >/home/LS2N/t
     return qsub_filename
 
 if __name__ == "__main__":
-    csvfile = open("./Instances/InstancesToSolveH.csv", 'rb')
+    csvfile = open("./Instances/InstancesToSolve.csv", 'rb')
     data_reader = csv.reader(csvfile, delimiter=",", skipinitialspace=True)
     instancenameslist = []
     for row in data_reader:
@@ -172,7 +172,7 @@ if __name__ == "__main__":
 
     scenariotreeset = ["6400b"] #["all2", "all5"]#, "allDIX", "all20"]
     #sddpnrbackset = ["allDIX", "all20", "50-50-10", "all50" ]#,10,20] #[2, 5], 10, 20]
-    sddpnrbackset = ["all20"]
+    sddpnrbackset = ["DependOnH"]
     if sys.argv[1] == "H":
         fileheurname = "runallheur.sh"
         fileheur = open(fileheurname, 'w')
@@ -193,13 +193,14 @@ if __name__ == "__main__":
                         #fileheur.write("sbatch %s \n" % (jobname))
                         #jobname = CreateMLLocalSearchJob(instance, nrback, nrforward, setting, model="YFix")
                         #fileheur.write("sbatch %s \n" % (jobname))
-                        #jobname = CreateMLLocalSearchJob(instance, nrback, nrforward, setting, model="YFix",mlsetting="NrIterationBeforeTabu1000")
-                        #fileheur.write("sbatch %s \n" % (jobname))
+                        jobname = CreateMLLocalSearchJob(instance, nrback, nrforward, setting, model="YFix",mlsetting="NrIterationBeforeTabu1000")
+                        fileheur.write("sbatch %s \n" % (jobname))
                         #jobname = CreateMIPJob(instance, 100, model="YQFix")
                         #fileheur.write("sbatch %s \n" % (jobname))
-                        jobname = CreateHybridSearchJob(instance, nrback, nrforward, setting, model="YFix")
+                        #jobname = CreateHybridSearchJob(instance, nrback, nrforward, setting, model="YFix")
+                        #fileheur.write("sbatch %s \n" % (jobname))
+                        jobname = CreateMIPJob(instance, "6400b", model="YFix")
                         fileheur.write("sbatch %s \n" % (jobname))
-
 
                         #    fileheur.write("sbatch %s \n" % (jobname))
                         #for mlsetting in ["NrIterationBeforeTabu10", "NrIterationBeforeTabu50", "NrIterationBeforeTabu100", "NrIterationBeforeTabu1000"]:
