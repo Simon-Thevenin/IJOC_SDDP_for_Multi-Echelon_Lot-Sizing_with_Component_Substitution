@@ -634,6 +634,7 @@ class MIPSolver(object):
                     if t == self.DemandKnownUntil -1:
                             #reset right hand side because the demand afterward is saved in a variable to accelerate the update of the MIP
                             righthandside = [-1 * self.Instance.StartingInventories[p]]
+
                     else:
                             righthandside[0] = righthandside[0] + self.Scenarios[w].Demands[t][p]
 
@@ -641,12 +642,13 @@ class MIPSolver(object):
                     if self.UseSafetyStock and t >= self.DemandKnownUntil:
                             righthandside[0] = righthandside[0] + safetystock[t][p]
 
+
                     if self.Instance.HasExternalDemand[p] :
                             backordervar = [self.GetIndexBackorderVariable(p, t, w)]
 
                     if t - self.Instance.LeadTimes[p] >= 0:
                             quantityvar = quantityvar + [self.GetIndexQuantityVariable(p, t - self.Instance.LeadTimes[p], w)]
-                            quantityvarceoff = quantityvarceoff + [1]
+                            quantityvarceoff = quantityvarceoff + [1.0]
 
                     dependentdemandvar = dependentdemandvar + [self.GetIndexConsumptionVariable(q, p, t, w)
                                                                for q in self.Instance.ProductSet
@@ -663,7 +665,7 @@ class MIPSolver(object):
 
                     if self.RollingHorizon and t < self.Instance.MaimumLeadTime:
                         startinginventoryinrollinghorizon = startinginventoryinrollinghorizon + [self.GetIndexInitialInventoryInRollingHorizon(p, t)]
-                        startinginventoryinrollinghorizoncoeff = startinginventoryinrollinghorizoncoeff + [1]
+                        startinginventoryinrollinghorizoncoeff = startinginventoryinrollinghorizoncoeff + [1.0]
 
                     vars = inventoryvar + backordervar + quantityvar + dependentdemandvar + knondemand + startinginventoryinrollinghorizon
                     coeff = [-1.0] * len(inventoryvar) \
