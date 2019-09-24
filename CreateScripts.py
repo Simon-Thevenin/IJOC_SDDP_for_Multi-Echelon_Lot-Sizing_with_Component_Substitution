@@ -143,7 +143,7 @@ srun python scm.py  Solve %s %s %s RQMC -n 5000 -p Re-solve -m Hybrid --mipsetti
     return qsub_filename
 
 def CreateMIPJob(instance, scenariotree, model = "YFix", mipsetting = "Default"):
-    qsub_filename = "./Jobs/job_mip_%s_%s_%s" % (instance, scenariotree, model, mipsetting)
+    qsub_filename = "./Jobs/job_mip_%s_%s_%s_%s" % (instance, scenariotree, model, mipsetting)
     qsub_file = open(qsub_filename, 'w')
     CreatHeader(qsub_file)
     qsub_file.write("""
