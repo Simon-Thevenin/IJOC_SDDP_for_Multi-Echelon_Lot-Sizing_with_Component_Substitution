@@ -688,6 +688,7 @@ class Solution(object):
                     self.BackOrderCost,
                     self.LostsaleCost,
                     self.VariableCost,
+                    self.ConsumptionCost,
                     inventorycoststochasticperiod,
                     setupcoststochasticperiod,
                     backordercoststochasticperiod,

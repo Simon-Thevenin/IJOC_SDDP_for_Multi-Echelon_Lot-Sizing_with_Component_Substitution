@@ -319,6 +319,7 @@ class Instance(object):
                         return p
 
     # def DrawSupplyChain(self):
+    #      plt.clf()
     #      G = nx.DiGraph()
     #      labels = {}
     #      for p in self.ProductSet:
@@ -331,9 +332,9 @@ class Instance(object):
     #              if self.Requirements[q][p]:
     #                  G.add_edge(p, q, color='b')
     #
-    #                  for i in self.ProductSet:
-    #                      if self.Alternates[p][i] and p != i:
-    #                          G.add_edge(i, q, color='g')
+    #          for i in self.ProductSet:
+    #                if self.Alternates[p][i] and p != i:
+    #                          G.add_edge(i, p, color='g')
     #
     #      pos = nx.spring_layout(G)
     #
@@ -557,12 +558,12 @@ class Instance(object):
     #       print "file %r not found" %(filepath)
 
     # This function read the instance from the file in folder ./Instances/
-    def ReadFromFile(self, instancename, distribution,  alternatestructure="Normal", longtimehoizon=False, longtimehorizonperiod = 10, additionaltimehorizon = 0):
+    def ReadFromFile(self, instancename, distribution,   longtimehoizon=False, longtimehorizonperiod = 10, additionaltimehorizon = 0, nralternate=0,costalternate=0):
         if instancename[0] == "0" or instancename == 'l0"':
             reader = InstanceReaderGrave(self)
         else:
             reader = InstanceReaderTemplemeier(self)
-        reader.ReadFromFile(instancename, distribution, longtimehoizon, largetimehorizonperiod=longtimehorizonperiod, alternatetype=alternatestructure, additionaltimehorizon= additionaltimehorizon)
+        reader.ReadFromFile(instancename, distribution, longtimehoizon, largetimehorizonperiod=longtimehorizonperiod, additionaltimehorizon= additionaltimehorizon, nralternate=nralternate, costalternate=costalternate)
 
 
     # Save the scenario tree in a file

@@ -22,7 +22,7 @@ class InstanceReader(object):
     # b and lostsale are the cost structure (backlog cost are b*instentory costs, lost sale costs are lostsale*instentory costs
     # is the echelon inventory cost (n: normal, l: large increase at each echelon)
     # forecasterror and rateknown are parameter used to build the NonStationary distribution
-    def ReadFromFile(self, instancename, distribution="NonStationary", longtimehoizon=False, largetimehorizonperiod = 10, alternatetype = "Normal", additionaltimehorizon = 0):
+    def ReadFromFile(self, instancename, distribution="NonStationary", longtimehoizon=False, largetimehorizonperiod = 10, additionaltimehorizon = 0, nralternate=0, costalternate=0):
             backlogcostmultiplier = 2
             forcasterror = 25
             e = "l"
@@ -31,10 +31,11 @@ class InstanceReader(object):
             lostsalecostmultiplier = 20
             capacityfactor = 2
 
-            self.Instance.InstanceName = "%s_%s_b%s_fe%s_e%s_rk%s_ll%s_l%s_H%s%s_c%s" % (
+            self.Instance.InstanceName = "%s_%s_b%s_fe%s_e%s_rk%s_ll%s_l%s_H%s%s_c%s_A%s_a%s" % (
                                                     instancename, distribution, backlogcostmultiplier, forcasterror,
                                                     e, rateknown, leadtimestructure, lostsalecostmultiplier,
-                                                    additionaltimehorizon, largetimehorizonperiod, capacityfactor)
+                                                    additionaltimehorizon, largetimehorizonperiod, capacityfactor,
+                                                    nralternate, costalternate)
             self.Instance.Distribution = distribution
             self.Filename = instancename
             # Open the file, and read the product, requirement, and resources
@@ -43,8 +44,7 @@ class InstanceReader(object):
             self.ReadInstanceStructure()
             self.ReadNrResource()
             self.CreateRequirement()
-
-            self.GenerateTransportCost(alternatetype)
+            self.GenerateTransportCost(nralternate, costalternate)
             self.Instance.ComputeLevel()
             self.CreateLeadTime(leadtimestructure)
             self.GenerateHoldingCostCost(e)
@@ -58,7 +58,7 @@ class InstanceReader(object):
             self.GenerateCapacity(capacityfactor)
             self.GenerateCostParameters(backlogcostmultiplier, lostsalecostmultiplier)
             self.GenerateVariableCost()
-            self.Instance.SaveCompleteInstanceInExelFile()
+            #self.Instance.SaveCompleteInstanceInExelFile()
             self.Instance.ComputeInstanceData()
 
     # This function reads the number of products, resources, ...

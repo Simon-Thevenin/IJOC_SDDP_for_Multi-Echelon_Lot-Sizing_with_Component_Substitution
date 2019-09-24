@@ -81,7 +81,10 @@ class MLLocalSearch(object):
         self.BestSolutionCost = Constants.Infinity
         self.BestSolutionSafeUperBound = Constants.Infinity
         self.NrScenarioOnceYIsFix = self.TestIdentifier.NrScenario
-        self.TestIdentifier.NrScenario = "all5"
+
+        if not Constants.MIPBasedOnSymetricTree:
+             self.TestIdentifier.NrScenario = "all5"
+
         MLTreestructure = solver.GetTreeStructure()
         self.SDDPSolver = SDDP(self.Instance, self.TestIdentifier, MLTreestructure)
         self.SDDPSolver.HasFixedSetup = True
@@ -107,7 +110,7 @@ class MLLocalSearch(object):
 
     def updateRecord(self, solution):
         if solution.TotalCost < self.BestSolutionCost \
-                and self.SDDPSolver.CurrentExpvalueUpperBound <  self.BestSolutionSafeUperBound\
+                and self.SDDPSolver.CurrentExpvalueUpperBound < self.BestSolutionSafeUperBound\
                 and self.SDDPSolver.CurrentLowerBound < self.BestSolutionSafeUperBound:
             self.BestSolutionCost = solution.TotalCost
             self.BestSolutionSafeUperBound = max( self.SDDPSolver.CurrentExpvalueUpperBound, self.SDDPSolver.CurrentLowerBound)
@@ -506,7 +509,7 @@ class MLLocalSearch(object):
 
     def GetHeuristicSetup(self):
       #  print("Get Heuristic Setups")
-        treestructure = [1, 100] + [1] * (self.Instance.NrTimeBucket - 1) + [0]
+        treestructure = [1, 200] + [1] * (self.Instance.NrTimeBucket - 1) + [0]
         self.TestIdentifier.Model = Constants.ModelYQFix
         chosengeneration = self.TestIdentifier.ScenarioSampling
         self.ScenarioGeneration = "RQMC"

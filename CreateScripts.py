@@ -142,13 +142,13 @@ srun python scm.py  Solve %s %s %s RQMC -n 5000 -p Re-solve -m Hybrid --mipsetti
 """ % (instance, model, nrback, setting, phsetting, nrforward))
     return qsub_filename
 
-def CreateMIPJob(instance, scenariotree, model = "YFix"):
-    qsub_filename = "./Jobs/job_mip_%s_%s_%s" % (instance, scenariotree, model)
+def CreateMIPJob(instance, scenariotree, model = "YFix", mipsetting = "Default"):
+    qsub_filename = "./Jobs/job_mip_%s_%s_%s" % (instance, scenariotree, model, mipsetting)
     qsub_file = open(qsub_filename, 'w')
     CreatHeader(qsub_file)
     qsub_file.write("""
-srun python scm.py  Solve %s %s %s RQMC -n 5000 -p Re-solve -m MIP  >/home/LS2N/thevenin-s/log/output-${SLURM_JOB_ID}.txt 
-""" % (instance, model, scenariotree))
+srun python scm.py  Solve %s %s %s RQMC -n 5000 -p Re-solve -m MIP --mipsetting %s  >/home/LS2N/thevenin-s/log/output-${SLURM_JOB_ID}.txt 
+""" % (instance, model, scenariotree, mipsetting))
     return qsub_filename
 
 
@@ -162,7 +162,7 @@ srun python scm.py  Solve %s %s %s RQMC -n 5000 -p Re-solve -m PH  >/home/LS2N/t
     return qsub_filename
 
 if __name__ == "__main__":
-    csvfile = open("./Instances/InstancesToSolveSub.csv", 'rb')
+    csvfile = open("./Instances/InstancesToSolve.csv", 'rb')
     data_reader = csv.reader(csvfile, delimiter=",", skipinitialspace=True)
     instancenameslist = []
     for row in data_reader:
@@ -173,6 +173,34 @@ if __name__ == "__main__":
     scenariotreeset = ["6400b"] #["all2", "all5"]#, "allDIX", "all20"]
     #sddpnrbackset = ["allDIX", "all20", "50-50-10", "all50" ]#,10,20] #[2, 5], 10, 20]
     sddpnrbackset = ["DependOnH"]
+
+    if sys.argv[1] == "N":
+        # sddpnrbackset = ["allDIX", "all20", "50-50-10", "all50" ]#,10,20] #[2, 5], 10, 20]
+        sddpnrbackset = ["all2", "all5", "all10", "all20"]
+        filenewname = "runallnewtest.sh"
+        filenew = open(filenewname, 'w')
+        filenew.write("""
+    #!/bin/bash -l
+    #
+    """)
+
+        for instance in InstanceSet:
+            for nrback in sddpnrbackset:
+                for setting in ["SymetricMIP", "Default"]:
+                    nrforward = 1
+
+                    jobname = CreateMIPJob(instance, nrback, model="YFix", mipsetting=setting)
+                    filenew.write("sbatch %s \n" % (jobname))
+                    jobname = CreateMLLocalSearchJob(instance, nrback, nrforward, setting, model="YFix", mlsetting="NrIterationBeforeTabu1000")
+                    filenew.write("sbatch %s \n" % (jobname))
+
+
+            jobname = CreateMIPJob(instance, "6400b", model="YFix")
+            filenew.write("sbatch %s \n" % (jobname))
+            jobname = CreateMLLocalSearchJob(instance, "DependOnH", nrforward, "Default", model="YFix", mlsetting="NrIterationBeforeTabu1000")
+            filenew.write("sbatch %s \n" % (jobname))
+
+
     if sys.argv[1] == "H":
         fileheurname = "runallheur.sh"
         fileheur = open(fileheurname, 'w')
