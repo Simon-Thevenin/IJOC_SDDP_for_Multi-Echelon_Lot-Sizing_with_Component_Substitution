@@ -10,6 +10,9 @@ from sklearn.neural_network import MLPRegressor
 import sys
 from sklearn.metrics import mean_absolute_error
 import random
+from SDDPStage import SDDPStage
+import cplex
+from CallBackML import CallBackML
 
 from ProgressiveHedging import ProgressiveHedging
 
@@ -83,8 +86,10 @@ class MLLocalSearch(object):
         self.NrScenarioOnceYIsFix = self.TestIdentifier.NrScenario
 
         if not Constants.MIPBasedOnSymetricTree:
-             self.TestIdentifier.NrScenario = "all5"
-
+            if self.Instance.NrTimeBucket > 5:
+             self.TestIdentifier.NrScenario = "all2"
+            else:
+                self.TestIdentifier.NrScenario = "all5"
         MLTreestructure = solver.GetTreeStructure()
         self.SDDPSolver = SDDP(self.Instance, self.TestIdentifier, MLTreestructure)
         self.SDDPSolver.HasFixedSetup = True
@@ -94,7 +99,7 @@ class MLLocalSearch(object):
 
         # Mke sure SDDP do not unter in preliminary stage (at the end of the preliminary stage, SDDP would change the setup to bynary)
         Constants.SDDPGenerateCutWith2Stage = False
-        Constants.SolveRelaxationFirst = False
+        #Constants.SolveRelaxationFirst = False
         Constants.SDDPRunSigleTree = False
 
         treestructure = [1, 10] + [1] * (self.Instance.NrTimeBucket - 1) + [0]
@@ -150,6 +155,105 @@ class MLLocalSearch(object):
 
         self.updateRecord(solution)
 
+    def SingleTreeSolver(self):
+        # Make a copy to be able to solve the first stage with contiunous variable in the call backs
+        self.CopyFirstStage = SDDPStage(owner=self.SDDPSolver, decisionstage=0, fixedccenarioset=[0], isforward=True,
+                      futurscenarioset=range(self.SDDPSolver.NrSAAScenarioInPeriod[0]))
+        self.CopyFirstStage.SetNrTrialScenario(len(self.SDDPSolver.CurrentSetOfTrialScenarios))
+
+        for cut in self.SDDPSolver.ForwardStage[0].SDDPCuts:
+             cut.ForwardStage = None
+             cut.BackwarStage = None
+
+        self.CopyFirstStage.SDDPCuts = copy.deepcopy(self.SDDPSolver.ForwardStage[0].SDDPCuts)
+
+        for cut in self.SDDPSolver.ForwardStage[0].SDDPCuts:
+            cut.ForwardStage = self.SDDPSolver.ForwardStage[0]
+            cut.BackwarStage = self.SDDPSolver.ForwardStage[0]
+
+        for cut in self.CopyFirstStage.SDDPCuts:
+            cut.ForwardStage = self.CopyFirstStage
+            cut.BackwarStage = self.CopyFirstStage
+
+        self.CopyFirstStage.FuturScenario = self.SDDPSolver.ForwardStage[0].FuturScenario
+        self.CopyFirstStage.NextSDDPStage = self.SDDPSolver.ForwardStage[0].NextSDDPStage
+        self.CopyFirstStage.FuturScenarProba = self.SDDPSolver.ForwardStage[0].FuturScenarProba
+        self.CopyFirstStage.NrFutureCostScenario = self.SDDPSolver.ForwardStage[0].NrFutureCostScenario
+
+        self.CopyFirstStage.TimeDecisionStage = 0
+        self.CopyFirstStage.FixedScenarioSet = [0]
+        self.CopyFirstStage.FixedScenarioPobability = [1]
+        self.CopyFirstStage.ComputeNrVariables()
+        self.CopyFirstStage.ComputeVariablePeriods()
+        self.CopyFirstStage.ComputeVariableIndices()
+        self.CopyFirstStage.ComputeVariablePeriodsInLargeMIP()
+
+#        self.CopyFirstStage.BackwardScenario = self.SDDPSolver.ForwardStage[0].BackwardScenario
+
+        self.CopyFirstStage.DefineMIP()
+
+        for cut in self.CopyFirstStage.SDDPCuts:
+            cut.ForwardStage = self.CopyFirstStage
+
+            cut.AddCut(False)
+
+            coeff = cut.GetCutVariablesCoefficientAtStage()
+
+            righthandside = cut.GetRHS()
+
+            for w in self.SDDPSolver.ForwardStage[0].FixedScenarioSet:
+                vars = cut.GetCutVariablesAtStage(self.SDDPSolver.ForwardStage[0], w)
+                vars = vars[0:-1]
+                coeffs = [1.0] + coeff[0:-1]
+
+                self.CopyFirstStage.Cplex.linear_constraints.add(lin_expr= [cplex.SparsePair(vars, coeffs)],
+                                             senses=["G"],
+                                             rhs=[righthandside])
+
+        self.CopyFirstStage.ChangeSetupToBinary()
+
+        vars = []
+        righthandside = []
+        # Setup equal to the given ones
+        self.GivenSetup2D = self.GetHeuristicSetup()
+        for p in self.Instance.ProductSet:
+            for t in self.Instance.TimeBucketSet:
+                vars = vars + [self.CopyFirstStage.GetIndexProductionVariable(p, t)]
+                righthandside = righthandside + [round(self.GivenSetup2D[t][p], 0)]
+        self.CopyFirstStage.Cplex.MIP_starts.add(cplex.SparsePair(vars, righthandside),
+                                                 self.CopyFirstStage.Cplex.MIP_starts.effort_level.solve_fixed)
+
+
+
+        model_lazy = self.CopyFirstStage.Cplex.register_callback(CallBackML)
+        model_lazy.SDDPOwner = self.SDDPSolver
+        model_lazy.MLLocalSearch = self
+        model_lazy.Model = self.CopyFirstStage
+
+
+        if Constants.Debug:
+            self.CopyFirstStage.Cplex.write("./Temp/MainModel.lp")
+        cplexlogfilename = "./Temp/CPLEXLog_%s_%s.txt" % (self.Instance.InstanceName, self.TestIdentifier.MIPSetting)
+        self.CopyFirstStage.Cplex.set_log_stream(cplexlogfilename)
+        self.CopyFirstStage.Cplex.set_results_stream(cplexlogfilename)
+        self.CopyFirstStage.Cplex.set_warning_stream(cplexlogfilename)
+        self.CopyFirstStage.Cplex.set_error_stream(cplexlogfilename)
+        self.CopyFirstStage.Cplex.parameters.mip.interval.set(1)
+        if Constants.Debug:
+            print("Start To solve the main tree")
+        self.CopyFirstStage.Cplex.parameters.timelimit.set(Constants.AlgorithmTimeLimit)
+        self.CopyFirstStage.Cplex.parameters.mip.limits.treememory.set(700000000.0)
+        self.CopyFirstStage.Cplex.parameters.threads.set(1)
+        self.CopyFirstStage.Cplex.solve()
+        self.WriteInTraceFile(
+            "End Solve in one tree cost: %r " % self.CopyFirstStage.Cplex.solution.get_objective_value())
+
+        self.SingleTreeCplexGap = self.CopyFirstStage.Cplex.solution.MIP.get_mip_relative_gap()
+        # for cut in self.CopyFirstStage.SDDPCuts:
+        #    self.ForwardStage[0].SDDPCuts.append(cut)
+
+
+
     def Run(self):
 
         #self.GetHeuristicSetup()
@@ -173,8 +277,15 @@ class MLLocalSearch(object):
 
 
         curentsolution = copy.deepcopy(self.BestSolution)
+        self.RunSDDP(relaxsetup=True)
+        #self.GivenSetup2D = self.GetHeuristicSetup()
+        #self.RunSDDP()
+        self.RunSDDP(runwithbinary=True)
+        #self.SingleTreeSolver()
 
         while( duration < Constants.AlgorithmTimeLimit):
+
+
             if(self.Iteration == 0):
                 self.WriteInTraceFile("use heuristic setups")
                 self.GivenSetup2D = self.GetHeuristicSetup()
@@ -272,11 +383,14 @@ class MLLocalSearch(object):
         self.Start = 0
         self.SDDPSolver.Run()
         self.BestSolution = self.SDDPSolver.CreateSolutionAtFirstStage()
-        #self.SDDPSolver.SDDPNrScenarioTest = 1000
+        self.SDDPSolver.SDDPNrScenarioTest = 1000
         #random.seed = 9876
-        #self.SDDPSolver.ComputeUpperBound()
+        self.SDDPSolver.ComputeUpperBound()
         self.TestIdentifier.Model = Constants.ModelYFix
         return self.BestSolution
+
+    # This function runs the SDDP algorithm
+
 
     def GetCostBasedML(self, setups):
         return self.clf.predict(setups)
@@ -451,17 +565,28 @@ class MLLocalSearch(object):
 
 
 
-    def RunSDDP(self):
+    def RunSDDP(self, relaxsetup = False, runwithbinary = False):
        ## print("RUN SDDP")
 
         self.SDDPSolver.WriteInTraceFile("__________________New run of SDDP ______________best ub: %r______ \n"%self.BestSolutionSafeUperBound)
 
-        self.SDDPSolver.HeuristicSetupValue = self.GivenSetup2D
+        if runwithbinary:
+            if self.SDDPSolver.ForwardStage[0].MIPDefined:
+                self.SDDPSolver.ForwardStage[0].ChangeSetupToBinary()
 
-        self.SDDPSolver.WriteInTraceFile("_Values of Y : %r \n"%self.SDDPSolver.HeuristicSetupValue)
+        if relaxsetup:
+            if self.SDDPSolver.ForwardStage[0].MIPDefined:
+                self.SDDPSolver.ForwardStage[0].ChangeSetupToContinous()
 
-        if self.SDDPSolver.ForwardStage[0].MIPDefined:
-            self.SDDPSolver.ForwardStage[0].ChangeSetupToValueOfTwoStage()
+        if  not relaxsetup and not runwithbinary:
+
+            self.SDDPSolver.HeuristicSetupValue = self.GivenSetup2D
+
+            self.SDDPSolver.WriteInTraceFile("_Values of Y : %r \n"%self.SDDPSolver.HeuristicSetupValue)
+
+            if self.SDDPSolver.ForwardStage[0].MIPDefined :
+                self.SDDPSolver.ForwardStage[0].ChangeSetupToValueOfTwoStage()
+
 
         stop = False
         lastbeforestop = False
@@ -471,30 +596,40 @@ class MLLocalSearch(object):
         self.SDDPSolver.CorePointQuantityValues = []
 
         self.SDDPSolver.CurrentForwardSampleSize = self.TestIdentifier.NrScenarioForward
+
+        iteration = 0
+
+        self.FirstStageCutAddedInLastSDDP=[]
         while (not stop ):
             self.SDDPSolver.GenerateTrialScenarios()
             self.SDDPSolver.ForwardPass()
             self.SDDPSolver.ComputeCost()
             self.SDDPSolver.UpdateLowerBound()
             self.SDDPSolver.UpdateUpperBound()
-            self.SDDPSolver.BackwardPass()
+            FirstStageCuts, avgsubprobcosts = self.SDDPSolver.BackwardPass(returnfirststagecut=True)
+            self.FirstStageCutAddedInLastSDDP = self.FirstStageCutAddedInLastSDDP + FirstStageCuts
             self.SDDPSolver.CurrentIteration = self.SDDPSolver.CurrentIteration + 1
 
             end = time.time()
             duration = end - self.Start
-
-            stop = self.CheckStopingSDDP() or duration > Constants.AlgorithmTimeLimit
-
-        if self.SDDPSolver.CurrentLowerBound < self.BestSolutionSafeUperBound:
-            self.SDDPSolver.SDDPNrScenarioTest = 100
-            self.SDDPSolver.ComputeUpperBound()
-            self.SDDPSolver.IsIterationWithConvergenceTest = False
+            iteration = iteration +1
+            stop = self.CheckStopingSDDP() or duration > Constants.AlgorithmTimeLimit \
+                   or (relaxsetup and iteration > 1000) \
+                   or (runwithbinary and iteration > 100)
 
 
-        self.SDDPSolver.ForwardStage[0].ProductionValue = [[[self.SDDPSolver.HeuristicSetupValue[t][p]
-                                                             for p in self.Instance.ProductSet]
-                                                            for t in self.Instance.TimeBucketSet]
-                                                           for w in range(len(self.SDDPSolver.CurrentSetOfTrialScenarios))]
+
+        if not relaxsetup and not runwithbinary:
+            if self.SDDPSolver.CurrentLowerBound < self.BestSolutionSafeUperBound:
+                self.SDDPSolver.SDDPNrScenarioTest = 100
+                self.SDDPSolver.ComputeUpperBound()
+                self.SDDPSolver.IsIterationWithConvergenceTest = False
+
+
+            self.SDDPSolver.ForwardStage[0].ProductionValue = [[[self.SDDPSolver.HeuristicSetupValue[t][p]
+                                                                 for p in self.Instance.ProductSet]
+                                                                for t in self.Instance.TimeBucketSet]
+                                                               for w in range(len(self.SDDPSolver.CurrentSetOfTrialScenarios))]
 
 
 
@@ -612,7 +747,8 @@ class MLLocalSearch(object):
 
 
         #return (convergencecriterion <= 1 and delta > self.CurrentTolerance and  self.SDDPSolver.NrIterationWithoutLBImprovment>5)
-        return self.SDDPSolver.NrIterationWithoutLBImprovment > 10 or self.SDDPSolver.CurrentLowerBound > self.BestSolutionSafeUperBound
+        return self.SDDPSolver.NrIterationWithoutLBImprovment > 10 \
+               or (self.SDDPSolver.CurrentLowerBound > self.BestSolutionSafeUperBound and self.SDDPSolver.NrIterationWithoutLBImprovment > 2)
 
     #self.SDDPSolver.CurrentLowerBound > self.BestSolutionSafeUperBound \
             #    or (convergencecriterion <= 1 and delta <= self.CurrentTolerance)#

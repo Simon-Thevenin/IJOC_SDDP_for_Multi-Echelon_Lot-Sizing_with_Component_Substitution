@@ -46,16 +46,16 @@ class SDDPMLCut( object ):
 
 
 
-    def AddCut(self):
-
-        variables = [self.ForwardStage.GetIndexProductionVariable(p, t) for t in self.Instance.TimeBucketSet for p in self.Instance.ProductSet] + \
-                    [self.ForwardStage.GetIndexQuantityVariable(p, t, 0) for p in self.Instance.ProductSet for t in self.QtyConsideredPeriod[p]] + \
-                    [self.ForwardStage.GetIndexStockVariable(p, self.ForwardStage.DecisionStage, 0) for p in self.Instance.ProductSet] + \
-                    [self.ForwardStage.GetIndexBackorderVariable(p, self.ForwardStage.DecisionStage, 0) for p in self.Instance.ProductWithExternalDemand]
-
-        self.ForwardStage.Cplex.linear_constraints.add(lin_expr=[cplex.SparsePair(variables, self.Regr.coef_)],
-                                                       senses=["G"],
-                                                       rhs=self.Regr.intercept_)  # ,
+    # def AddCut(self):
+    #
+    #     variables = [self.ForwardStage.GetIndexProductionVariable(p, t) for t in self.Instance.TimeBucketSet for p in self.Instance.ProductSet] + \
+    #                 [self.ForwardStage.GetIndexQuantityVariable(p, t, 0) for p in self.Instance.ProductSet for t in self.QtyConsideredPeriod[p]] + \
+    #                 [self.ForwardStage.GetIndexStockVariable(p, self.ForwardStage.DecisionStage, 0) for p in self.Instance.ProductSet] + \
+    #                 [self.ForwardStage.GetIndexBackorderVariable(p, self.ForwardStage.DecisionStage, 0) for p in self.Instance.ProductWithExternalDemand]
+    #
+    #     self.ForwardStage.Cplex.linear_constraints.add(lin_expr=[cplex.SparsePair(variables, self.Regr.coef_)],
+    #                                                    senses=["G"],
+    #                                                    rhs=self.Regr.intercept_)  # ,
 
 
     def ComputeRegression(self):

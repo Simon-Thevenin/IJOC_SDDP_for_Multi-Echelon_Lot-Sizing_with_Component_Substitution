@@ -65,7 +65,7 @@ class Constants( object ):
     AlgorithmOptimalityTolerence = 0.01#0.0005
     SDDPIterationLimit = 500
     SDDPPrintDebugLPFiles = False
-    PrintSDDPTrace = False
+    PrintSDDPTrace = True
     GenerateStrongCut = True
     SDDPRunSigleTree = False
     SDDPUseMultiCut = True
@@ -79,7 +79,7 @@ class Constants( object ):
     SDDPIncreaseNrScenarioTest = 100
     SDDPInitNrScenarioTest = 1000
 
-    SolveRelaxationFirst = False
+    SolveRelaxationFirst = True
     SDDPNrIterationRelax = 500
     SDDPGapRelax = 0.01
 

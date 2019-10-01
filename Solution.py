@@ -326,10 +326,10 @@ class Solution(object):
 
                     for q in self.Instance.ProductSet:
                         if self.Instance.PossibleComponents[p][q] \
-                                and self.Consumption[w][t][q][p] <> -1:
+                                and self.Consumption[w][t][q][p] > 0:
 
                             consumptioncost += self.Consumption[w][t][q][p] \
-                                                * self.Instance.AternateCosts[p][q]\
+                                                * self.Instance.GetComsumptionCost(p,q)\
                                                 *gammas[t] \
                                                 * self.Scenarioset[w].Probability
                 totalcost = inventorycost + backordercost + setupcost + lostsalecost + variablecost + consumptioncost
@@ -456,6 +456,10 @@ class Solution(object):
                                               for p in self.Instance.ProductWithExternalDemand]
                                                 for t in self.Instance.TimeBucketSet]
 
+        self.InSampleAverageConsumption = [[sum(self.Consumption[w][t][p][q] for w in self.SenarioNrset for t in self.Instance.TimeBucketSet)
+                                         / (len(self.SenarioNrset) * len(self.Instance.TimeBucketSet))
+                                         for p in self.Instance.ProductSet]
+                                         for q in self.Instance.ProductSet ]
 
         self.InSampleAverageQuantity = [[sum( self.ProductionQuantity[w][t][p] for w in self.SenarioNrset)
                                          /len(self.SenarioNrset)
@@ -538,6 +542,13 @@ class Solution(object):
 
         avgSetupdf.to_excel(writer, "AverageSetup")
 
+        avgConsumptiondf = pd.DataFrame(self.InSampleAverageConsumption,
+                                  columns=self.Instance.ProductName,
+                                  index=self.Instance.ProductName)
+
+        avgConsumptiondf.to_excel(writer, "AverageConsumption")
+
+
         perscenariodf = pd.DataFrame([self.InSampleTotalDemandPerScenario, self.InSampleTotalBackOrderPerScenario,
                                       self.InSampleTotalLostSalePerScenario],
                                      index=["Total Demand", "Total Backorder", "Total Lost Sales"],
@@ -547,8 +558,8 @@ class Solution(object):
 
         general = testidentifier.GetAsStringList() + [self.InSampleAverageDemand, offsetseed, nrevaluation, testidentifier.ScenarioSeed, evaluationmethod]
         columnstab = ["Instance", "Model", "Method", "ScenarioGeneration", "NrScenario", "ScenarioSeed",
-                      "EVPI", "NrForwardScenario", "mipsetting", "Average demand", "offsetseed", "nrevaluation", "solutionseed", "evaluationmethod"]
-
+                      "EVPI", "NrForwardScenario", "mipsetting", "SDDPSetting", "HybridPHSetting", "MLLocalSearchSetting",
+                      "Average demand", "offsetseed", "nrevaluation", "solutionseed", "evaluationmethod"]
 
         generaldf = pd.DataFrame(general, index=columnstab)
         generaldf.to_excel(writer, "General")
@@ -661,8 +672,8 @@ class Solution(object):
             backordercoststochasticperiod, \
             setupcoststochasticperiod,\
             lostsalecoststochasticperiod, \
-            variablecost, \
-            consumptioncost= self.GetCostInInterval( stochasticperiod )
+            variablecoststochasticperiod, \
+            consumptioncoststochasticperiod= self.GetCostInInterval( stochasticperiod )
         nrsetups = self.GetNrSetup()
 #       averagecoverage = self.GetAverageCoverage()
 

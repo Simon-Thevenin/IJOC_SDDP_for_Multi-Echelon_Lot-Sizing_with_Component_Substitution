@@ -194,12 +194,16 @@ if __name__ == "__main__":
                     jobname = CreateMLLocalSearchJob(instance, nrback, nrforward, setting, model="YFix", mlsetting="NrIterationBeforeTabu1000")
                     filenew.write("sbatch %s \n" % (jobname))
 
-
+            jobname = CreateMIPJob(instance, 100, model="YQFix")
+            filenew.write("sbatch %s \n" % (jobname))
             jobname = CreateMIPJob(instance, "6400b", model="YFix")
             filenew.write("sbatch %s \n" % (jobname))
-            jobname = CreateMLLocalSearchJob(instance, "DependOnH", nrforward, "Default", model="YFix", mlsetting="NrIterationBeforeTabu1000")
+            jobname = CreateMLLocalSearchJob(instance, "all20", nrforward, "Default", model="YFix", mlsetting="NrIterationBeforeTabu1000")
             filenew.write("sbatch %s \n" % (jobname))
-
+            jobname = CreateHybridSearchJob(instance, "all20", nrforward, "Default", model="YFix")
+            filenew.write("sbatch %s \n" % (jobname))
+            jobname = CreateSDDPJob(instance, "all20", nrforward, "Default", model="HeuristicYFix")
+            filenew.write("sbatch %s \n" % (jobname))
 
     if sys.argv[1] == "H":
         fileheurname = "runallheur.sh"

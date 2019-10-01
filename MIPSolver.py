@@ -300,7 +300,10 @@ class MIPSolver(object):
                  * (np.power(self.Instance.Gamma, t))
 
     def GetConsumptionCoeff(self, p, q, t, w):
-        return (self.Instance.AternateCosts[p][q]
+
+        cost = self.Instance.GetComsumptionCost(p,q)
+
+        return (cost
             * self.Scenarios[w].Probability) \
             * (np.power(self.Instance.Gamma, t))
 
@@ -715,7 +718,7 @@ class MIPSolver(object):
                                 vars = [self.GetIndexQuantityVariable(p,t,w)]
                                 coeff = [-1.0*self.Instance.Requirements[p][k]]
                                 for q in self.Instance.ProductSet:
-                                    if self.Instance.Alternates[k][q] or k==q:
+                                    if self.Instance.Alternates[q][k] or k==q:
                                         vars = vars + [ self.GetIndexConsumptionVariable(p, q, t, w)]
                                         coeff = coeff + [1.0]
                                         righthandside = [0.0]

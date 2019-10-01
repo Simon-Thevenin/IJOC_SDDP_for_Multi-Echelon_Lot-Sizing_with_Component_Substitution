@@ -308,7 +308,7 @@ class Instance(object):
             self.ComputeInstanceData()
 
     def IsMaterProduct(self, prod):
-        return sum(self.Alternates[p][prod] for p in self.ProductSet) == 0
+        return True#sum(self.Alternates[p][prod] for p in self.ProductSet) == 0
 
     def GetMasterProduct(self, prod):
             if sum(self.Requirements[p][prod] for p in self.ProductSet) > 0.0:
@@ -333,7 +333,7 @@ class Instance(object):
     #                  G.add_edge(p, q, color='b')
     #
     #          for i in self.ProductSet:
-    #                if self.Alternates[p][i] and p != i:
+    #                if self.Alternates[i][p] and p != i:
     #                          G.add_edge(i, p, color='g')
     #
     #      pos = nx.spring_layout(G)
@@ -390,7 +390,7 @@ class Instance(object):
                 if self.Requirements[p][q] > 0.0:
                     self.PossibleComponents[p][q] = 1
                     self.ConsumptionSet.append(self.GetConsumptiontuple(q, p))
-                elif sum(self.Alternates[c][q] for c in self.ProductSet if self.Requirements[p][c]) >= 1:
+                elif sum(self.Alternates[q][c] for c in self.ProductSet if self.Requirements[p][c]) >= 1:
                     self.PossibleComponents[p][q] = 1
                     self.ConsumptionSet.append( self.GetConsumptiontuple(q, p))
 
@@ -401,8 +401,18 @@ class Instance(object):
 
         self.NrComponentTotal = sum(self.NrComponent[p] for p in self.ProductSet)
 
+    def GetComsumptionCost(self, p, q ):
+        cost = 0
+        if self.Requirements[p][q]:
+            cost = 0
+        else:
+            for c in self.ProductSet:
+                if (self.Alternates[q][c] and self.Requirements[p][c] >= 1):
+                    cost = self.AternateCosts[q][c]
+        return cost
+
     def GetConsumptiontuple(self, p, q ):
-        return (p, q, "%s -> %s" % (p, q))
+        return (p, q, "%s -> %s" % (p, q), self.GetComsumptionCost(p,q))
     # Compute the lead time from a product to its component with the largest sum of lead time
     def ComputeMaxLeadTime(self):
         self.MaxLeadTimeProduct = [0 for p in self.ProductSet]
@@ -670,7 +680,8 @@ class Instance(object):
         # Add a tab with an array giving the requirements:
         # TransportCostdf = Tool.ReadDataFrame(wb2, "TransportCost")
         # self.TransportCost = [[TransportCostdf.at[q, p] for p in self.ProductName] for q in self.ProductName]
-        self.AternateCosts = [[0 for p in self.ProductName] for q in self.ProductName]
+        AlternateCostdf = Tool.ReadDataFrame(wb2, "AternateCosts")
+        self.AternateCosts = [[AlternateCostdf.at[q, p] for p in self.ProductName] for q in self.ProductName]
 
         Capacitydf = Tool.ReadDataFrame(wb2, "Capacity")
         self.Capacity = [Capacitydf.at[k, 0] for k in self.ResourceSet]

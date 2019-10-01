@@ -142,32 +142,28 @@ def GenerateInstances():
     # instancecreated = instancecreated + [instance.InstanceName]
 
 
-    normalname = "G0041331"
+
     normalhorizon = 4
     normalalternate = 4
     normalcostalternate = 0.1
     for name in ["G0041331","G0041111", "K0011311", "K0011331"]:#,"G0041311","K0011111","K0011311","G0041131","G0041331","K0011131","K0011331"]:
-        instance.ReadFromFile(name, "Lumpy", longtimehoizon=True, longtimehorizonperiod=normalhorizon,
-                              nralternate=normalalternate, costalternate=normalcostalternate)
-        instance.SaveCompleteInstanceInExelFile()
-        instancecreated = instancecreated + [instance.InstanceName]
-    for horizon in [2, 4, 6, 8, 10]:
-        instance.ReadFromFile(normalname, "Lumpy", longtimehoizon=True, longtimehorizonperiod=horizon,
-                              nralternate=normalalternate, costalternate=normalcostalternate)
-        instance.SaveCompleteInstanceInExelFile()
-        instancecreated = instancecreated + [instance.InstanceName]
+        for horizon in [2, 4, 6, 8, 10]:
+            instance.ReadFromFile(name, "Lumpy", longtimehoizon=True, longtimehorizonperiod=horizon,
+                                  nralternate=normalalternate, costalternate=normalcostalternate)
+            instance.SaveCompleteInstanceInExelFile()
+            instancecreated = instancecreated + [instance.InstanceName]
 
-    for nralternates in [0,2,4,6]:
-        instance.ReadFromFile(normalname, "Lumpy", longtimehoizon=True, longtimehorizonperiod=normalhorizon,
-                              nralternate=nralternates, costalternate=normalcostalternate)
-        instance.SaveCompleteInstanceInExelFile()
-        instancecreated = instancecreated + [instance.InstanceName]
+        for nralternates in [0,2,4,6]:
+            instance.ReadFromFile(name, "Lumpy", longtimehoizon=True, longtimehorizonperiod=normalhorizon,
+                                  nralternate=nralternates, costalternate=normalcostalternate)
+            instance.SaveCompleteInstanceInExelFile()
+            instancecreated = instancecreated + [instance.InstanceName]
 
-    for costalternates in [0,0.1,1]:
-        instance.ReadFromFile(normalname, "Lumpy", longtimehoizon=True, longtimehorizonperiod=normalhorizon,
-                              nralternate=normalalternate, costalternate=costalternates)
-        instance.SaveCompleteInstanceInExelFile()
-        instancecreated = instancecreated + [instance.InstanceName]
+        for costalternates in [0,0.1,1]:
+            instance.ReadFromFile(name, "Lumpy", longtimehoizon=True, longtimehorizonperiod=normalhorizon,
+                                  nralternate=normalalternate, costalternate=costalternates)
+            instance.SaveCompleteInstanceInExelFile()
+            instancecreated = instancecreated + [instance.InstanceName]
 
 
     csvfile = open("./Instances/InstancesToSolve.csv", 'wb')

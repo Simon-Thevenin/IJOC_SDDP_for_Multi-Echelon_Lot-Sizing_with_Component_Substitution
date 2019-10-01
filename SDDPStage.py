@@ -167,6 +167,7 @@ class SDDPStage(object):
         self.FullTreeSolverDefine = False
         self.FullTreeSolver = None
 
+
         #if self.IsForward and Constants.SDDPUseMLCuts:
         #    self.MLCut = SDDPMLCut(self)
 
@@ -941,7 +942,7 @@ class SDDPStage(object):
                             consumptionvars = []
                             consumptionvarcoeff = []
                             for q in self.Instance.ProductSet:
-                                if self.Instance.Alternates[k][q] or k == q:
+                                if self.Instance.Alternates[q][k] or k == q:
                                     consumptionvars = consumptionvars + [self.GetIndexConsumptionVariable(self.Instance.GetConsumptiontuple(q, p), t, w)]
                                     consumptionvarcoeff = consumptionvarcoeff + [1.0]
                             righthandside = [0.0]
@@ -971,7 +972,7 @@ class SDDPStage(object):
                                 consumptionvars = []
                                 consumptionvarcoeff = []
                                 for q in self.Instance.ProductSet:
-                                    if self.Instance.Alternates[k][q] or k == q:
+                                    if self.Instance.Alternates[q][k] or k == q:
                                         consumptionvars = consumptionvars + [self.GetIndexPIConsumptionVariable(self.Instance.GetConsumptiontuple(q, p), t, wevpi, w)]
                                         consumptionvarcoeff = consumptionvarcoeff + [1.0]
                                 righthandside = [0.0]
@@ -1210,7 +1211,7 @@ class SDDPStage(object):
         #Variable for the consumption
         self.Cplex.variables.add(obj=[math.pow(self.Instance.Gamma,  self.GetTimePeriodAssociatedToQuantityVariable(p, t))
                                    #   * self.FixedScenarioPobability[w]
-                                      * self.Instance.AternateCosts[c[1]][c[0]]
+                                      * c[3]
                                       for t in self.RangePeriodQty
                                       for w in self.FixedScenarioSet
                                       for c in self.Instance.ConsumptionSet],
@@ -1444,7 +1445,7 @@ class SDDPStage(object):
                 or self.SDDPOwner.TestIdentifier.Method == Constants.Hybrid
                 or self.SDDPOwner.TestIdentifier.Method == Constants.MLLocalSearch
         )\
-            and self.IsFirstStage():
+            and self.IsFirstStage() and False :
                 self.ChangeSetupToValueOfTwoStage()
                 self.SDDPOwner.HasFixedSetup = True
 
@@ -1711,6 +1712,12 @@ class SDDPStage(object):
             self.Cplex.parameters.threads.set(1)
             self.Cplex.parameters.barrier.convergetol.set(0.00001)
             self.Cplex.parameters.simplex.tolerances.feasibility.set(0.0001)
+
+            if self.SDDPOwner.EvaluationMode:
+                self.Cplex.parameters.simplex.tolerances.feasibility.set(0.01)
+
+            #if self.IsFirstStage():
+            #    self.Cplex.parameters.simplex.tolerances.optimality.set(0.1)
 
             self.Cplex.solve()
             # print("Solution status:%r - %r " %(self.Cplex.solution.get_status(), self.Cplex.solution.get_objective_value()))
@@ -2270,6 +2277,23 @@ class SDDPStage(object):
         #self.Cplex.variables.set_types(zip(indexarray, ["B"] * len(indexarray)))
         self.Cplex.variables.set_lower_bounds(zip(indexarray, [0.0] * len(indexarray)))
         self.Cplex.variables.set_upper_bounds(zip(indexarray, [0.0] * len(indexarray)))
+
+    def ChangeSetupToContinous(self):
+        indexarray = [self.GetIndexProductionVariable(p, t)
+                      for t in self.Instance.TimeBucketSet
+                      for p in self.Instance.ProductSet]
+
+        lbtuple = []
+        ubtuples = []
+        for p in self.Instance.ProductSet:
+            for t in self.Instance.TimeBucketSet:
+                lbtuple.append((self.GetIndexProductionVariable(p, t), 0.0))
+                ubtuples.append((self.GetIndexProductionVariable(p, t), 1.0))
+
+        self.Cplex.variables.set_types(zip(indexarray, ["C"] * len(indexarray)))
+        self.Cplex.set_problem_type(self.Cplex.problem_type.LP)
+        self.Cplex.variables.set_lower_bounds(lbtuple)
+        self.Cplex.variables.set_upper_bounds(ubtuples)
 
     def ChangeSetupToValueOfTwoStage(self, makecontinuous = True):
         lbtuple=[]
