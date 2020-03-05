@@ -383,9 +383,20 @@ class MLLocalSearch(object):
         self.Start = 0
         self.SDDPSolver.Run()
         self.BestSolution = self.SDDPSolver.CreateSolutionAtFirstStage()
+#        solution = self.SDDPSolver.CreateSolutionOfAllInSampleScenario()
+#        solution.Print()
+
+
         self.SDDPSolver.SDDPNrScenarioTest = 1000
         #random.seed = 9876
         self.SDDPSolver.ComputeUpperBound()
+        #for s in range(len(self.SDDPSolver.SetOfSAAScenario)):
+        #    print(s)
+        #    sol = self.SDDPSolver.CreateSolutionOfScenario(s)
+        #    sol.Print()
+        #    print("WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW")
+        #    sol.ComputeCost()
+        #    print(sol.TotalCost)
         self.TestIdentifier.Model = Constants.ModelYFix
         return self.BestSolution
 

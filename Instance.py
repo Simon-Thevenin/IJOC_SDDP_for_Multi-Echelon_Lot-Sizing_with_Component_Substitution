@@ -412,7 +412,7 @@ class Instance(object):
         return cost
 
     def GetConsumptiontuple(self, p, q ):
-        return (p, q, "%s -> %s" % (p, q), self.GetComsumptionCost(p,q))
+        return (p, q, "%s -> %s" % (p, q), self.GetComsumptionCost(q,p))#p,q))
     # Compute the lead time from a product to its component with the largest sum of lead time
     def ComputeMaxLeadTime(self):
         self.MaxLeadTimeProduct = [0 for p in self.ProductSet]

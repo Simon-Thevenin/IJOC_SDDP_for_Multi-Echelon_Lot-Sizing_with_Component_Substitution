@@ -306,6 +306,9 @@ class SDDP(object):
                     selected = self.CreateRandomScenarioFromSAA()
                     self.CurrentSetOfTrialScenarios.append(selected)
 
+            if self.IsIterationWithConvergenceTest:
+                self.CurrentSetOfTrialScenarios = self.CreateAllScenarioFromSAA()
+
             self.TrialScenarioNrSet = range(len(self.CurrentSetOfTrialScenarios))
             self.CurrentNrScenario = len(self.CurrentSetOfTrialScenarios)
            # self.SDDPNrScenarioTest = self.CurrentNrScenario
@@ -439,6 +442,43 @@ class SDDP(object):
                     w.Probability *= self.Saascenarioproba[t][x]
 
         return w
+
+    def CreateAllScenarioFromSAA(self):
+
+        scenarioset=[]
+
+        nrscenar = 1
+        for s in range(len(self.StagesSet)):
+            if self.ForwardStage[s].TimeObservationStage >= 0:
+                nrscenar *= self.NrSAAScenarioInPeriod[self.ForwardStage[s].TimeObservationStage]
+
+        indexstage = [0] * len(self.StagesSet)
+
+        for nrw in range(nrscenar):
+            w = Scenario(proabability=1)
+            w.Demands = [[] for t in self.Instance.TimeBucketSet]
+            for s in range(len(self.StagesSet)):# in self.Instance.TimeBucketSet:
+
+                for tau in self.ForwardStage[s].RangePeriodEndItemInv:
+                        t = self.ForwardStage[s].TimeObservationStage + tau
+                        w.Demands[t] = copy.deepcopy(self.SetOfSAAScenario[t][indexstage[s]])
+                        w.Probability *= self.Saascenarioproba[t][indexstage[s]]
+
+            k=len(self.StagesSet)-1
+            stop = False
+            while not stop:
+                indexstage[k] = indexstage[k] + 1
+                if self.ForwardStage[k].TimeObservationStage >= 0 \
+                    and indexstage[k] >= self.NrSAAScenarioInPeriod[self.ForwardStage[k].TimeObservationStage]:
+                    indexstage[k] = 0
+                    k=k-1
+                else:
+                    stop = True
+
+            scenarioset.append(w)
+
+
+        return scenarioset
 
     #This function return the quanity of product to produce at time which has been decided at an earlier stage
     def GetQuantityFixedEarlier(self, product, time, scenario):
@@ -1075,10 +1115,14 @@ class SDDP(object):
             solconsumption = [[[[-1 for p in self.Instance.ProductSet] for p in self.Instance.ProductSet]for t in self.Instance.TimeBucketSet]]
 
             for t in self.Instance.TimeBucketSet:
+
+
                 k = -1
                 for c in self.Instance.ConsumptionSet:
                      k += 1
-                     solconsumption[scenario][t][c[0]][c[1]] = self.ForwardStage[t].ConsumptionValues[scenario][k]
+                     forwardstage = self.ForwardStageWithQuantityDec[t]
+                     time = forwardstage.GetTimeIndexForQty(c[1], t)
+                     solconsumption[0][t][c[0]][c[1]] = forwardstage.ConsumptionValues[scenario][time][k]
 
             emptyscenariotree = ScenarioTree(instance=self.Instance,
                                              branchperlevel=[0, 0, 0, 0, 0],

@@ -186,24 +186,26 @@ if __name__ == "__main__":
 
         for instance in InstanceSet:
             for nrback in sddpnrbackset:
-                for setting in ["SymetricMIP", "Default"]:
+                for setting in ["SymetricMIP"]:#, "Default"]:
                     nrforward = 1
 
                     jobname = CreateMIPJob(instance, nrback, model="YFix", mipsetting=setting)
                     filenew.write("sbatch %s \n" % (jobname))
                     jobname = CreateMLLocalSearchJob(instance, nrback, nrforward, setting, model="YFix", mlsetting="NrIterationBeforeTabu1000")
                     filenew.write("sbatch %s \n" % (jobname))
+                    jobname = CreateHybridSearchJob(instance, nrback, nrforward, setting, model="YFix")
+                    filenew.write("sbatch %s \n" % (jobname))
+                    jobname = CreateSDDPJob(instance, nrback, nrforward, setting, model="HeuristicYFix")
+                    filenew.write("sbatch %s \n" % (jobname))
 
-            jobname = CreateMIPJob(instance, 100, model="YQFix")
-            filenew.write("sbatch %s \n" % (jobname))
-            jobname = CreateMIPJob(instance, "6400b", model="YFix")
-            filenew.write("sbatch %s \n" % (jobname))
-            jobname = CreateMLLocalSearchJob(instance, "all20", nrforward, "Default", model="YFix", mlsetting="NrIterationBeforeTabu1000")
-            filenew.write("sbatch %s \n" % (jobname))
-            jobname = CreateHybridSearchJob(instance, "all20", nrforward, "Default", model="YFix")
-            filenew.write("sbatch %s \n" % (jobname))
-            jobname = CreateSDDPJob(instance, "all20", nrforward, "Default", model="HeuristicYFix")
-            filenew.write("sbatch %s \n" % (jobname))
+            #jobname = CreateMIPJob(instance, 100, model="YQFix")
+            #filenew.write("sbatch %s \n" % (jobname))
+            #jobname = CreateMIPJob(instance, "6400b", model="YFix")
+            #filenew.write("sbatch %s \n" % (jobname))
+            #jobname = CreateMLLocalSearchJob(instance, "all20", nrforward, "Default", model="YFix", mlsetting="NrIterationBeforeTabu1000")
+            #filenew.write("sbatch %s \n" % (jobname))
+
+
 
     if sys.argv[1] == "H":
         fileheurname = "runallheur.sh"

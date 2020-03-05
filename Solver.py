@@ -106,8 +106,9 @@ class Solver( object ):
                                     model=scenariotreemodel,
                                     issymetric=(Constants.MIPBasedOnSymetricTree and scenariotreemodel == Constants.ModelYFix))
 
-        #scenarioset = scenariotree.GetAllScenarios(computeindex=False)
-
+        scenarioset = scenariotree.GetAllScenarios(computeindex=False)
+        #for s in scenarioset:
+        #    print(s.Demands)
         MIPModel = self.TestIdentifier.Model
         if self.TestIdentifier.Model == Constants.Average:
             MIPModel = Constants.ModelYQFix
@@ -149,7 +150,7 @@ class Solver( object ):
         #                PLT.show()
 
         solution = mipsolver.Solve()
-
+        #solution.Print()
         if recordsolveinfo:
             SolveInformation = mipsolver.SolveInfo
 
@@ -310,6 +311,7 @@ class Solver( object ):
                 solution = self.SDDPSolver.CreateSolutionAtFirstStage()
             else:
                 solution = self.SDDPSolver.CreateSolutionOfAllInSampleScenario()
+
             if Constants.SDDPSaveInExcel:
                 self.SDDPSolver.SaveSolver()
         #self.SDDPSolver = SDDP(self.Instance, self.TestIdentifier)

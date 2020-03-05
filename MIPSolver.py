@@ -1473,8 +1473,8 @@ class MIPSolver(object):
         self.Cplex.parameters.timelimit.set(Constants.AlgorithmTimeLimit)
         self.Cplex.parameters.mip.limits.treememory.set(700000000.0)
         self.Cplex.parameters.threads.set(1)
-        self.Cplex.parameters.mip.tolerances.integrality.set(0.0)
-#        self.Cplex.parameters.simplex.tolerances.feasibility.set(0.000000001)
+        self.Cplex.parameters.mip.tolerances.integrality.set(0.000000001)#(0.0)
+       # self.Cplex.parameters.simplex.tolerances.feasibility.set(0.000000001)
         self.TuneCplexParamter()
 
 
