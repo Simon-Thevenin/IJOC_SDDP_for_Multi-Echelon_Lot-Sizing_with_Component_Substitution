@@ -152,10 +152,7 @@ def GenerateInstances():
                                   nralternate=normalalternate, costalternate=normalcostalternate)
             instance.SaveCompleteInstanceInExelFile()
             instancecreated = instancecreated + [instance.InstanceName]
-            instance.ReadFromFile(name, "Binomial", longtimehoizon=True, longtimehorizonperiod=horizon,
-                                  nralternate=normalalternate, costalternate=normalcostalternate)
-            instance.SaveCompleteInstanceInExelFile()
-            instancecreated = instancecreated + [instance.InstanceName]
+
 
         for nralternates in [0,2,4,6]:
             instance.ReadFromFile(name, "Lumpy", longtimehoizon=True, longtimehorizonperiod=normalhorizon,
@@ -217,6 +214,7 @@ if __name__ == '__main__':
         if TestIdentifier.MIPSetting == "SymetricMIP":
             Constants.MIPBasedOnSymetricTree = True
             Constants.SDDPForwardPassInSAATree = True
+            EvaluatorIdentifier.NrEvaluation = 0
 
         instance = Instance()
         #instance.DefineAsSuperSmallIntance()

@@ -183,7 +183,7 @@ if __name__ == "__main__":
     #!/bin/bash -l
     #
     """)
-
+        InstanceSet =["G0041111_Lumpy_b2_fe25_el_rk25_ll0_l20_H04_c2_A0_a0.1","G0041111_Lumpy_b2_fe25_el_rk25_ll0_l20_H02_c2_A2_a0.1","G0041111_Lumpy_b2_fe25_el_rk25_ll0_l20_H06_c2_A2_a1","G0041111_Lumpy_b2_fe25_el_rk25_ll0_l20_H08_c2_A4_a1","G0041111_Lumpy_b2_fe25_el_rk25_ll0_l20_H010_c2_A6_a1"]
         for instance in InstanceSet:
             for nrback in sddpnrbackset:
                 for setting in ["SymetricMIP"]:#, "Default"]:

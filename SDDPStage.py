@@ -1441,11 +1441,11 @@ class SDDPStage(object):
         if Constants.Debug:
             print("Define the MIP of stage %d" % self.DecisionStage)
         self.DefineVariables()
-        if (self.SDDPOwner.TestIdentifier.Model == Constants.ModelHeuristicYFix\
-                or self.SDDPOwner.TestIdentifier.Method == Constants.Hybrid
-                or self.SDDPOwner.TestIdentifier.Method == Constants.MLLocalSearch
+        if (self.SDDPOwner.TestIdentifier.Model == Constants.ModelHeuristicYFix \
+                 or self.SDDPOwner.TestIdentifier.Method == Constants.Hybrid
+       #         or self.SDDPOwner.TestIdentifier.Method == Constants.MLLocalSearch
         )\
-            and self.IsFirstStage() and False :
+            and self.IsFirstStage() :#and False :
                 self.ChangeSetupToValueOfTwoStage()
                 self.SDDPOwner.HasFixedSetup = True
 
