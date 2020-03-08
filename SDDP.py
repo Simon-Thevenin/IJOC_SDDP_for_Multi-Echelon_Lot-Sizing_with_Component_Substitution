@@ -306,7 +306,7 @@ class SDDP(object):
                     selected = self.CreateRandomScenarioFromSAA()
                     self.CurrentSetOfTrialScenarios.append(selected)
 
-            if self.IsIterationWithConvergenceTest:
+            if self.IsIterationWithConvergenceTest and Constants.MIPBasedOnSymetricTree:
                 self.CurrentSetOfTrialScenarios = self.CreateAllScenarioFromSAA()
 
             self.TrialScenarioNrSet = range(len(self.CurrentSetOfTrialScenarios))
