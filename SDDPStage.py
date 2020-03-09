@@ -1443,6 +1443,7 @@ class SDDPStage(object):
         self.DefineVariables()
         if (self.SDDPOwner.TestIdentifier.Model == Constants.ModelHeuristicYFix \
                  or self.SDDPOwner.TestIdentifier.Method == Constants.Hybrid
+                 or self.SDDPOwner.EvaluationMode
        #         or self.SDDPOwner.TestIdentifier.Method == Constants.MLLocalSearch
         )\
             and self.IsFirstStage() :#and False :
