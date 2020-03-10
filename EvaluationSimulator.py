@@ -571,7 +571,7 @@ class EvaluationSimulator(object):
                 if Constants.Debug:
                     print(resultqty)
 
-                array = [self.MIPResolveTime[resolvetime].GetIndexConsumptionVariable(c[1], c[0], resolvetime, 0) for c in self.Instance.ConsumptionSet];
+                array = [int(self.MIPResolveTime[resolvetime].GetIndexConsumptionVariable(c[0], c[1], resolvetime, 0)) for c in self.Instance.ConsumptionSet];
                 resultconsumption = sol.get_values(array)
                 if Constants.Debug:
                     print(resultqty)

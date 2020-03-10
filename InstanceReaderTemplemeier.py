@@ -33,6 +33,8 @@ class InstanceReaderTemplemeier(InstanceReader):
         self.Instance.AternateCosts = [[0] * self.Instance.NrProduct for _ in self.Instance.ProductSet]
         self.Instance.Alternates = [[0] * self.Instance.NrProduct for _ in self.Instance.ProductSet]
 
+        self.Instance.ComputePossibleComponent()
+
         for i in range(0, nralternate):
 
             p1=0
@@ -42,12 +44,20 @@ class InstanceReaderTemplemeier(InstanceReader):
 
             level = self.GetProductLevel()
 
-            while p1 == p2 or self.Instance.Alternates[p1][p2] or p1 in finishproduct or p2 in finishproduct or level[p1] != level[p2]:
+
+            while  p1 == p2 or self.Instance.Alternates[p1][p2] \
+                    or  level[p1] != level[p2] or p1 in finishproduct or p2 in finishproduct:
+                # or p1 in finishproduct or p2 in finishproduct
                 p1 = randint(0, self.Instance.NrProduct -1)
                 p2 = randint(0, self.Instance.NrProduct -1)
+                # regerate = False
+                # for q in self.Instance.ProductSet:
+                #     if self.Instance.PossibleComponents[q][p1] and self.Instance.PossibleComponents[q][p2]:
+                #         regerate = True
 
             self.Instance.Alternates[p1][p2] = 1
             self.Instance.AternateCosts[p1][p2] = costalternate
+            self.Instance.ComputePossibleComponent()
 
 
 

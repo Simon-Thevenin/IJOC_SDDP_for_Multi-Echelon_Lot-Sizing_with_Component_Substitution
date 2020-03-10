@@ -934,16 +934,15 @@ class SDDPStage(object):
         # Capacity constraint
         for w in self.FixedScenarioSet:
             for t in self.RangePeriodQty:
-                for p in self.Instance.ProductSet:
                     for k in self.Instance.ProductSet:
-                        if self.Instance.Requirements[p][k] and self.Instance.IsMaterProduct(k):
-                            quantityvar = [self.GetIndexQuantityVariable(p, t, w)]
-                            quantityvarcoeff = [-1.0 * self.Instance.Requirements[p][k]]
+                        if self.Instance.IsMaterProduct(k):
+                            quantityvar = [self.GetIndexQuantityVariable(p, t, w)   for p in self.Instance.ProductSet]
+                            quantityvarcoeff = [-1.0 * self.Instance.Requirements[p][k]  for p in self.Instance.ProductSet]
                             consumptionvars = []
                             consumptionvarcoeff = []
                             for q in self.Instance.ProductSet:
-                                if self.Instance.Alternates[q][k] or k == q:
-                                    consumptionvars = consumptionvars + [self.GetIndexConsumptionVariable(self.Instance.GetConsumptiontuple(q, p), t, w)]
+                                if self.Instance.Alternates[q][k]:
+                                    consumptionvars = consumptionvars + [self.GetIndexConsumptionVariable(self.Instance.GetConsumptiontuple(q, k), t, w)]
                                     consumptionvarcoeff = consumptionvarcoeff + [1.0]
                             righthandside = [0.0]
 
@@ -964,16 +963,16 @@ class SDDPStage(object):
         for w in self.FixedScenarioSet:
             for wevpi in self.EVPIScenarioRange:
                 for t in self.TimePeriodToGoQty:
-                    for p in self.Instance.ProductSet:
+
                         for k in self.Instance.ProductSet:
-                            if self.Instance.Requirements[p][k] and self.Instance.IsMaterProduct(k):
-                                quantityvar = [self.GetIndexPIQuantityVariable(p, t, wevpi, w)]
-                                quantityvarcoeff = [-1.0 * self.Instance.Requirements[p][k]]
+                            if  self.Instance.IsMaterProduct(k):
+                                quantityvar = [self.GetIndexPIQuantityVariable(p, t, wevpi, w)  for p in self.Instance.ProductSet]
+                                quantityvarcoeff = [-1.0 * self.Instance.Requirements[p][k]  for p in self.Instance.ProductSet]
                                 consumptionvars = []
                                 consumptionvarcoeff = []
                                 for q in self.Instance.ProductSet:
-                                    if self.Instance.Alternates[q][k] or k == q:
-                                        consumptionvars = consumptionvars + [self.GetIndexPIConsumptionVariable(self.Instance.GetConsumptiontuple(q, p), t, wevpi, w)]
+                                    if self.Instance.Alternates[q][k] :
+                                        consumptionvars = consumptionvars + [self.GetIndexPIConsumptionVariable(self.Instance.GetConsumptiontuple(q, k), t, wevpi, w)]
                                         consumptionvarcoeff = consumptionvarcoeff + [1.0]
                                 righthandside = [0.0]
 
@@ -1892,6 +1891,7 @@ class SDDPStage(object):
                 print("******************** Solution at stage %d cost: %r cost to go %r *********************"
                       %(self.DecisionStage, sol.get_objective_value(), cotogo))
                 print(" Quantities: %r"%self.QuantityValues)
+                print(" Consumption: %r" % self.ConsumptionValues)
                 if not self.IsLastStage():
                    print(" Demand: %r" %(self.SDDPOwner.CurrentSetOfTrialScenarios[self.CurrentTrialNr].Demands[self.TimeDecisionStage]))
                 print(" Inventory: %r"%self.InventoryValue)
@@ -2305,12 +2305,13 @@ class SDDPStage(object):
                       for p in self.Instance.ProductSet]
         for p in self.Instance.ProductSet:
             for t in self.Instance.TimeBucketSet:
-                lbtuple.append((self.GetIndexProductionVariable(p, t), self.SDDPOwner.HeuristicSetupValue[t][p]))
-                ubtuples.append((self.GetIndexProductionVariable(p, t), self.SDDPOwner.HeuristicSetupValue[t][p]))
+                lbtuple.append((self.GetIndexProductionVariable(p, t), float(self.SDDPOwner.HeuristicSetupValue[t][p])))
+                ubtuples.append((self.GetIndexProductionVariable(p, t), float(self.SDDPOwner.HeuristicSetupValue[t][p])))
 
         if makecontinuous:
             self.Cplex.variables.set_types(zip(indexarray, ["C"] * len(indexarray)))
             self.Cplex.set_problem_type(self.Cplex.problem_type.LP)
+
 
         self.Cplex.variables.set_lower_bounds(lbtuple)
         self.Cplex.variables.set_upper_bounds(ubtuples)

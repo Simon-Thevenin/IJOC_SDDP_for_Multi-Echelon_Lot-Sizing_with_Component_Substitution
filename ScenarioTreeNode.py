@@ -359,10 +359,10 @@ class ScenarioTreeNode(object):
 
         if self.Time < self.Instance.NrTimeBucket: #Do not associate Production or quantity variable to the last nodes
             self.ConsumptionVariable = [[ self.Owner.Owner.StartConsumptionVariable + \
-                                          self.Instance.NrComponentTotal * (self.NodeNumber -1)\
-                                          + sum(self.Instance.NrComponent[k] for k in range(p))\
-                                          + sum(self.Instance.PossibleComponents[p][k] for k in range(q))
-                                          if self.Instance.PossibleComponents[p][q]
+                                          self.Instance.NrAlternateTotal * (self.NodeNumber -1)\
+                                          + sum(self.Instance.NrAlternate[k] for k in range(p))\
+                                          + sum(self.Instance.Alternates[p][k] for k in range(q))
+                                          if self.Instance.Alternates[p][q]
                                           else -1
                                         for q in self.Instance.ProductSet]
                                         for p in self.Instance.ProductSet]

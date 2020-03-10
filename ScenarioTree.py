@@ -203,13 +203,14 @@ class ScenarioTree(object):
 
                 s.ConsumptionVariable = [[[self.Owner.StartConsumptionVariable + \
                                            s.ScenarioId * self.Instance.NrComponentTotal * len(self.Instance.TimeBucketSet) \
-                                        +   self.Instance.NrComponentTotal * t \
-                                             + sum(self.Instance.NrComponent[k] for k in range(p)) \
-                                             + sum(self.Instance.PossibleComponents[p][k] for k in range(q))
-                                             if self.Instance.PossibleComponents[p][q]
+                                             + self.Instance.self.NrAlternateTotal * t \
+                                             + sum(self.Instance.NrAlternate[k] for k in range(p)) \
+                                             + sum(self.Instance.Alternates[p][k] for k in range(q))
+                                             if self.Instance.Alternates[p][q]
                                              else -1
-                                             for q in self.Instance.ProductSet]
-                                            for p in self.Instance.ProductSet]
+
+                                           for q in self.Instance.ProductSet]
+                                          for p in self.Instance.ProductSet]
                                           for t in self.Instance.TimeBucketSet]
 
                 s.QuanitityVariable = [[self.Owner.StartQuantityVariable +\
@@ -236,7 +237,7 @@ class ScenarioTree(object):
             if n.Time >= 0 and n.Time < self.Instance.NrTimeBucket:
                 n.QuantityToOrder = sol.get_values([n.QuanitityVariable[p]for p in self.Instance.ProductSet])
                 if len(self.Instance.ConsumptionSet) > 0:
-                    n.Consumption = sol.get_values([n.ConsumptionVariable[c[1]][c[0]] for c in self.Instance.ConsumptionSet])
+                    n.Consumption = sol.get_values([(int)(n.ConsumptionVariable[c[0]][c[1]]) for c in self.Instance.ConsumptionSet])
                 if n.Time > 0:
                     n.InventoryLevel = sol.get_values([n.InventoryVariable[p] for p in self.Instance.ProductSet])
                     n.BackOrderLevel = sol.get_values([n.BackOrderVariable[self.Instance.ProductWithExternalDemandIndex[p]]

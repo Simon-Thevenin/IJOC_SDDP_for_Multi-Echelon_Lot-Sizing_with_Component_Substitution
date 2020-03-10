@@ -308,7 +308,7 @@ class Instance(object):
             self.ComputeInstanceData()
 
     def IsMaterProduct(self, prod):
-        return True#sum(self.Alternates[p][prod] for p in self.ProductSet) == 0
+        return sum(self.Requirements[p][prod] for p in self.ProductSet) > 0.0#sum(self.Alternates[prod][p] for p in self.ProductSet) == 0
 
     def GetMasterProduct(self, prod):
             if sum(self.Requirements[p][prod] for p in self.ProductSet) > 0.0:
@@ -383,36 +383,42 @@ class Instance(object):
     #Compute the possible component for each product (inluding alternative)
     def ComputePossibleComponent(self):
 
-        self.ConsumptionSet = []
-        self.PossibleComponents=[[0 for q in self.ProductSet] for p in self.ProductSet]
-        for p in self.ProductSet:
-            for q in self.ProductSet:
-                if self.Requirements[p][q] > 0.0:
-                    self.PossibleComponents[p][q] = 1
-                    self.ConsumptionSet.append(self.GetConsumptiontuple(q, p))
-                elif sum(self.Alternates[q][c] for c in self.ProductSet if self.Requirements[p][c]) >= 1:
-                    self.PossibleComponents[p][q] = 1
-                    self.ConsumptionSet.append( self.GetConsumptiontuple(q, p))
+         self.ConsumptionSet = []
+         for p in self.ProductWithoutExternalDemand:
+             if self.IsMaterProduct(p):
+                    self.Alternates[p][p] = 1
+    #     self.PossibleComponents=[[0 for q in self.ProductSet] for p in self.ProductSet]
+         for p in self.ProductSet:
+             for q in self.ProductSet:
+                 if self.Alternates[p][q] > 0.0:
+                     self.ConsumptionSet.append(self.GetConsumptiontuple(p, q))
+    #             if self.Requirements[p][q] > 0.0:
+    #                 self.PossibleComponents[p][q] = 1
+    #                 self.ConsumptionSet.append(self.GetConsumptiontuple(q, p))
+    #             elif sum(self.Alternates[q][c] for c in self.ProductSet if self.Requirements[p][c]) >= 1:
+    #                 self.PossibleComponents[p][q] = 1
+    #                 self.ConsumptionSet.append( self.GetConsumptiontuple(q, p))
+    #
+    #
+         self.NrAlternate = [sum(1 for q in self.ProductSet
+                                 if self.Alternates[p][q] > 0.0)
+                             for p in self.ProductSet]
 
-
-        self.NrComponent = [sum(1 for q in self.ProductSet
-                                if self.PossibleComponents[p][q] > 0.0)
-                            for p in self.ProductSet]
-
-        self.NrComponentTotal = sum(self.NrComponent[p] for p in self.ProductSet)
+         self.NrAlternateTotal = sum(self.NrAlternate[p] for p in self.ProductSet)
 
     def GetComsumptionCost(self, p, q ):
-        cost = 0
-        if self.Requirements[p][q]:
-            cost = 0
-        else:
-            for c in self.ProductSet:
-                if (self.Alternates[q][c] and self.Requirements[p][c] >= 1):
-                    cost = self.AternateCosts[q][c]
-        return cost
+        return self.AternateCosts[p][q]
+        # cost = 0
+        # if self.Requirements[p][q]:
+        #     cost = 0
+        # else:
+        #     for c in self.ProductSet:
+        #         if (self.Alternates[q][c] and self.Requirements[p][c] >= 1):
+        #             cost = self.AternateCosts[q][c]
+        # return cost
 
     def GetConsumptiontuple(self, p, q ):
-        return (p, q, "%s -> %s" % (p, q), self.GetComsumptionCost(q,p))#p,q))
+        return (p, q, "%s -> %s" % (p, q), self.GetComsumptionCost(p,q))#p,q))
     # Compute the lead time from a product to its component with the largest sum of lead time
     def ComputeMaxLeadTime(self):
         self.MaxLeadTimeProduct = [0 for p in self.ProductSet]
