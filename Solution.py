@@ -326,9 +326,9 @@ class Solution(object):
 
                     for q in self.Instance.ProductSet:
                         if self.Instance.Alternates[p][q] \
-                                and self.Consumption[w][t][q][p] > 0:
+                                and self.Consumption[w][t][p][q] > 0:
 
-                            consumptioncost += self.Consumption[w][t][q][p] \
+                            consumptioncost += self.Consumption[w][t][p][q] \
                                                 * self.Instance.GetComsumptionCost(p,q)\
                                                 *gammas[t] \
                                                 * self.Scenarioset[w].Probability

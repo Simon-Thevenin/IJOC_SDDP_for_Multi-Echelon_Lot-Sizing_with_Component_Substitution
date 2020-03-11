@@ -379,8 +379,8 @@ class ProgressiveHedging(object):
                       #  variablesquad.append((variable, variable, 2 * 0.5 * self.LagrangianMultiplier))
 
                     for c in self.Instance.ConsumptionSet:
-                            variable = mipsolver.GetIndexConsumptionVariable(c[1], c[0], t, scenarioindexinmip)
-                            coeff = mipsolver.GetConsumptionCoeff(c[1], c[0], t, scenarioindexinmip) + self.LagrangianConsumption[scenario][t][c[0]][c[1]]
+                            variable = int(mipsolver.GetIndexConsumptionVariable(c[0], c[1], t, scenarioindexinmip))
+                            coeff = mipsolver.GetConsumptionCoeff(c[0], c[1], t, scenarioindexinmip) + self.LagrangianConsumption[scenario][t][c[0]][c[1]]
                             variables.append((variable, coeff))
                             variablesquad.append((variable, variable, 2 * 0.5 * self.LagrangianMultiplier))
 

@@ -97,7 +97,7 @@ class Constants( object ):
     SDDPMinimumNrIterationBetweenTest = 30
     SDDPNrItNoImproveLBBeforeTest = 10
     SDDPDurationBeforeIncreaseForwardSample = 3600
-    SDDPSaveInExcel = True
+    SDDPSaveInExcel = False
     SDDPFixSetupStrategy = False
     SDDPFirstForwardWithEVPI = False
 

@@ -202,8 +202,8 @@ class ScenarioTree(object):
                                         for t in self.Instance.TimeBucketSet]
 
                 s.ConsumptionVariable = [[[self.Owner.StartConsumptionVariable + \
-                                           s.ScenarioId * self.Instance.NrComponentTotal * len(self.Instance.TimeBucketSet) \
-                                             + self.Instance.self.NrAlternateTotal * t \
+                                           s.ScenarioId * self.Instance.NrAlternateTotal * len(self.Instance.TimeBucketSet) \
+                                             + self.Instance.NrAlternateTotal * t \
                                              + sum(self.Instance.NrAlternate[k] for k in range(p)) \
                                              + sum(self.Instance.Alternates[p][k] for k in range(q))
                                              if self.Instance.Alternates[p][q]

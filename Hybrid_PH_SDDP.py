@@ -142,7 +142,6 @@ class Hybrid_PH_SDDP(object):
 
 
     def GetHeuristicSetup(self):
-        print("Get Heuristic Setups")
         treestructure = [1, 200] + [1] * (self.Instance.NrTimeBucket - 1) + [0]
         self.TestIdentifier.Model = Constants.ModelYQFix
         chosengeneration = self.TestIdentifier.ScenarioSampling
