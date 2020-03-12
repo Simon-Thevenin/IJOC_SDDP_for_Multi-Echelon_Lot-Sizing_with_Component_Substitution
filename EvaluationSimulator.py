@@ -408,7 +408,14 @@ class EvaluationSimulator(object):
 
     def ComputeStatistic(self, Evaluated, Probabilities, KPIStat, nrerror):
 
-        mean = float(sum(np.dot(Evaluated[k], Probabilities[k]) for k in range(len(Evaluated))) / float(len(Evaluated)))
+
+        mean = float(sum(np.dot(Evaluated[k][m], Probabilities[k][m])
+                         for k in range(len(Evaluated) )
+                         for m  in range(self.EvalatorIdentificator.NrEvaluation) if Evaluated[k][m]>=0)
+                     / sum(Probabilities[k][m]
+                           for k in range(len(Evaluated))
+                           for m in range(self.EvalatorIdentificator.NrEvaluation) if Evaluated[k][m] >= 0
+                            if Evaluated[k]>=0))
         K = len(Evaluated)
         M = self.EvalatorIdentificator.NrEvaluation
         variancepondere = (1.0 / K) * \
