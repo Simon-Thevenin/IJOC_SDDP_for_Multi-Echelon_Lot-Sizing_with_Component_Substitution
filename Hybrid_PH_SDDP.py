@@ -30,10 +30,17 @@ class Hybrid_PH_SDDP(object):
 #
         self.Solver = solver
 
+        self.NrScenarioOnceYIsFix = self.TestIdentifier.NrScenario
 
-        OldNrScenar =self.TestIdentifier.NrScenario
-        self.TestIdentifier.NrScenario = "1000"
+        if not Constants.MIPBasedOnSymetricTree:
+            if self.Instance.NrTimeBucket > 5:
+             self.TestIdentifier.NrScenario = "all2"
+            else:
+                self.TestIdentifier.NrScenario = "all5"
+        #OldNrScenar =self.TestIdentifier.NrScenario
+        #self.TestIdentifier.NrScenario = "1000"
         PHTreestructure = solver.GetTreeStructure()
+
         # treestructure = [1, 200] + [1] * (self.Instance.NrTimeBucket - 1) + [0]
         # self.TestIdentifier.Model = Constants.ModelYQFix
         # chosengeneration = self.TestIdentifier.ScenarioSampling
@@ -43,7 +50,7 @@ class Hybrid_PH_SDDP(object):
         #                                       for t in self.Instance.TimeBucketSet]
         self.ProgressiveHedging = ProgressiveHedging(self.Instance, self.TestIdentifier, PHTreestructure)
 
-        self.TestIdentifier.NrScenario = OldNrScenar
+        self.TestIdentifier.NrScenario = self.NrScenarioOnceYIsFix
     def Run(self):
 
         self.GetHeuristicSetup()
@@ -58,7 +65,8 @@ class Hybrid_PH_SDDP(object):
             Constants.PrintOnlyFirstStageDecision = False
 
         self.ProgressiveHedging.CurrentIteration = 0
-        while self.ProgressiveHedging.CurrentIteration < 5 or not self.ProgressiveHedging.ComputeConvergenceY() <= 1.0:
+        stop = False
+        while not stop:#self.ProgressiveHedging.CurrentIteration < 5 or not self.ProgressiveHedging.ComputeConvergenceY() <= 1.0:
             self.ProgressiveHedging.SolveScenariosIndependently()
             if self.ProgressiveHedging.CurrentIteration == -1:
                 treestructure = [1, 200] + [1] * (self.Instance.NrTimeBucket - 1) + [0]
@@ -108,7 +116,7 @@ class Hybrid_PH_SDDP(object):
             self.ProgressiveHedging.UpdateLagragianMultipliers()
 
             #Just for the printing:
-            self.ProgressiveHedging.CheckStopingCriterion()
+            stop = self.ProgressiveHedging.CheckStopingCriterion()
 
             if Constants.Debug:
                 self.ProgressiveHedging.PrintCurrentIteration()

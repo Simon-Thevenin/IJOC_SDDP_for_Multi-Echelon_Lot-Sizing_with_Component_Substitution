@@ -195,8 +195,8 @@ if __name__ == "__main__":
                    # filenew.write("sbatch %s \n" % (jobname))
                     jobname = CreateHybridSearchJob(instance, nrback, nrforward, setting, model="YFix")
                     filenew.write("sbatch %s \n" % (jobname))
-                    jobname = CreateSDDPJob(instance, nrback, nrforward, setting, model="HeuristicYFix")
-                    filenew.write("sbatch %s \n" % (jobname))
+                    #jobname = CreateSDDPJob(instance, nrback, nrforward, setting, model="HeuristicYFix")
+                    #filenew.write("sbatch %s \n" % (jobname))
 
 
 

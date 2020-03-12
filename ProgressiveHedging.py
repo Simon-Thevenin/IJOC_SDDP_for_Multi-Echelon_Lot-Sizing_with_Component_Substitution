@@ -81,6 +81,8 @@ class ProgressiveHedging(object):
             self.ScenarioTree = scenariotree
 
         self.ScenarioSet = self.ScenarioTree.GetAllScenarios(False)
+        #for s in self.ScenarioSet:
+        #    print(s.Demands)
         self.ScenarioNrSet = range(len(self.ScenarioSet))
         self.SplitScenrioTree2()
 

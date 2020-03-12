@@ -109,6 +109,7 @@ class Solver( object ):
         scenarioset = scenariotree.GetAllScenarios(computeindex=False)
         #for s in scenarioset:
         #    print(s.Demands)
+        #print("######################")
         MIPModel = self.TestIdentifier.Model
         if self.TestIdentifier.Model == Constants.Average:
             MIPModel = Constants.ModelYQFix
