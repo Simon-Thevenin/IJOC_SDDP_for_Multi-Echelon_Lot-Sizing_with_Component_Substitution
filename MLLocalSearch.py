@@ -111,6 +111,9 @@ class MLLocalSearch(object):
         self.Iteration = 0
         self.SDDPNrScenarioTest = 200
         self.SDDPSolver.CurrentToleranceForSameLB = 1
+
+        self.MLLocalSearchLB = -1
+        self.MLLocalSearchTimeBestSol = -1
         self.InitTrace()
 
     def updateRecord(self, solution):
@@ -120,6 +123,7 @@ class MLLocalSearch(object):
             self.BestSolutionCost = solution.TotalCost
             self.BestSolutionSafeUperBound = max( self.SDDPSolver.CurrentExpvalueUpperBound, self.SDDPSolver.CurrentLowerBound)
             self.BestSolution = solution
+            self.MLLocalSearchTimeBestSol = time.time() - self.Start
 
     def trainML(self):
         #self.Regr = linear_model.LinearRegression()
@@ -579,7 +583,7 @@ class MLLocalSearch(object):
     def RunSDDP(self, relaxsetup = False, runwithbinary = False):
        ## print("RUN SDDP")
 
-        self.SDDPSolver.WriteInTraceFile("__________________New run of SDDP ______________best ub: %r______ \n"%self.BestSolutionSafeUperBound)
+        self.SDDPSolver.WriteInTraceFile("__________________New run of SDDP ______________best ub: %r______ MLLocalSearchLB: %r \n"%(self.BestSolutionSafeUperBound, self.MLLocalSearchLB))
 
         if runwithbinary:
             if self.SDDPSolver.ForwardStage[0].MIPDefined:
@@ -673,6 +677,7 @@ class MLLocalSearch(object):
         self.SDDPSolver.ForwardStage[0].ChangeSetupToBinary()
         self.SDDPSolver.ForwardStage[0].Cplex.solve()
         sol = self.SDDPSolver.ForwardStage[0].Cplex.solution
+        self.MLLocalSearchLB = sol.get_objective_value();
         indexarray = [self.SDDPSolver.ForwardStage[0].GetIndexProductionVariable(p, t) for t in self.Instance.TimeBucketSet
                       for p in self.Instance.ProductSet]
         values = sol.get_values(indexarray)

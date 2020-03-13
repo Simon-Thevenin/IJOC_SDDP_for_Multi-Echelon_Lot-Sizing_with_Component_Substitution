@@ -66,6 +66,8 @@ class Solution(object):
         self.TotalTime = 0
         self.CplexNrConstraints = -1
         self.CplexNrVariables = -1
+        self.MLLocalSearchLB = -1
+        self.MLLocalSearchTimeBestSol = -1
         self.PHCost = -1
         self.PHNrIteration = -1
 
@@ -106,13 +108,13 @@ class Solution(object):
         general = [self.Instance.InstanceName, self.Instance.Distribution, model,
                    self.CplexCost, self.CplexTime, self.TotalTime, self.CplexGap, self.CplexNrConstraints,
                    self.CplexNrVariables, self.SDDPLB, self.SDDPExpUB, self.SDDPNrIteration,  self.SDDPTimeBackward,
-                   self.SDDPTimeForwardNoTest, self.SDDPTimeForwardTest, self.LocalSearchIteration, self.PHCost,
+                   self.SDDPTimeForwardNoTest, self.SDDPTimeForwardTest, self.MLLocalSearchLB, self.MLLocalSearchTimeBestSol, self.LocalSearchIteration, self.PHCost,
                    self.PHNrIteration, self.IsPartialSolution, self.IsSDDPSolution]
 
         
         columnstab = ["Name", "Distribution", "Model", "CplexCost", "CplexTime", "TotalTime", "CplexGap", "CplexNrConstraints",
                       "CplexNrVariables", "SDDP_LB", "SDDP_ExpUB", "SDDP_NrIteration",  "SDDPTimeBackward",
-                   "SDDPTimeForwardNoTest", "SDDPTimeForwardTest",  "LocalSearchIterations", "PH_Cost", "PH_NrIteration", "IsPartialSolution", "ISSDDPSolution"]
+                   "SDDPTimeForwardNoTest", "SDDPTimeForwardTest", "MLLocalSearchLB", "MLLocalSearchTimeBestSol", "LocalSearchIterations", "PH_Cost", "PH_NrIteration", "IsPartialSolution", "ISSDDPSolution"]
         generaldf = pd.DataFrame(general, index=columnstab)
         return generaldf
 
@@ -250,6 +252,9 @@ class Solution(object):
         self.SDDPNrIteration = instanceinfo.at['SDDP_NrIteration', 0]
 
         self.LocalSearchIteration = instanceinfo.at['LocalSearchIterations', 0]
+        self.MLLocalSearchLB = instanceinfo.at['MLLocalSearchLB', 0]
+        self.MLLocalSearchTimeBestSol = instanceinfo.at['MLLocalSearchTimeBestSol', 0]
+
 
         self.SDDPTimeBackward = instanceinfo.at['SDDPTimeBackward', 0]
         self.SDDPTimeForwardNoTest = instanceinfo.at['SDDPTimeForwardNoTest', 0]
@@ -689,6 +694,8 @@ class Solution(object):
                     self.SDDPTimeBackward,
                     self.SDDPTimeForwardNoTest,
                     self.SDDPTimeForwardTest,
+                    self.MLLocalSearchLB,
+                    self.MLLocalSearchTimeBestSol,
                     self.LocalSearchIteration,
                     self.PHCost,
                     self.PHNrIteration,

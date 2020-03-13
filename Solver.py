@@ -313,6 +313,9 @@ class Solver( object ):
             else:
                 solution = self.SDDPSolver.CreateSolutionOfAllInSampleScenario()
 
+            solution.MLLocalSearchLB =  self.MLLocalSearch.MLLocalSearchLB
+            solution.MLLocalSearchTimeBestSol = self.MLLocalSearch.MLLocalSearchTimeBestSol
+
             if Constants.SDDPSaveInExcel:
                 self.SDDPSolver.SaveSolver()
         #self.SDDPSolver = SDDP(self.Instance, self.TestIdentifier)
