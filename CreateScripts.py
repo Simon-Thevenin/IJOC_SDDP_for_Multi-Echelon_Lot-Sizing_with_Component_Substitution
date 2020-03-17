@@ -176,7 +176,7 @@ if __name__ == "__main__":
 
     if sys.argv[1] == "N":
         # sddpnrbackset = ["allDIX", "all20", "50-50-10", "all50" ]#,10,20] #[2, 5], 10, 20]
-        sddpnrbackset = ["all2", "all5", "all10", "all20"]
+        sddpnrbackset = ["all2", "all5", "all10"]#, "all20"]
         filenewname = "runallnewtest.sh"
         filenew = open(filenewname, 'w')
         filenew.write("""
@@ -188,10 +188,19 @@ if __name__ == "__main__":
             for nrback in sddpnrbackset:
                 for setting in ["SymetricMIP"]:#, "Default"]:
                     nrforward = 1
+                    if( not ( "H06" in instance and nrback == "all10"
+                              or "H08" in instance and nrback == "all10"
+                              or "H010" in instance and nrback == "all10"
+                              or "H08" in instance and nrback == "all5"
+                              or "H010" in instance and nrback == "all5"
+                    ) ) :
+                            #jobname = CreateMIPJob(instance, nrback, model="YFix", mipsetting=setting)
+                            # filenew.write("sbatch %s \n" % (jobname))
+                            #jobname = CreateMLLocalSearchJob(instance, nrback, nrforward, setting, model="YFix", mlsetting="NrIterationBeforeTabu1000")
+                            #filenew.write("sbatch %s \n" % (jobname))
 
-                    #jobname = CreateMIPJob(instance, nrback, model="YFix", mipsetting=setting)
-                   # filenew.write("sbatch %s \n" % (jobname))
-                    jobname = CreateMLLocalSearchJob(instance, nrback, nrforward, setting, model="YFix", mlsetting="NrIterationBeforeTabu1000")
+                    jobname = CreateMLLocalSearchJob(instance, nrback, nrforward, "Default", model="YFix",
+                                                     mlsetting="NrIterationBeforeTabu1000")
                     filenew.write("sbatch %s \n" % (jobname))
 
 
@@ -294,12 +303,12 @@ if __name__ == "__main__":
         nrforward = 1
         nrback = "all20"
         for instance in InstanceSet:
-                #for setting in ["Default", "NoEVPI", "NoStrongCut", "SingleCut", "MC" ]:
-                    #jobname = CreateSDDPJob(instance, nrback, nrforward, setting, model="HeuristicYFix", nrtest=0)
-                    #filesddp.write("sbatch %s \n" % (jobname))
+                for setting in ["Default", "NoEVPI", "NoStrongCut", "SingleCut", "MC" ]:
+                    jobname = CreateSDDPJob(instance, nrback, nrforward, setting, model="HeuristicYFix", nrtest=0)
+                    filesddp.write("sbatch %s \n" % (jobname))
 
-                jobname = CreateSDDPJob(instance, nrback, nrforward, "JustYFix", model="YFix", nrtest=0)
-                filesddp.write("sbatch %s \n" % (jobname))
+                #jobname = CreateSDDPJob(instance, nrback, nrforward, "JustYFix", model="YFix", nrtest=0)
+                #filesddp.write("sbatch %s \n" % (jobname))
 
 
 

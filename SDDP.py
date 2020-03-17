@@ -658,7 +658,8 @@ class SDDP(object):
         optimalitygap = (self.CurrentExpvalueUpperBound - self.CurrentLowerBound)/self.CurrentExpvalueUpperBound
         optimalitygapreached = (optimalitygap < Constants.SDDPGapRelax)
         iterationlimitreached = (self.CurrentIteration > Constants.SDDPNrIterationRelax * phase)
-        result = iterationlimitreached # or optimalitygapreached
+        durationlimitreached = duration > Constants.AlgorithmTimeLimit
+        result = iterationlimitreached or durationlimitreached# or optimalitygapreached
         self.WriteInTraceFile("Iteration: %d, Duration: %d, LB: %r, (exp UB:%r),  Gap: %r \n"
                               % (self.CurrentIteration, duration, self.CurrentLowerBound, self.CurrentExpvalueUpperBound,
                               optimalitygap,))

@@ -1247,7 +1247,13 @@ class SDDPStage(object):
                                       ub=[self.M] * self.NrBackOrderVariable)
 
         if not self.IsLastStage():
+            costtogoproba = []
+
             costtogoproba = [ self.FuturScenarProba[f] for w in self.FixedScenarioSet for f in self.FuturScenario] # *
+            #if not Constants.SDDPUseMultiCut:
+            #    costtogoproba[0] = 1.0
+
+
             self.Cplex.variables.add(obj=costtogoproba,
                                      lb=[0.0]*self.NrCostToGo,
                                      ub=[self.M]*self.NrCostToGo)
@@ -1874,7 +1880,7 @@ class SDDPStage(object):
                     self.StageCostPerScenarioWithoutCostoGo[self.CurrentTrialNr] = self.StageCostPerScenarioWithCostoGo[self.CurrentTrialNr] - sum(self.FuturScenarProba[w] * sol.get_values([self.GetIndexCostToGo(w, futurescenario)])[0]
                                                                                                                                                    for w in self.FixedScenarioSet for futurescenario in self.FuturScenario)
                 else:
-                    self.StageCostPerScenarioWithoutCostoGo[self.CurrentTrialNr] = self.StageCostPerScenarioWithCostoGo[self.CurrentTrialNr] - sum(   sol.get_values([self.GetIndexCostToGo(w, 0)])[0] for w in self.FixedScenarioSet )
+                    self.StageCostPerScenarioWithoutCostoGo[self.CurrentTrialNr] = self.StageCostPerScenarioWithCostoGo[self.CurrentTrialNr] - sum( self.FuturScenarProba[w] *  sol.get_values([self.GetIndexCostToGo(w, 0)])[0] for w in self.FixedScenarioSet )
 
             if self.IsFirstStage():
                 self.PartialCostPerScenario[self.CurrentTrialNr] = self.StageCostPerScenarioWithoutCostoGo[self.CurrentTrialNr]
