@@ -33,6 +33,7 @@ class Constants( object ):
     ModelYFix = "YFix"
     ModelHeuristicYFix = "HeuristicYFix"
     MLLocalSearch = "MLLocalSearch"
+    JustYFix = "JustYFix"
     #Action
     Solve ="Solve"
     Evaluate = "Evaluate"

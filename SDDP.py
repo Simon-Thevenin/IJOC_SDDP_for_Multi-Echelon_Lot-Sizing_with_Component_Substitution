@@ -742,7 +742,7 @@ class SDDP(object):
 
 
 
-        if self.TestIdentifier.Model == Constants.ModelHeuristicYFix or self.TestIdentifier.Method == Constants.Hybrid:
+        if self.TestIdentifier.Model == Constants.ModelHeuristicYFix or self.TestIdentifier.Method == Constants.Hybrid or self.TestIdentifier.SDDPSetting == Constants.JustYFix:
             Constants.SDDPGenerateCutWith2Stage = False
             Constants.SolveRelaxationFirst = False
             Constants.SDDPRunSigleTree = False

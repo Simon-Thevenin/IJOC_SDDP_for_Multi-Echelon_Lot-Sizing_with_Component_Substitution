@@ -112,7 +112,7 @@ export I_MPI_PMI_LIBRARY=/usr/lib64/libpmi.so
 
 #SBATCH --mail-user=simon.thevenin@imt-atlantique.fr
 
-def CreateSDDPJob(instance, nrback, nrforward, setting, model = "YFix"):
+def CreateSDDPJob(instance, nrback, nrforward, setting, model = "YFix", nrtest="5000"):
     qsub_filename = "./Jobs/job_sddp_%s_%s_%s_%s_%s" % (instance, nrback, nrforward, setting, model)
     qsub_file = open(qsub_filename, 'w')
     CreatHeader(qsub_file )
@@ -120,8 +120,8 @@ def CreateSDDPJob(instance, nrback, nrforward, setting, model = "YFix"):
     if setting == "MC":
         scengen = "MC"
     qsub_file.write("""
-srun python scm.py  Solve %s %s %s %s -n 5000 -p Re-solve -m SDDP --sddpsetting %s --nrforward %s  > /home/LS2N/thevenin-s/log/output-${SLURM_JOB_ID}.txt 
-""" % (instance, model, nrback, scengen, setting, nrforward))
+srun python scm.py  Solve %s %s %s %s -n %s -p Re-solve -m SDDP --sddpsetting %s --nrforward %s  > /home/LS2N/thevenin-s/log/output-${SLURM_JOB_ID}.txt 
+""" % (instance, model, nrback, scengen, nrtest, setting, nrforward))
     return qsub_filename
 
 def CreateMLLocalSearchJob(instance, nrback, nrforward, setting, model = "YFix", mlsetting = "Defuault"):
@@ -278,7 +278,7 @@ if __name__ == "__main__":
         for instance in InstanceSet:
             for nrback in sddpnrbackset:
                 for setting in ["SingleCut"]:
-                    jobname = CreateSDDPJob(instance, nrback, nrforward, setting, model="HeuristicYFix")
+                    jobname = CreateSDDPJob(instance, nrback, nrforward, setting, model="HeuristicYFix", nrtest=0)
                     filesddp.write("sbatch %s \n" % (jobname))
 
 
@@ -295,10 +295,10 @@ if __name__ == "__main__":
         nrback = "all20"
         for instance in InstanceSet:
                 for setting in ["Default", "NoEVPI", "NoStrongCut", "SingleCut", "MC" ]:
-                    jobname = CreateSDDPJob(instance, nrback, nrforward, setting, model="HeuristicYFix")
+                    jobname = CreateSDDPJob(instance, nrback, nrforward, setting, model="HeuristicYFix", nrtest=0)
                     filesddp.write("sbatch %s \n" % (jobname))
 
-                jobname = CreateSDDPJob(instance, nrback, nrforward, "Default", model="YFix")
+                jobname = CreateSDDPJob(instance, nrback, nrforward, "JustYFix", model="YFix", nrtest=0)
                 filesddp.write("sbatch %s \n" % (jobname))
 
 
