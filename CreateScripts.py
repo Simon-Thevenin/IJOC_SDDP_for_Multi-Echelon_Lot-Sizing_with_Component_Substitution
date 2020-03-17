@@ -295,21 +295,13 @@ if __name__ == "__main__":
         nrback = "all20"
         for instance in InstanceSet:
                 for setting in ["Default", "NoEVPI", "NoStrongCut", "SingleCut", "MC" ]:
-                    jobname = CreateSDDPJob(instance, nrback, nrforward, setting, model="HeuristicYFix", nrtest=0)
-                    filesddp.write("sbatch %s \n" % (jobname))
+                    #jobname = CreateSDDPJob(instance, nrback, nrforward, setting, model="HeuristicYFix", nrtest=0)
+                    #filesddp.write("sbatch %s \n" % (jobname))
 
                 jobname = CreateSDDPJob(instance, nrback, nrforward, "JustYFix", model="YFix", nrtest=0)
                 filesddp.write("sbatch %s \n" % (jobname))
 
 
-
-        # for instance in InstanceSet:
-        #    for nrback in sddpnrbackset:
-        #         for setting in [ "Default", "NoFirstCuts", "NoEVPI", "NoStongCut", "NoSingleTree", "WithLPTree", "WithFixedSetups", "WithFixedSetupsNoScenarioTree" ]:
-        #
-        #             nrforward = 1
-        #             jobname = CreateSDDPJob(instance, nrback, nrforward, setting)
-        #             filesddp.write("qsub %s \n" % (jobname) )
 
 
     if sys.argv[1] == "COMP":
