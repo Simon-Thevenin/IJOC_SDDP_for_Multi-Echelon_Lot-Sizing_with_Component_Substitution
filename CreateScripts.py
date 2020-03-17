@@ -194,6 +194,7 @@ if __name__ == "__main__":
                               or "H08" in instance and nrback == "all5"
                               or "H010" in instance and nrback == "all5"
                     ) ) :
+                        print("yo")
                             #jobname = CreateMIPJob(instance, nrback, model="YFix", mipsetting=setting)
                             # filenew.write("sbatch %s \n" % (jobname))
                             #jobname = CreateMLLocalSearchJob(instance, nrback, nrforward, setting, model="YFix", mlsetting="NrIterationBeforeTabu1000")
