@@ -288,7 +288,7 @@ if __name__ == "__main__":
         for instance in InstanceSet:
             for nrback in sddpnrbackset:
                 for setting in ["SingleCut"]:
-                    jobname = CreateSDDPJob(instance, nrback, nrforward, setting, model="HeuristicYFix", nrtest=0)
+                    jobname = CreateSDDPJob(instance, nrback, nrforward, setting, model="HeuristicYFix")
                     filesddp.write("sbatch %s \n" % (jobname))
 
 
