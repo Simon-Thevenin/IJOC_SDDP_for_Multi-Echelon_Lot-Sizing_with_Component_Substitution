@@ -124,13 +124,13 @@ srun python scm.py  Solve %s %s %s %s -n %s -p Re-solve -m SDDP --sddpsetting %s
 """ % (instance, model, nrback, scengen, nrtest, setting, nrforward))
     return qsub_filename
 
-def CreateMLLocalSearchJob(instance, nrback, nrforward, setting, model = "YFix", mlsetting = "Defuault"):
+def CreateMLLocalSearchJob(instance, nrback, nrforward, setting, model = "YFix", mlsetting = "Defuault", sddpsetting = "Default"):
     qsub_filename = "./Jobs/job_mllocalsearch_%s_%s_%s_%s_%s_%s" % (instance, nrback, nrforward, setting, model, mlsetting)
     qsub_file = open(qsub_filename, 'w')
     CreatHeader(qsub_file )
     qsub_file.write("""
-srun python scm.py  Solve %s %s %s RQMC -n 5000 -p Re-solve -m MLLocalSearch --mipsetting %s --mllocalsearchsetting %s --nrforward %s >/home/LS2N/thevenin-s/log/output-${SLURM_JOB_ID}.txt
-""" % (instance, model, nrback, setting, mlsetting, nrforward))
+srun python scm.py  Solve %s %s %s RQMC -n 5000 -p Re-solve -m MLLocalSearch --mipsetting %s --mllocalsearchsetting %s --nrforward %s --sddpsetting %s>/home/LS2N/thevenin-s/log/output-${SLURM_JOB_ID}.txt
+""" % (instance, model, nrback, setting, mlsetting, nrforward, sddpsetting))
     return qsub_filename
 
 def CreateHybridSearchJob(instance, nrback, nrforward, setting, model = "YFix", phsetting = "Default"):
@@ -200,8 +200,8 @@ if __name__ == "__main__":
                             #jobname = CreateMLLocalSearchJob(instance, nrback, nrforward, setting, model="YFix", mlsetting="NrIterationBeforeTabu1000")
                             #filenew.write("sbatch %s \n" % (jobname))
 
-                    jobname = CreateMLLocalSearchJob(instance, nrback, nrforward, "Default", model="YFix",
-                                                     mlsetting="NrIterationBeforeTabu1000")
+                    jobname = CreateMLLocalSearchJob(instance, nrback, nrforward, "SymetricMIP", model="YFix",
+                                                     mlsetting="NrIterationBeforeTabu1000", sddpsetting = "EvalOutSample")
                     filenew.write("sbatch %s \n" % (jobname))
 
 
