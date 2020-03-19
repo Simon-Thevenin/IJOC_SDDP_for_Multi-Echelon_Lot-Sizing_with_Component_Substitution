@@ -146,7 +146,7 @@ def GenerateInstances():
     normalhorizon = 4
     normalalternate = 4
     normalcostalternate = 0.1
-    for name in ["G0041331"]:#,"G0041111", "K0011311" ,"K0011131"]:#,"G0041311","K0011111","K0011311", "K0011331", ,"G0041331","K0011131","K0011331"]:
+    for name in ["G0041111", "K0011311" ,"K0011131"]:#"G0041331"]:#,,"G0041311","K0011111","K0011311", "K0011331", ,"G0041331","K0011131","K0011331"]:
         for horizon in [2, 4, 6, 8, 10]:
             instance.ReadFromFile(name, "Lumpy", longtimehoizon=True, longtimehorizonperiod=horizon,
                                   nralternate=normalalternate, costalternate=normalcostalternate)
