@@ -194,11 +194,10 @@ if __name__ == "__main__":
                               or "H08" in instance and nrback == "all5"
                               or "H010" in instance and nrback == "all5"
                     ) ) :
-                        print("yo")
-                            #jobname = CreateMIPJob(instance, nrback, model="YFix", mipsetting=setting)
-                            # filenew.write("sbatch %s \n" % (jobname))
-                            #jobname = CreateMLLocalSearchJob(instance, nrback, nrforward, setting, model="YFix", mlsetting="NrIterationBeforeTabu1000")
-                            #filenew.write("sbatch %s \n" % (jobname))
+                            jobname = CreateMIPJob(instance, nrback, model="YFix", mipsetting=setting)
+                            filenew.write("sbatch %s \n" % (jobname))
+                            jobname = CreateMLLocalSearchJob(instance, nrback, nrforward, setting, model="YFix", mlsetting="NrIterationBeforeTabu1000")
+                            filenew.write("sbatch %s \n" % (jobname))
 
                     jobname = CreateMLLocalSearchJob(instance, nrback, nrforward, "SymetricMIP", model="YFix",
                                                      mlsetting="NrIterationBeforeTabu1000", sddpsetting = "EvalOutSample")
@@ -223,14 +222,16 @@ if __name__ == "__main__":
                     for setting in ["Default"]:
                         nrforward = 1
 
-                        jobname = CreateSDDPJob(instance, nrback, nrforward, setting, model="HeuristicYFix")
-                        fileheur.write("sbatch %s \n" % (jobname))
-                        jobname = CreateMLLocalSearchJob(instance, nrback, nrforward, setting, model="YFix",mlsetting="NrIterationBeforeTabu1000")
-                        fileheur.write("sbatch %s \n" % (jobname))
+                        #jobname = CreateSDDPJob(instance, nrback, nrforward, setting, model="HeuristicYFix")
+                        #fileheur.write("sbatch %s \n" % (jobname))
+                        #jobname = CreateMLLocalSearchJob(instance, nrback, nrforward, setting, model="YFix",mlsetting="NrIterationBeforeTabu1000")
+                        #fileheur.write("sbatch %s \n" % (jobname))
                         #jobname = CreateMIPJob(instance, 100, model="YQFix")
                         #fileheur.write("sbatch %s \n" % (jobname))
-                        jobname = CreateHybridSearchJob(instance, nrback, nrforward, setting, model="YFix")
+                        jobname = CreateMIPJob(instance, 1, model="Average")
                         fileheur.write("sbatch %s \n" % (jobname))
+                        #jobname = CreateHybridSearchJob(instance, nrback, nrforward, setting, model="YFix")
+                        #fileheur.write("sbatch %s \n" % (jobname))
                         #jobname = CreateMIPJob(instance, "6400b", model="YFix")
                         #fileheur.write("sbatch %s \n" % (jobname))
                         #jobname = CreateMIPJob(instance, "all2", model="YFix")
@@ -304,9 +305,9 @@ if __name__ == "__main__":
         nrforward = 1
         nrback = "all20"
         for instance in InstanceSet:
-                #for setting in ["Default", "NoEVPI", "NoStrongCut", "SingleCut", "MC" ]:
-                #    jobname = CreateSDDPJob(instance, nrback, nrforward, setting, model="HeuristicYFix", nrtest=0)
-                #    filesddp.write("sbatch %s \n" % (jobname))
+                for setting in ["Default", "NoEVPI", "NoStrongCut", "SingleCut", "MC" ]:
+                    jobname = CreateSDDPJob(instance, nrback, nrforward, setting, model="HeuristicYFix", nrtest=0)
+                    filesddp.write("sbatch %s \n" % (jobname))
 
                 jobname = CreateSDDPJob(instance, nrback, nrforward, "JustYFix", model="YFix", nrtest=0)
                 filesddp.write("sbatch %s \n" % (jobname))
