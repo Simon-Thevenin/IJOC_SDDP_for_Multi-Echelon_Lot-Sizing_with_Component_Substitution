@@ -304,12 +304,12 @@ if __name__ == "__main__":
         nrforward = 1
         nrback = "all20"
         for instance in InstanceSet:
-                for setting in ["Default", "NoEVPI", "NoStrongCut", "SingleCut", "MC" ]:
-                    jobname = CreateSDDPJob(instance, nrback, nrforward, setting, model="HeuristicYFix", nrtest=0)
-                    filesddp.write("sbatch %s \n" % (jobname))
+                #for setting in ["Default", "NoEVPI", "NoStrongCut", "SingleCut", "MC" ]:
+                #    jobname = CreateSDDPJob(instance, nrback, nrforward, setting, model="HeuristicYFix", nrtest=0)
+                #    filesddp.write("sbatch %s \n" % (jobname))
 
-                #jobname = CreateSDDPJob(instance, nrback, nrforward, "JustYFix", model="YFix", nrtest=0)
-                #filesddp.write("sbatch %s \n" % (jobname))
+                jobname = CreateSDDPJob(instance, nrback, nrforward, "JustYFix", model="YFix", nrtest=0)
+                filesddp.write("sbatch %s \n" % (jobname))
 
 
 
