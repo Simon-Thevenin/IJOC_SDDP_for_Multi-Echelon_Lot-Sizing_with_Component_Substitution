@@ -199,9 +199,9 @@ if __name__ == "__main__":
                             jobname = CreateMLLocalSearchJob(instance, nrback, nrforward, setting, model="YFix", mlsetting="NrIterationBeforeTabu1000")
                             filenew.write("sbatch %s \n" % (jobname))
 
-                    jobname = CreateMLLocalSearchJob(instance, nrback, nrforward, "SymetricMIP", model="YFix",
-                                                     mlsetting="NrIterationBeforeTabu1000", sddpsetting = "EvalOutSample")
-                    filenew.write("sbatch %s \n" % (jobname))
+                    #jobname = CreateMLLocalSearchJob(instance, nrback, nrforward, "SymetricMIP", model="YFix",
+                    #                                 mlsetting="NrIterationBeforeTabu1000", sddpsetting = "EvalOutSample")
+                    #filenew.write("sbatch %s \n" % (jobname))
 
 
 
