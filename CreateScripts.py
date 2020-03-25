@@ -74,7 +74,7 @@ def CreatHeaderNantes(file):
 #SBATCH -J MON_JOB_MPI
 #
 # Partition visee
-#SBATCH --partition=SMP-short
+#SBATCH --partition=SMP-medium
 #
 # Nombre de noeuds
 #SBATCH --nodes=1
@@ -83,7 +83,7 @@ def CreatHeaderNantes(file):
 #SBATCH --mem 40000
 #
 # Temps de presence du job
-#SBATCH --time=20:00:00
+#SBATCH --time=40:00:00
 #
 # Adresse mel de l'utilisateur
 #
