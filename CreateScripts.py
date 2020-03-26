@@ -41,7 +41,7 @@ module load cplex/2.9
 
 ENVDIR=/tmp/$RANDOM
 virtualenv --no-download $ENVDIR
- virtualenv --no-download -p /home/LS2N/thevenin-s/python/bin/python2.7 $ENVDIR
+virtualenv --no-download -p /home/LS2N/thevenin-s/python/bin/python2.7 $ENVDIR
 
 source $ENVDIR/bin/activate
 pip install --upgrade pip

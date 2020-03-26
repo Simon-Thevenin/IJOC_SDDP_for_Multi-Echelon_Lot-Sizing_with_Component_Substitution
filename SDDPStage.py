@@ -1716,8 +1716,8 @@ class SDDPStage(object):
             #self.Cplex.parameters.lpmethod = 2 # Dual primal cplex.CPX_ALG_DUAL
             #self.Cplex.parameters.lpmethod = 4  # Berriere
             self.Cplex.parameters.threads.set(1)
-            self.Cplex.parameters.barrier.convergetol.set(0.00001)
-            self.Cplex.parameters.simplex.tolerances.feasibility.set(0.000001)
+            #self.Cplex.parameters.barrier.convergetol.set(0.00001)
+            self.Cplex.parameters.simplex.tolerances.feasibility.set(0.0000001)
 
             if self.SDDPOwner.EvaluationMode:
                 self.Cplex.parameters.simplex.tolerances.feasibility.set(0.0001)
