@@ -1720,7 +1720,7 @@ class SDDPStage(object):
             self.Cplex.parameters.simplex.tolerances.feasibility.set(0.0000001)
 
             if self.SDDPOwner.EvaluationMode:
-                self.Cplex.parameters.simplex.tolerances.feasibility.set(0.0001)
+                self.Cplex.parameters.simplex.tolerances.feasibility.set(0.0000001)
 
             #if self.IsFirstStage():
             #    self.Cplex.parameters.simplex.tolerances.optimality.set(0.1)
