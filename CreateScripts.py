@@ -328,7 +328,7 @@ if __name__ == "__main__":
             jobname = CreateMIPJob(instance, 100, model="YQFix", evaluationpolicy="Fix")
             filecomp.write("sbatch %s \n" % (jobname))
             jobname = CreateMIPJob(instance, 1, model="Average", evaluationpolicy="Fix")
-            fileheur.write("sbatch %s \n" % (jobname))
+            filecomp.write("sbatch %s \n" % (jobname))
 
     if sys.argv[1] == "MIP":
        # Create the sh file for resolution
