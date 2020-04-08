@@ -142,13 +142,13 @@ srun python scm.py  Solve %s %s %s RQMC -n 5000 -p Re-solve -m Hybrid --mipsetti
 """ % (instance, model, nrback, setting, phsetting, nrforward))
     return qsub_filename
 
-def CreateMIPJob(instance, scenariotree, model = "YFix", mipsetting = "Default"):
-    qsub_filename = "./Jobs/job_mip_%s_%s_%s_%s" % (instance, scenariotree, model, mipsetting)
+def CreateMIPJob(instance, scenariotree, model = "YFix", mipsetting = "Default", evaluationpolicy = "Re-solve" ):
+    qsub_filename = "./Jobs/job_mip_%s_%s_%s_%s_%s" % (instance, scenariotree, model, mipsetting, evaluationpolicy)
     qsub_file = open(qsub_filename, 'w')
     CreatHeader(qsub_file)
     qsub_file.write("""
-srun python scm.py  Solve %s %s %s RQMC -n 5000 -p Re-solve -m MIP --mipsetting %s  >/home/LS2N/thevenin-s/log/output-${SLURM_JOB_ID}.txt 
-""" % (instance, model, scenariotree, mipsetting))
+srun python scm.py  Solve %s %s %s RQMC -n 5000 -p %s -m MIP --mipsetting %s  >/home/LS2N/thevenin-s/log/output-${SLURM_JOB_ID}.txt 
+""" % (instance, model, scenariotree, evaluationpolicy, mipsetting))
     return qsub_filename
 
 
@@ -294,6 +294,7 @@ if __name__ == "__main__":
 
 
 
+
     if sys.argv[1] == "SDDP":
         filesddpname = "runallsddp.sh"
         filesddp = open(filesddpname, 'w')
@@ -323,11 +324,11 @@ if __name__ == "__main__":
         #!/bin/bash -l
         #
         """)
-        instance = "ComponentSubs"
-        jobname = CreateMLLocalSearchJob(instance, "all20", 1, "Default", model="YFix",  mlsetting="NrIterationBeforeTabu1000")
-        filecomp.write("sbatch %s \n" % (jobname))
-        jobname = CreateMIPJob(instance, 100, model="YQFix")
-        filecomp.write("sbatch %s \n" % (jobname))
+        for instance in InstanceSet:
+            jobname = CreateMIPJob(instance, 100, model="YQFix", evaluationpolicy="Fix")
+            filecomp.write("sbatch %s \n" % (jobname))
+            jobname = CreateMIPJob(instance, 1, model="Average", evaluationpolicy="Fix")
+            fileheur.write("sbatch %s \n" % (jobname))
 
     if sys.argv[1] == "MIP":
        # Create the sh file for resolution
