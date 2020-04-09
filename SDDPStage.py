@@ -1478,6 +1478,7 @@ class SDDPStage(object):
             self.EVPIScenarioSet = []
             for w in range(Constants.SDDPNrEVPIScenario):
                 selected = self.SDDPOwner.CreateRandomScenarioFromSAA()
+                selected.Probability = 1.0 / Constants.SDDPNrEVPIScenario
                 self.EVPIScenarioSet.append(selected)
 
 
@@ -1872,6 +1873,8 @@ class SDDPStage(object):
 
     def SaveSolutionFromSol(self, sol):
             obj = sol.get_objective_value()
+            #if not self.IsLastStage():
+            #    print(sol.get_values([self.GetIndexEVPICostToGo(0)])[0])
             self.StageCostPerScenarioWithCostoGo[self.CurrentTrialNr] = obj
             self.StageCostPerScenarioWithoutCostoGo[self.CurrentTrialNr] = self.StageCostPerScenarioWithCostoGo[self.CurrentTrialNr]
 
