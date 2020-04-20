@@ -232,8 +232,8 @@ if __name__ == "__main__":
                         fileheur.write("sbatch %s \n" % (jobname))
                         jobname = CreateHybridSearchJob(instance, nrback, nrforward, setting, model="YFix")
                         fileheur.write("sbatch %s \n" % (jobname))
-                        jobname = CreateMIPJob(instance, "6400b", model="YFix")
-                        fileheur.write("sbatch %s \n" % (jobname))
+                        #jobname = CreateMIPJob(instance, "6400b", model="YFix")
+                        #fileheur.write("sbatch %s \n" % (jobname))
                         jobname = CreateMIPJob(instance, "all2", model="YFix")
                         fileheur.write("sbatch %s \n" % (jobname))
 
