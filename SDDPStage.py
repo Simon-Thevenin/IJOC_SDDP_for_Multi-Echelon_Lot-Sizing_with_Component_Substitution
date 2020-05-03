@@ -1718,11 +1718,11 @@ class SDDPStage(object):
             #self.Cplex.parameters.lpmethod = 4  # Berriere
             self.Cplex.parameters.threads.set(1)
             #self.Cplex.parameters.barrier.convergetol.set(0.00001)
-            self.Cplex.parameters.simplex.tolerances.feasibility.set(0.00001)
-            self.Cplex.parameters.simplex.tolerances.optimality.set(0.00001)
+            self.Cplex.parameters.simplex.tolerances.feasibility.set(0.0000000001)
+            #self.Cplex.parameters.simplex.tolerances.optimality.set(0.00001)
 
             if self.SDDPOwner.EvaluationMode:
-                self.Cplex.parameters.simplex.tolerances.feasibility.set(0.0000001)
+                self.Cplex.parameters.simplex.tolerances.feasibility.set(0.0000000001)
 
             #if self.IsFirstStage():
             #    self.Cplex.parameters.simplex.tolerances.optimality.set(0.1)
