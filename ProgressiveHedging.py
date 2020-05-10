@@ -137,7 +137,7 @@ class ProgressiveHedging(object):
 
     def SplitScenrioTree2(self):
 
-        batchsize = 1024
+        batchsize = 200
         self.NrMIPBatch = int(math.ceil(len(self.ScenarioNrSet)/(batchsize)))
         self.Indexscenarioinbatch = [None for m in range(self.NrMIPBatch)]
         self.Scenarioinbatch = [None for m in range(self.NrMIPBatch)]
