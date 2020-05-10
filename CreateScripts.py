@@ -80,7 +80,7 @@ def CreatHeaderNantes(file):
 #SBATCH --nodes=1
 # Nombre de processus MPI par noeud
 #SBATCH --ntasks-per-node=1
-#SBATCH --mem 40000
+#SBATCH --mem 80000
 #
 # Temps de presence du job
 #SBATCH --time=40:00:00
@@ -89,6 +89,7 @@ def CreatHeaderNantes(file):
 #
 # Envoi des mails
 #SBATCH --mail-type=abort,end
+#SBATCH --mail-user=simon.thevenin@imt-atlantique.fr
 #
 #SBATCH -o /home/LS2N/thevenin-s/log/job_mpi-%j.out
  
