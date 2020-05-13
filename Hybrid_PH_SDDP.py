@@ -37,6 +37,10 @@ class Hybrid_PH_SDDP(object):
              self.TestIdentifier.NrScenario = "all2"
             else:
                 self.TestIdentifier.NrScenario = "all5"
+
+        print("TO be removed::::")
+        if self.Instance.NrTimeBucket > 5:
+            self.TestIdentifier.NrScenario = "all2"
         #OldNrScenar =self.TestIdentifier.NrScenario
         #self.TestIdentifier.NrScenario = "1000"
         PHTreestructure = solver.GetTreeStructure()
