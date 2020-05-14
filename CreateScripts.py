@@ -80,7 +80,7 @@ def CreatHeaderNantes(file):
 #SBATCH --nodes=1
 # Nombre de processus MPI par noeud
 #SBATCH --ntasks-per-node=1
-#SBATCH --mem 80000
+#SBATCH --mem 40000
 #
 # Temps de presence du job
 #SBATCH --time=40:00:00
