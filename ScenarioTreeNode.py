@@ -53,7 +53,7 @@ class ScenarioTreeNode(object):
         self.BackOrderLevelNextTime = []  # After solving the MILP, the attribut contains the back order level at the node
         self.InventoryLevelTime = []  # After solving the MILP, the attribut contains the inventory level at the node
         self.BackOrderLevelTime = []  # After solving the MILP, the attribut contains the back order level at the node
-        self.Scenario = None
+        self.Scenarios = []
         self.OneOfScenario = None
 
     # This function creates the children of the current node
@@ -89,18 +89,25 @@ class ScenarioTreeNode(object):
                         self.Owner.ScenarioGenerationMethod == Constants.All and self.Owner.Model == Constants.ModelYQFix):
                     nextdemands, probabilities = self.GetDemandToFollowMultipleScenarios(t - 1, nrbranch,  self.FirstBranchID )
                 # case 4: Sample a set of scenario for the next stage
+                elif self.Owner.IsSymetric:
+                        nextdemands = self.Owner.SymetricDemand[t - 1]
+                        probabilities = self.Owner.SymetricProba[t - 1]
                 else:
                     nextdemands, probabilities = ScenarioTreeNode.CreateDemandNormalDistributiondemand(self.Instance,
                                                                                                        t - 1,
                                                                                                        nrbranch,
                                                                                                        averagescenariotree,
                                                                                                        self.Owner.ScenarioGenerationMethod)
+
+
             #Use the sample to create the new branches
             if len(nextdemands) > 0:
                 nrbranch = len(nextdemands[0])
 
                 self.Owner.NrBranches[t] = nrbranch
                 self.Owner.TreeStructure[t] = nrbranch
+
+
 
             usaverageforbranch = (t >= (self.Instance.NrTimeBucket - self.Instance.NrTimeBucketWithoutUncertaintyAfter)) \
                                  or (t < self.Instance.NrTimeBucketWithoutUncertaintyBefore) \
@@ -138,21 +145,21 @@ class ScenarioTreeNode(object):
                              for i in range(nrdemand)]
                             for p in self.Instance.ProductSet]
 
-        probability = [1 for i in range(nrdemand) ]
+        probability = [1 for i in range(nrdemand)]
 
-        if time  - self.Owner.FollowGivenUntil== 0:
-                probability = [ self.Owner.ProbabilityToFollowMultipleSceario[i]  for i in range(nrdemand)]
+        if time - self.Owner.FollowGivenUntil == 0:
+                probability = [self.Owner.ProbabilityToFollowMultipleSceario[i] for i in range(nrdemand)]
 
         return demandvector, probability
 
 
     #This function is used when the demand to use are the one generated for YQFix, which are stored in an array DemandToFollow
     #Return the demand of time at position nrdemand in array DemandTo follow
-    def GetDemandAsYQFix( self, time, nrdemand ):
+    def GetDemandAsYQFix(self, time, nrdemand):
 
-            demandvector = [ [ self.Owner.DemandToFollow[i][time][p]
-                                 for i in range(nrdemand)]
-                                      for p in self.Instance.ProductSet]
+            demandvector = [[self.Owner.DemandToFollow[i][time][p]
+                             for i in range(nrdemand)]
+                             for p in self.Instance.ProductSet]
 
             return demandvector
 
@@ -161,8 +168,8 @@ class ScenarioTreeNode(object):
     #This function returns the given demand at time
     def GetDemandToFollowFirstPeriods(self, time):
              demandvector = [[self.Owner.GivenFirstPeriod[time][p]
-                                 for i in [0]]
-                                for p in self.Instance.ProductSet]
+                              for i in [0]]
+                              for p in self.Instance.ProductSet]
 
              return demandvector
 
@@ -170,18 +177,24 @@ class ScenarioTreeNode(object):
     @staticmethod
     def Aggregate(points, probabilities):
        # get the set of difflerent value in points
-        newpoints = points
+        if Constants.RQMCAggregate:
+            newpoints = points
 
-        newpoints=map(list, zip(*newpoints))
-        newpoints =  list(set(map(tuple,newpoints)))
 
-        newpoints = [list(t) for t in newpoints]
-        tpoint = map(list, zip(*points))
-        newprobaba = [ sum( probabilities[i]  for i in range(len( tpoint ) ) if tpoint[i] == newpoints[p] ) for p in range( len( newpoints ) ) ]
+            #newprobaba = probabilities
+            newpoints = map(list, zip(*newpoints))
+            newpoints = list(set(map(tuple,newpoints)))
+            #
+            newpoints = [list(t) for t in newpoints]
+            tpoint = map(list, zip(*points))
+            newprobaba = [sum(probabilities[i] for i in range(len(tpoint)) if tpoint[i] == newpoints[p]) for p in range(len(newpoints))]
 
-        newpoints = map(list, zip(*newpoints))
 
-        return newpoints, newprobaba
+            newpoints = map(list, zip(*newpoints))
+
+            return newpoints, newprobaba
+        else:
+            return points, probabilities
 
     #This method generate a set of points in [0,1] using RQMC. The points are generated with the library given on the website of P. Lecuyer
     # Apply the inverse of  the given distribution for each point (generated in [0,1]) in the set.
@@ -333,7 +346,7 @@ class ScenarioTreeNode(object):
 
 
     #This function compute the indices of the variables associated wiht each node of the tree
-    def ComputeVariableIndex( self ):
+    def ComputeVariableIndex(self, expandfirststage = False, nrscenar = -1):
 
         if self.NodeNumber == 0:
             self.ProductionVariable = [(self.Owner.Owner.StartProductionVariable
@@ -341,18 +354,25 @@ class ScenarioTreeNode(object):
                                        for p in self.Instance.ProductSet
                                        for t in self.Instance.TimeBucketSet]
 
+
+
+
         if self.Time < self.Instance.NrTimeBucket: #Do not associate Production or quantity variable to the last nodes
             self.ConsumptionVariable = [[ self.Owner.Owner.StartConsumptionVariable + \
-                                          self.Instance.NrComponentTotal * (self.NodeNumber -1)\
-                                          + sum(self.Instance.NrComponent[k] for k in range(p))\
-                                          + sum(self.Instance.PossibleComponents[p][k] for k in range(q))
-                                          if self.Instance.PossibleComponents[p][q]
+                                          self.Instance.NrAlternateTotal * (self.NodeNumber -1)\
+                                          + sum(self.Instance.NrAlternate[k] for k in range(p))\
+                                          + sum(self.Instance.Alternates[p][k] for k in range(q))
+                                          if self.Instance.Alternates[p][q]
                                           else -1
                                         for q in self.Instance.ProductSet]
                                         for p in self.Instance.ProductSet]
             self.QuanitityVariable = [(self.Owner.Owner.StartQuantityVariable +
                                        (self.Instance.NrProduct * (self.NodeNumber - 1)) + p)
                                       for p in self.Instance.ProductSet]
+
+
+
+
 
         if self.Time > 0: #use ( self.NodeNumber -2 ) because thee is no inventory variable for the first node and for the root node
             self.InventoryVariable = [(self.Owner.Owner.StartInventoryVariable
@@ -478,7 +498,7 @@ class ScenarioTreeNode(object):
             for q in self.Instance.ProductSet:
               inventory[q] += node.QuantityToOrderNextTime[q]
             #       # minus internal  demand
-              inventory[q]  -= sum( node.QuantityToOrderNextTime[q2] * self.Instance.Requirements[q2][q] for q2 in self.Instance.ProductSet )
+              inventory[q] -= sum(node.QuantityToOrderNextTime[q2] * self.Instance.Requirements[q2][q] for q2 in self.Instance.ProductSet )
             #     #minus external demand
               if node.Time > 0:
                   inventory[q] -= node.Demand[q]
@@ -498,9 +518,9 @@ class ScenarioTreeNode(object):
         hasrequirement = sum(self.Instance.Requirements[p][q2] for q2 in self.Instance.ProductSet  )
         m=0
         if hasrequirement:
-            m = min( self.InventoryLevelNextTime[q2]
-                     for q2 in self.Instance.ProductSet
-                     if  self.Instance.Requirements[p][q2]>0  )
+            m = min(self.InventoryLevelNextTime[q2]
+                    for q2 in self.Instance.ProductSet
+                    if self.Instance.Requirements[p][q2]>0)
         return hasrequirement == 0 or m > 0
 
     #return true the capacity of the resource used to produce p is not all consumed at this node

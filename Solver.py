@@ -4,6 +4,9 @@ from ScenarioTree import ScenarioTree
 import time
 from MIPSolver import MIPSolver
 from SDDP import SDDP
+from ProgressiveHedging import ProgressiveHedging
+from Hybrid_PH_SDDP import Hybrid_PH_SDDP
+from MLLocalSearch import MLLocalSearch
 import csv
 import datetime
 #from DecentralizedMRP import DecentralizedMRP
@@ -11,7 +14,7 @@ import datetime
 class Solver( object ):
 
     # Constructor
-    def __init__( self, instance, testidentifier, mipsetting, evaluatesol ):
+    def __init__(self, instance, testidentifier, mipsetting, evaluatesol):
         self.Instance = instance
         self.TestIdentifier = testidentifier
         self.ScenarioGeneration = self.TestIdentifier.ScenarioSampling
@@ -46,13 +49,9 @@ class Solver( object ):
         if self.TestIdentifier.Model == Constants.ModelHeuristicYFix:
             solution = self.SolveYFixHeuristic()
 
-
-    #    self.PrintTestResult()
         self.PrintSolutionToFile(solution)
 
         return solution
-
-
 
 
     def PrintTestResult():
@@ -79,8 +78,6 @@ class Solver( object ):
         myfile.close()
 
 
-
-
     def PrintSolutionToFile(self, solution):
         testdescription = self.TestIdentifier.GetAsString()
         if Constants.PrintSolutionFileToExcel:
@@ -98,15 +95,21 @@ class Solver( object ):
     #    wr.writerow(data)
     #    myfile.close()
     #This function creates the CPLEX model and solves it.
-    def MRP( self, treestructur=[1, 8, 8, 4, 2, 1, 0], averagescenario=False, recordsolveinfo=False, yfixheuristic=False, warmstart=False):
+
+    def MRP(self, treestructur=[1, 8, 8, 4, 2, 1, 0], averagescenario=False, recordsolveinfo=False, yfixheuristic=False, warmstart=False):
 
         scenariotreemodel = self.TestIdentifier.Model
 
         scenariotree = ScenarioTree(self.Instance, treestructur, self.TestIdentifier.ScenarioSeed,
                                     averagescenariotree=averagescenario,
                                     scenariogenerationmethod=self.ScenarioGeneration,
-                                    model=scenariotreemodel)
+                                    model=scenariotreemodel,
+                                    issymetric=(Constants.MIPBasedOnSymetricTree and scenariotreemodel == Constants.ModelYFix))
 
+        scenarioset = scenariotree.GetAllScenarios(computeindex=False)
+        #for s in scenarioset:
+        #    print(s.Demands)
+        #print("######################")
         MIPModel = self.TestIdentifier.Model
         if self.TestIdentifier.Model == Constants.Average:
             MIPModel = Constants.ModelYQFix
@@ -130,7 +133,7 @@ class Solver( object ):
             print("Start to model in Cplex")
         mipsolver.BuildModel()
         if Constants.Debug:
-            print( "Start to solve instance %s with Cplex"% self.Instance.InstanceName)
+            print("Start to solve instance %s with Cplex"% self.Instance.InstanceName)
 
 
         # scenario = mipsolver.Scenarios
@@ -148,14 +151,14 @@ class Solver( object ):
         #                PLT.show()
 
         solution = mipsolver.Solve()
-
+        #solution.Print()
         if recordsolveinfo:
             SolveInformation = mipsolver.SolveInfo
 
         return solution, mipsolver
 
     #Solve the two-stage version of the problem
-    def SolveYQFix( self ):
+    def SolveYQFix(self):
         tmpmodel = self.TestIdentifier.Model
         start = time.time()
 
@@ -164,7 +167,7 @@ class Solver( object ):
 
         average = False
         nrscenario = int(self.TestIdentifier.NrScenario)
-        if Constants.IsDeterministic( self.TestIdentifier.Model ):
+        if Constants.IsDeterministic(self.TestIdentifier.Model):
             average = True
             nrscenario = 1
 
@@ -174,8 +177,8 @@ class Solver( object ):
                  self.UseSSGrave = True
             self.TestIdentifier.Model = Constants.Average
 
-        treestructure = [1, nrscenario] +  [1] * ( self.Instance.NrTimeBucket - 1 ) +[ 0 ]
-        solution, mipsolver = self.MRP( treestructure, average, recordsolveinfo=True )
+        treestructure = [1, nrscenario] + [1] * (self.Instance.NrTimeBucket - 1) +[ 0 ]
+        solution, mipsolver = self.MRP(treestructure, average, recordsolveinfo=True )
 
         end = time.time()
         solution.TotalTime = end - start
@@ -197,23 +200,47 @@ class Solver( object ):
     def SolveYFixHeuristic(self):
 
         start = time.time()
-        treestructure = [1, 5] + [1] * (self.Instance.NrTimeBucket - 1) + [0]
+        treestructure = [1, 100] + [1] * (self.Instance.NrTimeBucket - 1) + [0]
         self.TestIdentifier.Model = Constants.ModelYQFix
         chosengeneration = self.ScenarioGeneration
         self.ScenarioGeneration = Constants.RQMC
         solution, mipsolver = self.MRP(treestructure, False, recordsolveinfo=True)
         self.GivenSetup = [[solution.Production[0][t][p] for p in self.Instance.ProductSet] for t in self.Instance.TimeBucketSet]
-
         if Constants.Debug:
             self.Instance.PrintInstance()
 
         self.ScenarioGeneration = chosengeneration
-        self.TestIdentifier.Model = Constants.ModelYFix
 
-        solution, mipsolver = self.MRP(self.TreeStructure,
-                                  averagescenario=False,
-                                  recordsolveinfo=True,
-                                  yfixheuristic=True)
+        if self.TestIdentifier.Method == "MIP":
+            self.TestIdentifier.Model = Constants.ModelYFix
+            solution, mipsolver = self.MRP(self.TreeStructure,
+                                      averagescenario=False,
+                                      recordsolveinfo=True,
+                                      yfixheuristic=True)
+            self.TestIdentifier.Model = Constants.ModelHeuristicYFix
+
+        if self.TestIdentifier.Method == Constants.SDDP:
+             self.TestIdentifier.Model = Constants.ModelHeuristicYFix
+
+             self.SDDPSolver = SDDP(self.Instance, self.TestIdentifier, self.TreeStructure)
+             self.SDDPSolver.HasFixedSetup = True
+             self.SDDPSolver.HeuristicSetupValue = self.GivenSetup
+             self.SDDPSolver.Run()
+             if Constants.PrintOnlyFirstStageDecision:
+                solution = self.SDDPSolver.CreateSolutionAtFirstStage()
+             else:
+                 solution = self.SDDPSolver.CreateSolutionOfAllInSampleScenario()
+             if Constants.SDDPSaveInExcel:
+                self.SDDPSolver.SaveSolver()
+
+        if self.TestIdentifier.Method == Constants.ProgressiveHedging:
+            self.TestIdentifier.Model = Constants.ModelHeuristicYFix
+
+            self.TreeStructure = self.GetTreeStructure()
+
+            self.ProgressiveHedging = ProgressiveHedging(self.Instance, self.TestIdentifier, self.TreeStructure, givensetup=self.GivenSetup)
+            solution = self.ProgressiveHedging.Run()
+
 
         end = time.time()
         solution.TotalTime = end - start
@@ -239,19 +266,60 @@ class Solver( object ):
             self.TestIdentifier.Model = Constants.ModelYFix
             self.TestIdentifier.Method = methodtemp
 
+        if self.TestIdentifier.Method == "MIP":
 
+            self.TreeStructure = self.GetTreeStructure()
             solution, mipsolver = self.MRP(self.TreeStructure, averagescenario=False, recordsolveinfo=True, warmstart=True)
 
-        if self.TestIdentifier.Method == "SDDP":
-             self.SDDPSolver = SDDP(self.Instance, self.TestIdentifier)
+        if self.TestIdentifier.Method == Constants.SDDP:
+             self.TreeStructure = self.GetTreeStructure()
+             self.SDDPSolver = SDDP(self.Instance, self.TestIdentifier, self.TreeStructure)
              self.SDDPSolver.HeuristicSetupValue = self.GivenSetup
              self.SDDPSolver.Run()
-             solution = self.SDDPSolver.CreateSolutionAtFirstStage()
+             if Constants.PrintOnlyFirstStageDecision:
+                solution = self.SDDPSolver.CreateSolutionAtFirstStage()
+             else:
+                 solution = self.SDDPSolver.CreateSolutionOfAllInSampleScenario()
+             if Constants.SDDPSaveInExcel:
+                self.SDDPSolver.SaveSolver()
 
-             self.SDDPSolver.SaveSolver()
+        if self.TestIdentifier.Method == Constants.ProgressiveHedging:
+            self.TreeStructure = self.GetTreeStructure()
 
-             self.SDDPSolver = SDDP(self.Instance, self.TestIdentifier)
-             self.SDDPSolver.LoadCuts()
+            self.ProgressiveHedging = ProgressiveHedging(self.Instance, self.TestIdentifier, self.TreeStructure)
+            solution = self.ProgressiveHedging.Run()
+
+
+        if self.TestIdentifier.Method == Constants.Hybrid:
+            self.TreeStructure = self.GetTreeStructure()
+
+            self.Hybrid = Hybrid_PH_SDDP(self.Instance, self.TestIdentifier, self.TreeStructure, self)
+            self.Hybrid.Run()
+            if Constants.PrintOnlyFirstStageDecision:
+                solution = self.Hybrid.SDDPSolver.CreateSolutionAtFirstStage()
+            else:
+                 solution = self.Hybrid.SDDPSolver.CreateSolutionOfAllInSampleScenario()
+
+            self.SDDPSolver = self.Hybrid.SDDPSolver
+            if Constants.SDDPSaveInExcel:
+                self.SDDPSolver.SaveSolver()
+        if self.TestIdentifier.Method == Constants.MLLocalSearch:
+            self.MLLocalSearch = MLLocalSearch(self.Instance, self.TestIdentifier, self.TreeStructure, self)
+
+            solution = self.MLLocalSearch.Run()
+            self.SDDPSolver = self.MLLocalSearch.SDDPSolver
+            if Constants.PrintOnlyFirstStageDecision:
+                solution = self.SDDPSolver.CreateSolutionAtFirstStage()
+            else:
+                solution = self.SDDPSolver.CreateSolutionOfAllInSampleScenario()
+
+            solution.MLLocalSearchLB =  self.MLLocalSearch.MLLocalSearchLB
+            solution.MLLocalSearchTimeBestSol = self.MLLocalSearch.MLLocalSearchTimeBestSol
+
+            if Constants.SDDPSaveInExcel:
+                self.SDDPSolver.SaveSolver()
+        #self.SDDPSolver = SDDP(self.Instance, self.TestIdentifier)
+             #self.SDDPSolver.LoadCuts()
              #SolveInformation = sddpsolver.SolveInfo
              #evaluator = self.Evaluator(self.Instance, [], [sddpsolver], optimizationmethod=Constants.SDDP)
              #OutOfSampleTestResult = evaluator.EvaluateYQFixSolution(self.TestIdentifier, self.EvaluatorIdentifier, self.Model,
@@ -292,19 +360,19 @@ class Solver( object ):
                 if nrtimebucketstochastic == 2:
                     stochasticparttreestructure = [4, 1]
                 if nrtimebucketstochastic == 3:
-                    stochasticparttreestructure = [4, 1, 1]
+                    stochasticparttreestructure = [2, 2, 1]
                 if nrtimebucketstochastic == 4:
-                    stochasticparttreestructure = [4, 1, 1, 1]
+                    stochasticparttreestructure = [2, 2, 1, 1]
                 if nrtimebucketstochastic == 5:
-                    stochasticparttreestructure = [4, 1, 1, 1, 1]
+                    stochasticparttreestructure = [2, 2, 1, 1, 1]
                 if nrtimebucketstochastic == 6:
-                    stochasticparttreestructure = [4, 1, 1, 1, 1, 1]
+                    stochasticparttreestructure = [2, 2, 1, 1, 1, 1]
                 if nrtimebucketstochastic == 7:
-                    stochasticparttreestructure = [4, 1, 1, 1, 1, 1, 1]
+                    stochasticparttreestructure = [2, 2, 1, 1, 1, 1, 1]
                 if nrtimebucketstochastic == 8:
-                    stochasticparttreestructure = [4, 1, 1, 1, 1, 1, 1, 1]
+                    stochasticparttreestructure = [2, 2, 1, 1, 1, 1, 1, 1]
                 if nrtimebucketstochastic == 9:
-                    stochasticparttreestructure = [4, 1, 1, 1, 1, 1, 1, 1, 1]
+                    stochasticparttreestructure = [2, 2, 1, 1, 1, 1, 1, 1, 1]
                 if nrtimebucketstochastic == 10:
                     stochasticparttreestructure = [4, 1, 1, 1, 1, 1, 1, 1, 1, 1]
                 if nrtimebucketstochastic == 11:
@@ -316,8 +384,58 @@ class Solver( object ):
                 if nrtimebucketstochastic == 14:
                     stochasticparttreestructure = [4, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
 
+            if self.TestIdentifier.NrScenario == "all20":
+                stochasticparttreestructure = [20]*nrtimebucketstochastic
+
+            if self.TestIdentifier.NrScenario == "all50":
+                stochasticparttreestructure = [50] * nrtimebucketstochastic
+
+            if self.TestIdentifier.NrScenario == "all100":
+                stochasticparttreestructure = [100] * nrtimebucketstochastic
+
+            if self.TestIdentifier.NrScenario == "all10":
+                stochasticparttreestructure = [10]*nrtimebucketstochastic
+
+            if self.TestIdentifier.NrScenario == "all5":
+                stochasticparttreestructure = [5]*nrtimebucketstochastic
+
+            if self.TestIdentifier.NrScenario == "all4":
+                stochasticparttreestructure = [4] * nrtimebucketstochastic
+
+            if self.TestIdentifier.NrScenario == "all1":
+                stochasticparttreestructure = [1] * nrtimebucketstochastic
+
+            if self.TestIdentifier.NrScenario == "all2":
+                stochasticparttreestructure = [2] * nrtimebucketstochastic
+
+
+            if self.TestIdentifier.NrScenario == "DependOnH":
+                if nrtimebucketstochastic == 1:
+                    stochasticparttreestructure = [100] * nrtimebucketstochastic
+                if nrtimebucketstochastic == 2:
+                    stochasticparttreestructure = [100] * nrtimebucketstochastic
+                if nrtimebucketstochastic == 3:
+                    stochasticparttreestructure = [100] * nrtimebucketstochastic
+                if nrtimebucketstochastic == 4:
+                    stochasticparttreestructure = [50] * nrtimebucketstochastic
+                if nrtimebucketstochastic == 5:
+                    stochasticparttreestructure = [50] * nrtimebucketstochastic
+                if nrtimebucketstochastic == 6:
+                    stochasticparttreestructure = [20] * nrtimebucketstochastic
+                if nrtimebucketstochastic == 7:
+                    stochasticparttreestructure = [20] * nrtimebucketstochastic
+                if nrtimebucketstochastic == 8:
+                    stochasticparttreestructure = [5] * nrtimebucketstochastic
+                if nrtimebucketstochastic == 9:
+                    stochasticparttreestructure = [5] * nrtimebucketstochastic
+                if nrtimebucketstochastic == 10:
+                    stochasticparttreestructure = [5] * nrtimebucketstochastic
 
             if self.TestIdentifier.NrScenario == "6400b":
+                if nrtimebucketstochastic == 1:
+                    stochasticparttreestructure = [6400]
+                if nrtimebucketstochastic == 2:
+                    stochasticparttreestructure = [100, 64]
                 if nrtimebucketstochastic == 3:
                     stochasticparttreestructure = [50, 32, 4]
                 if nrtimebucketstochastic == 4:
@@ -345,11 +463,26 @@ class Solver( object ):
                 if nrtimebucketstochastic == 15:
                     stochasticparttreestructure = [50, 8, 4, 4, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
 
-            if self.TestIdentifier.NrScenario == "10000":
+            if self.TestIdentifier.NrScenario == "1000":
                 if nrtimebucketstochastic == 3:
-                    stochasticparttreestructure = [100, 10, 10]
-                if nrtimebucketstochastic == 4:
-                    stochasticparttreestructure = [10, 10, 10, 10]
+                    stochasticparttreestructure = [25, 10, 4]
+                if nrtimebucketstochastic >= 4:
+                    stochasticparttreestructure = [25, 10, 2, 2] + [1]*(nrtimebucketstochastic-3)
+
+            if self.TestIdentifier.NrScenario == "50-50-10-5":
+                if nrtimebucketstochastic == 3:
+                    stochasticparttreestructure = [50, 50, 10]
+                if nrtimebucketstochastic >= 4:
+                    stochasticparttreestructure = [50, 50, 10] + [5]*(nrtimebucketstochastic-3)
+
+            if self.TestIdentifier.NrScenario == "50-50-10":
+                stochasticparttreestructure = [50, 50] + [10] * (nrtimebucketstochastic - 2)
+
+            if self.TestIdentifier.NrScenario == "50-10-10-5":
+                if nrtimebucketstochastic == 3:
+                    stochasticparttreestructure = [50, 10, 10]
+                if nrtimebucketstochastic >= 4:
+                    stochasticparttreestructure = [50, 10, 10] + [5] * (nrtimebucketstochastic - 3)
 
             #if not self.TestIdentifier.PolicyGeneration == Constants.RollingHorizon:
             k = 0

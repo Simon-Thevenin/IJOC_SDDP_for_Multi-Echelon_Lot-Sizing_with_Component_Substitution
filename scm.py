@@ -8,6 +8,9 @@ from Instance import Instance
 import os
 import argparse
 from SDDP import SDDP
+
+
+
 import csv
 import datetime
 
@@ -47,6 +50,12 @@ def parseArguments():
     parser.add_argument("-c", "--mipsetting", help="test a specific mip solver parameter",  default="")
     parser.add_argument("-t", "--timehorizon", help="the time horizon used in shiting window.", type=int, default=1)
     parser.add_argument("-a", "--allscenario", help="generate all possible scenario.", type=int, default=0)
+    parser.add_argument("-w", "--nrforward", help="number of scenario in the forward pass of sddp.", type=int, default=0)
+    parser.add_argument("-d", "--sddpsetting", help="test a specific sddp parameter", default="")
+    parser.add_argument("-y", "--hybridphsetting", help="test a specific hybridph parameter", default="")
+    parser.add_argument("-z", "--mllocalsearchsetting", help="test a specific mllocalsearch parameter", default="")
+
+
     # Print version
     parser.add_argument("--version", action="version", version='%(prog)s - Version 1.0')
 
@@ -62,6 +71,7 @@ def parseArguments():
     if args.evpi:
         policygeneration ="EVPI"
 
+
     TestIdentifier = TestIdentificator(args.Instance,
                                        args.Model,
                                        args.method,
@@ -69,7 +79,13 @@ def parseArguments():
                                        args.NrScenario,
                                        Constants.SeedArray[args.ScenarioSeed],
                                        args.evpi,
-                                       args.mipsetting)
+                                       args.nrforward,
+                                       args.mipsetting,
+                                       args.sddpsetting,
+                                       args.hybridphsetting,
+                                       args.mllocalsearchsetting)
+
+
     EvaluatorIdentifier = EvaluatorIdentificator(policygeneration,  args.nrevaluation, args.timehorizon, args.allscenario)
 
 def Solve(instance):
@@ -78,17 +94,22 @@ def Solve(instance):
 
     solution = solver.Solve()
 
-
     LastFoundSolution = solution
     evaluator = Evaluator(instance, TestIdentifier, EvaluatorIdentifier, solver)
     evaluator.RunEvaluation()
-    evaluator.GatherEvaluation()
+    if Constants.LauchEvalAfterSolve and EvaluatorIdentifier.NrEvaluation>0:
+        evaluator.GatherEvaluation()
+
+
 
 def Evaluate():
     solver = Solver(instance, TestIdentifier, mipsetting="", evaluatesol=EvaluateSolution)
 
 
     evaluator = Evaluator(instance, TestIdentifier, EvaluatorIdentifier, solver)
+
+
+
     evaluator.RunEvaluation()
     evaluator.GatherEvaluation()
 
@@ -96,27 +117,55 @@ def Evaluate():
 def GenerateInstances():
     instancecreated = []
     instance = Instance()
-    # instance.DefineAsSuperSmallIntance()
+    #instance.DefineAsSuperSmallIntance()
     # instance.ReadFromFile("K0011525", "NonStationary", "Normal")
-    instance.ReadFromFile("01", "NonStationary", "Normal")
-    instance.SaveCompleteInstanceInExelFile()
-    instancecreated = instancecreated + [instance.InstanceName]
+    #instance.ReadFromFile("10", "Lumpy", "Normal")
+    #instance.SaveCompleteInstanceInExelFile()
+    #instancecreated = instancecreated + [instance.InstanceName]
+    #
+    # for sc in ["01", "02", "03"]:#, "04", "05"]:
+    #     for addtime in [0,1,2]:
+    #         instance.ReadFromFile(sc, "Lumpy", "Normal", additionaltimehorizon=addtime)
+    #         instance.SaveCompleteInstanceInExelFile()
+    #         instancecreated = instancecreated + [instance.InstanceName]
+    # #
+    # instance.ReadFromFile("03", "Lumpy", "Normal")
+    # instance.SaveCompleteInstanceInExelFile()
+    # instancecreated = instancecreated + [instance.InstanceName]
+    # #
+    # instance.ReadFromFile("04", "Lumpy", "Normal")
+    # instance.SaveCompleteInstanceInExelFile()
+    # instancecreated = instancecreated + [instance.InstanceName]
+    # #
+    # instance.ReadFromFile("05", "Lumpy", "Normal")
+    # instance.SaveCompleteInstanceInExelFile()
+    # instancecreated = instancecreated + [instance.InstanceName]
 
-    instance.ReadFromFile("02", "NonStationary", "Normal")
-    instance.SaveCompleteInstanceInExelFile()
-    instancecreated = instancecreated + [instance.InstanceName]
 
-    instance.ReadFromFile("03", "NonStationary", "Normal")
-    instance.SaveCompleteInstanceInExelFile()
-    instancecreated = instancecreated + [instance.InstanceName]
 
-    instance.ReadFromFile("K0011525", "NonStationary", "Normal")
-    instance.SaveCompleteInstanceInExelFile()
-    instancecreated = instancecreated + [instance.InstanceName]
+    normalhorizon = 4
+    normalalternate = 4
+    normalcostalternate = 0.1 #["G0041111", "K0011311" ,"K0011131", "G0041331"]
+    for name in ["K0011111", "G0041311" ,"G0041131", "K0011331"]:
+        for horizon in [2, 4, 6, 8, 10]:
+            instance.ReadFromFile(name, "Lumpy", longtimehoizon=True, longtimehorizonperiod=horizon,
+                                  nralternate=normalalternate, costalternate=normalcostalternate)
+            instance.SaveCompleteInstanceInExelFile()
+            instancecreated = instancecreated + [instance.InstanceName]
 
-    instance.ReadFromFile("G0041421", "NonStationary", "Normal")
-    instance.SaveCompleteInstanceInExelFile()
-    instancecreated = instancecreated + [instance.InstanceName]
+
+        for nralternates in [0,2,4,6]:
+            instance.ReadFromFile(name, "Lumpy", longtimehoizon=True, longtimehorizonperiod=normalhorizon,
+                                  nralternate=nralternates, costalternate=normalcostalternate)
+            instance.SaveCompleteInstanceInExelFile()
+            instancecreated = instancecreated + [instance.InstanceName]
+
+        for costalternates in [0,0.1,1]:
+            instance.ReadFromFile(name, "Lumpy", longtimehoizon=True, longtimehorizonperiod=normalhorizon,
+                                  nralternate=normalalternate, costalternate=costalternates)
+            instance.SaveCompleteInstanceInExelFile()
+            instancecreated = instancecreated + [instance.InstanceName]
+
 
     csvfile = open("./Instances/InstancesToSolve.csv", 'wb')
     data_rwriter = csv.writer(csvfile, delimiter=",", skipinitialspace=True)
@@ -127,6 +176,16 @@ if __name__ == '__main__':
     #instance.ReadFromFile("lpopt_input.dat", Constants.NonStationary)
     #instance.ReadInstanceFromExelFile( "G0044432_NonStationary_b2_fe25_en_rk50_ll0_l20_HFalse_c0" )
     #instance.SaveCompleteInstanceInExelFile()
+    # if Constants.UseGUI:
+    #     fenetre = Tk()
+    #
+    #     label = Label(fenetre, text="SCM")
+    #     label.pack()
+    #
+    #     bouton = Button(fenetre, text="Fermer", command=fenetre.quit)
+    #     bouton.pack()
+    #
+    #     fenetre.mainloop()
 
     try:
         CreateRequiredDir()
@@ -139,14 +198,36 @@ if __name__ == '__main__':
             Constants.SDDPUseEVPI = False
         if TestIdentifier.MIPSetting == "NoStongCut":
             Constants.GenerateStrongCut = False
+        if TestIdentifier.MIPSetting == "NoSingleTree":
+            Constants.SDDPRunSigleTree = False
+        if TestIdentifier.MIPSetting == "WithLPTree":
+            Constants.SDDPFirstForwardWithEVPI = True
+            Constants.GenerateStrongCut = False
+
+        if TestIdentifier.MIPSetting == "WithFixedSetupsNoScenarioTree":
+            Constants.SDDPFixSetupStrategy = True
+            SDDPRunSigleTree = False
+
+        if TestIdentifier.MIPSetting == "WithFixedSetups":
+            Constants.SDDPFixSetupStrategy = True
+
+        if TestIdentifier.MIPSetting == "SymetricMIP":
+            Constants.MIPBasedOnSymetricTree = True
+            Constants.SDDPForwardPassInSAATree = True
+            EvaluatorIdentifier.NrEvaluation = 0
 
         instance = Instance()
-        # instance.DefineAsSuperSmallIntance()
+        #instance.DefineAsSuperSmallIntance()
+        #instance.DefineAsTwoItemIntance()
         # instance.ReadFromFile("K0011525", "NonStationary", "Normal")
-        # GenerateInstances()
+
+        #GenerateInstances()
+
         instance.ReadInstanceFromExelFile(TestIdentifier.InstanceName)
+        Constants.AlgorithmTimeLimit = 900 *(instance.NrTimeBucket-instance.NrTimeBucketWithoutUncertaintyBefore)
         #instance.DrawSupplyChain()
     except KeyError:
+        print(KeyError.message)
         print("This instance does not exist.")
 
     if Action == Constants.Solve:

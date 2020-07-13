@@ -15,15 +15,17 @@ class Evaluator( object ):
     # Constructor
     def __init__(self, instance, testidentifier, evaluatoridentificator, solver):
         self.TestIdentifier = testidentifier
+        self.AttentionModelInTestIdentifierChanged = False
         self.EvalutorIdentificator = evaluatoridentificator
         self.Solutions = self.GetPreviouslyFoundSolution()
         self.Instance = instance
         self.Solver = solver
         self.OutOfSampleTestResult = []
         self.InSampleTestResult =[]
-        if self.TestIdentifier.Method == Constants.SDDP:
-            self.Solver.SDDPSolver = SDDP(instance, self.TestIdentifier)
-            self.Solver.SDDPSolver.LoadCuts()
+        if Constants.IsSDDPBased(self.TestIdentifier.Method):
+            if Constants.SDDPSaveInExcel:
+                self.Solver.SDDPSolver = SDDP(instance, self.TestIdentifier, self.Solver.GetTreeStructure())
+                self.Solver.SDDPSolver.LoadCuts()
             Constants.SDDPGenerateCutWith2Stage = False
             Constants.SDDPRunSigleTree = False
             Constants.SolveRelaxationFirst = False
@@ -35,7 +37,11 @@ class Evaluator( object ):
         for s in seeds:
             try:
                 self.TestIdentifier.ScenarioSeed = s
+
                 filedescription = self.TestIdentifier.GetAsString()
+
+
+
                 solution = Solution()
                 solution.ReadFromFile(filedescription)
                 result.append(solution)
@@ -58,7 +64,7 @@ class Evaluator( object ):
             if not Constants.PrintOnlyFirstStageDecision:
                 solution.ComputeStatistics()
             insamplekpisstate = solution.PrintStatistics(self.TestIdentifier,
-                                                         "InSample",-1, 0, -1, True,
+                                                         "InSample", -1, 0, -1, True,
                                                          self.TestIdentifier.ScenarioSampling)
             lengthinsamplekpi = len(insamplekpisstate)
             InSampleKPIStat = [0] * lengthinsamplekpi
@@ -82,7 +88,7 @@ class Evaluator( object ):
     #Get the temporary file conting the results of the simulation
     def GetEvaluationFileName(self):
 
-        result = Constants.EvaluationFolder + self.TestIdentifier.GetAsString() + self.EvalutorIdentificator.GetAsString()
+        result = Constants.GetEvaluationFolder() + self.TestIdentifier.GetAsString() + self.EvalutorIdentificator.GetAsString()
         return result
 
     #run the simulation
@@ -90,12 +96,14 @@ class Evaluator( object ):
         tmpmodel = self.TestIdentifier.Model
         filedescription = self.TestIdentifier.GetAsString()
 
+        self.AttentionModelInTestIdentifierChanged = False
         MIPModel = self.TestIdentifier.Model
         if Constants.IsDeterministic(self.TestIdentifier.Model):
             MIPModel = Constants.ModelYQFix
         if self.TestIdentifier.Model == Constants.ModelHeuristicYFix:
             MIPModel = Constants.ModelYFix
             self.TestIdentifier.Model = Constants.ModelYFix
+            self.AttentionModelInTestIdentifierChanged = True
 
         solution = Solution()
         if not self.TestIdentifier.EVPI and not self.TestIdentifier.ScenarioSampling == Constants.RollingHorizon:
@@ -103,7 +111,14 @@ class Evaluator( object ):
             if Constants.RunEvaluationInSeparatedJob:
                 solution.ReadFromFile(filedescription)
             else:
+                if self.AttentionModelInTestIdentifierChanged:
+                    self.TestIdentifier.Model = Constants.ModelHeuristicYFix
+
                 solution = self.GetPreviouslyFoundSolution()[0]
+
+                if self.AttentionModelInTestIdentifierChanged:
+                    self.TestIdentifier.Model = Constants.ModelYFix
+
 
                 if not solution.IsPartialSolution:
                     solution.ComputeCost()
@@ -116,12 +131,12 @@ class Evaluator( object ):
                                         evaluatoridentificator=self.EvalutorIdentificator,
                                         treestructure=self.Solver.GetTreeStructure(),
                                         model=MIPModel)
-
+        self.TestIdentifier.Model = tmpmodel
         self.OutOfSampleTestResult = evaluator.EvaluateYQFixSolution(saveevaluatetab=True,
                                                                      filename=self.GetEvaluationFileName(),
                                                                      evpi=self.TestIdentifier.EVPI)
 
-        self.TestIdentifier.Model = tmpmodel
+
         self.GatherEvaluation()
 
     def GatherEvaluation(self):
@@ -137,8 +152,9 @@ class Evaluator( object ):
         #Creat the evaluation table
         currentseedvalue = self.TestIdentifier.ScenarioSeed
         for seed in [self.TestIdentifier.ScenarioSeed]:#SeedArray:
+            filename = self.GetEvaluationFileName()
             try:
-                filename = self.GetEvaluationFileName()
+
                 self.TestIdentifier.ScenarioSeed = seed
                 #print "open file %rEvaluator.txt"%filename
                 with open(filename + "Evaluator.txt", 'rb') as f:
@@ -154,15 +170,15 @@ class Evaluator( object ):
                     KPIStats.append(list)
                     nrfile =nrfile +1
             except IOError:
-                if Constants.Debug:
-                    print("No evaluation file found for seed %d" % seed)
+               # if Constants.Debug:
+                    print("No evaluation file found for seed %d %r" %(seed, filename))
 
         if nrfile >= 1:
             KPIStat = [sum(e) / len(e) for e in zip(*KPIStats)]
 
             self.OutOfSampleTestResult = evaluator.ComputeStatistic(EvaluationTab, ProbabilitiesTab, KPIStat, -1)
-            if self.TestIdentifier.Method == Constants.MIP and not self.TestIdentifier.EVPI:
-                self.InSampleTestResult = self.ComputeInSampleStatistis()
+            #if self.TestIdentifier.Method == Constants.MIP and not self.TestIdentifier.EVPI:
+            #    self.InSampleTestResult = self.ComputeInSampleStatistis()
             self.InSampleTestResult = self.ComputeInSampleStatistis()
             self.PrintFinalResult()
 
@@ -185,22 +201,8 @@ class Evaluator( object ):
 
     #This function runs the evaluation for the just completed test :
     def RunEvaluation(self):
-        if Constants.LauchEvalAfterSolve:
-            policyset = ["S", "Re-solve"]
-
-            if self.TestIdentifier.NrScenario == "6400b" or self.TestIdentifier.Method == Constants.SDDP:
-                policyset = ["Re-solve"]
-
-            if self.TestIdentifier.NrScenario == "6400c":
-                policyset = ["S"]
-
-            if self.TestIdentifier.Model == Constants.ModelYQFix \
-                    or Constants.IsDeterministic(self.TestIdentifier.Model)\
-                    or Constants.IsRule(self.TestIdentifier.Model):
-                    policyset = ["Fix", "Re-solve"]
-
-            if self.Instance.NrTimeBucket >= 10 and not self.TestIdentifier.Model == Constants.ModelHeuristicYFix:
-                policyset = ["Fix"]
+        if Constants.LauchEvalAfterSolve and self.EvalutorIdentificator.NrEvaluation >0:
+            policyset = ["Re-solve"]
 
             perfectsenarioset = [0]
             if self.Instance.Distribution == Constants.Binomial:
@@ -232,3 +234,8 @@ class Evaluator( object ):
                                                                             perfectset)
 
                         self.EvaluateSingleSol()
+
+        else:
+
+            self.InSampleTestResult = self.ComputeInSampleStatistis()
+            self.PrintFinalResult()
