@@ -59,7 +59,6 @@ class Hybrid_PH_SDDP(object):
 
         self.GetHeuristicSetup()
 
-        #solution = self.RunPH()
 
         self.ProgressiveHedging.InitTrace()
         # self.ProgressiveHedging.Run()
@@ -70,7 +69,7 @@ class Hybrid_PH_SDDP(object):
 
         self.ProgressiveHedging.CurrentIteration = 0
         stop = False
-        while not stop:#self.ProgressiveHedging.CurrentIteration < 5 or not self.ProgressiveHedging.ComputeConvergenceY() <= 1.0:
+        while not stop:
             self.ProgressiveHedging.SolveScenariosIndependently()
             if self.ProgressiveHedging.CurrentIteration == -1:
                 treestructure = [1, 200] + [1] * (self.Instance.NrTimeBucket - 1) + [0]

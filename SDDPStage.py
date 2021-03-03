@@ -1708,7 +1708,6 @@ class SDDPStage(object):
                     self.Cplex.set_error_stream(None)
             if self.IsFirstStage():
                 self.Cplex.set_results_stream("./CPLEXLog/log")
-                self.Cplex.write("yo.lp")
                 self.Cplex.set_log_stream("./CPLEXLog/log")
                 self.Cplex.set_results_stream("./CPLEXLog/log")
                 self.Cplex.set_warning_stream("./CPLEXLog/log")
@@ -1728,10 +1727,7 @@ class SDDPStage(object):
             #    self.Cplex.parameters.simplex.tolerances.optimality.set(0.1)
 
             self.Cplex.solve()
-            # print("Solution status:%r - %r " %(self.Cplex.solution.get_status(), self.Cplex.solution.get_objective_value()))
-            # if self.SDDPOwner.CurrentIteration == 10 and self.IsFirstStage():
-            #     self.Cplex.write("fuckinmodel.lp")
-            #     sys.exit()
+
             if Constants.Debug:
                  print("Solution status:%r"%self.Cplex.solution.get_status())
                  if Constants.SDDPPrintDebugLPFiles:  # or self.IsFirstStage():

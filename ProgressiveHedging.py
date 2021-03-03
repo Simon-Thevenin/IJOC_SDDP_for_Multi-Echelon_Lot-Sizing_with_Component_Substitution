@@ -471,7 +471,7 @@ class ProgressiveHedging(object):
 
                     for w in scenarios:
                         for p in self.Instance.ProductSet:
-                            solproduction[w][time][p] = prod[p]# int(round(prod[p]))
+                            solproduction[w][time][p] = prod[p]
                             solquantity[w][time][p] = qty[p]
                             solinventory[w][time][p] = inv[p]
                             if self.Instance.HasExternalDemand[p]:
@@ -900,8 +900,6 @@ class ProgressiveHedging(object):
 
             if self.CurrentIteration == 1:
                     self.LagrangianMultiplier = 0.00001
-
-
 
             if False and self.CurrentIteration >= 2:
                 self.UpdateMultipler()

@@ -193,7 +193,7 @@ columnname = ["Instance name",
 
 all_data = pd.DataFrame(columns=columnname)
 # Add the content of each csv file at the end of the dataframe
-for f in glob.glob("./Test/SolveInfo/*.csv"):
+for f in glob.glob("./Test/*.csv"):
     df = pd.read_csv(f, names=columnname)
     df.columns = columnname
     all_data = all_data.append(df, ignore_index=True)
@@ -207,6 +207,6 @@ for f in glob.glob("./Test/SolveInfo/*.csv"):
 #                     "Policy generation",
 #                     "NrOutSampleScenario"])
 
-writer = pd.ExcelWriter("./Test/SolveInfo/TestResult.xlsx", engine='openpyxl')
+writer = pd.ExcelWriter("./Test/TestResult.xlsx", engine='openpyxl')
 all_data.to_excel(writer, "Res")
 writer.save()

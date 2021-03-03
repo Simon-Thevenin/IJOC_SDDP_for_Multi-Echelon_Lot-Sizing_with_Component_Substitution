@@ -203,6 +203,13 @@ if __name__ == '__main__':
         if TestIdentifier.MIPSetting == "WithLPTree":
             Constants.SDDPFirstForwardWithEVPI = True
             Constants.GenerateStrongCut = False
+        if TestIdentifier.MIPSetting == "NoEnhancement":
+            Constants.GenerateStrongCut = False
+            Constants.SDDPGenerateCutWith2Stage = False
+            Constants.SolveRelaxationFirst = False
+            Constants.SDDPUseEVPI = False
+            Constants.GenerateStrongCut = False
+
 
         if TestIdentifier.MIPSetting == "WithFixedSetupsNoScenarioTree":
             Constants.SDDPFixSetupStrategy = True
