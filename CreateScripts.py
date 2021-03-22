@@ -314,7 +314,7 @@ if __name__ == "__main__":
                 jobname = CreateSDDPJob(instance, nrback, nrforward, "JustYFix", model="YFix", nrtest=0)
                 filesddp.write("sbatch %s \n" % (jobname))
 
-    if sys.argv[1] == "SDDPNoImpr":
+    if sys.argv[1] == "SDDPJYF":
         filesddpname = "runallsddp.sh"
         filesddp = open(filesddpname, 'w')
         filesddp.write("""
@@ -325,7 +325,8 @@ if __name__ == "__main__":
         nrforward = 1
         nrback = "all20"
         for instance in InstanceSet:
-            jobname = CreateSDDPJob(instance, nrback, nrforward, "NoEnhancement", model="YFix", nrtest=0)
+            #jobname = CreateSDDPJob(instance, nrback, nrforward, "NoEnhancement", model="YFix", nrtest=0)
+            jobname = CreateSDDPJob(instance, nrback, nrforward, "JustYFix", model="YFix", nrtest=0)
             filesddp.write("sbatch %s \n" % (jobname))
 
 
