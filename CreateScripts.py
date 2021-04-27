@@ -1,7 +1,5 @@
-#!/usr/bin/python
-# script de lancement pour les fichiers
-#!/usr/bin/python
-# script de lancement pour les fichiers
+#This script generate the scripts to run all the instances on server grids.
+
 import sys
 import csv
 from Constants import Constants

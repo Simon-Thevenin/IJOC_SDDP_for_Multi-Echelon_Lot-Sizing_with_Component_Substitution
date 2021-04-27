@@ -12,6 +12,8 @@ import numpy as np
 import pandas as pd
 #from matplotlib import pyplot as plt
 
+
+#This class define a solution to MRP
 class Solution(object):
 
     #constructor
@@ -127,7 +129,6 @@ class Solution(object):
             inventorydf.to_pickle(self.GetSolutionPickleFileNameStart(description,  'InventoryLevel'))
             bbackorderdf.to_pickle(self.GetSolutionPickleFileNameStart(description,  'BackOrder'))
             consumptiondf.to_pickle(self.GetSolutionPickleFileNameStart(description, 'Consumption'))
-            #svaluedf.to_pickle(self.GetSolutionPickleFileNameStart(description,  'SValue'))
             fixedqvaluesdf.to_pickle(self.GetSolutionPickleFileNameStart(description,  'FixedQvalue'))
 
             generaldf = self.GetGeneralInfoDf()
@@ -148,7 +149,6 @@ class Solution(object):
         inventorydf.to_excel(writer, 'InventoryLevel')
         bbackorderdf.to_excel(writer, 'BackOrder')
         consumptiondf.to_excel(writer, 'Consumption')
-        #svaluedf.to_excel(writer, 'SValue')
         fixedqvaluesdf.to_excel(writer, 'FixedQvalue')
 
         generaldf = self.GetGeneralInfoDf()

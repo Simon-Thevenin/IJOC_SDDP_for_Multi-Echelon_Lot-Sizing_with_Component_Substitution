@@ -154,16 +154,6 @@ class InstanceReaderTemplemeier(InstanceReader):
             result = [  float( self.DatFile[i +1  ][2] ) for i in  self.Instance.ProductSet ]
         return result
 
-    # def GenerateHoldingCostCost(self):
-    #
-    #     startholding = 4 +  self.Instance.NrProduct
-    #
-    #     self.Instance.InventoryCosts = [0.0] * self.Instance.NrProduct
-    #
-    #     for p in self.Instance.ProductSet:
-    #         self.Instance.InventoryCosts[p] = float(self.TMPFile[startholding + p][0])
-
-
 
 
     def GenerateTimeHorizon(self, largetimehorizon = False, largetimehorizonperiod=10, additionaltimehorizon = -1):

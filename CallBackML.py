@@ -1,3 +1,4 @@
+#This class contains the code to implement SDDP in a single search tree.
 import cplex
 from Constants import Constants
 from cplex.callbacks import LazyConstraintCallback
@@ -48,6 +49,7 @@ class CallBackML(LazyConstraintCallback):
             self.Model.CorePointBackorderValue = self.SDDPOwner.ForwardStage[0].CorePointBackorderValue
             if Constants.Debug:
                     print("THERE IS NO CHECK!!!!!!!!!!!!!!")
+                    #Uncomment the line below to check if the added cut is valid
                     #self.Model.checknewcut(FirstStageCutForModel, avgcostsubproblem, self, None, withcorpoint=False)
             FirstStageCutForModel.AddCut(False)
 

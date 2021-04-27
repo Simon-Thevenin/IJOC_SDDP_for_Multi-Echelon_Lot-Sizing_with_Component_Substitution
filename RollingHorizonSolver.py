@@ -7,6 +7,7 @@ import copy
 
 from Solution import Solution
 
+#This class provide the method to solve the problem in a rolling horizon
 class RollingHorizonSolver:
 
     def __init__(self, instance,  model, treestructure, seed, scenariogenerationmethod, windowsize, usesafetystock, owner ):

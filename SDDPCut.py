@@ -3,6 +3,7 @@ import cplex
 from Constants import Constants
 #from sets import Set
 
+#This class contains the parameters and method to generate and store the cuts.
 class SDDPCut(object):
 
     def __init__(self, owner=None, forwardstage=None, trial=-1, backwardscenario=-1):
@@ -41,9 +42,6 @@ class SDDPCut(object):
         self.IndexForward = []
         self.IndexBackward = []
         self.LastIterationWithDual = self.Iteration
-        #self.LastAddedConstraintIndex = 0
-
-
 
         #This function add the cut to the MIP
 
@@ -314,7 +312,7 @@ class SDDPCut(object):
             self.NonZeroFixedEarlierStockVar.add((product, time))
     #Increase the coefficient of the quantity variable for product and time  by value
     def IncreaseCoefficientBackorder(self, product, time, value):
-        indexp = product#self.Instance.ProductWithExternalDemandIndex[product]
+        indexp = product
         self.CoefficientBackorderyVariable[time][indexp] = self.CoefficientBackorderyVariable[time][indexp] + value
 
         if time < self.BackwarStage.GetTimePeriodAssociatedToBackorderVariable(product, 0):
@@ -347,8 +345,6 @@ class SDDPCut(object):
         variablofstage = variablofstage[1:]
 
         # coefficient of the variable a
-
-
 
         valueofvariable = [self.ForwardStage.QuantityValues[w][t][p]
                            for t in self.ForwardStage.RangePeriodQty

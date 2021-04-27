@@ -114,6 +114,7 @@ def Evaluate():
     evaluator.GatherEvaluation()
 
 
+#This function generate the instances, and it creates a file "InstancesToSolve.csv" with the list of instances to solve
 def GenerateInstances():
     instancecreated = []
     instance = Instance()
@@ -191,6 +192,7 @@ if __name__ == '__main__':
         CreateRequiredDir()
         parseArguments()
 
+        #For experimentation purpose, we remove some of the enhancement to SDDP depending on the value of the parameter "MIPSetting"
         if TestIdentifier.MIPSetting == "NoFirstCuts":
             Constants.SDDPGenerateCutWith2Stage = False
             Constants.SolveRelaxationFirst = False
@@ -224,10 +226,12 @@ if __name__ == '__main__':
             EvaluatorIdentifier.NrEvaluation = 0
 
         instance = Instance()
+
+        # uncomment to generate Toysize instances for testing/development purpose
         #instance.DefineAsSuperSmallIntance()
         #instance.DefineAsTwoItemIntance()
-        # instance.ReadFromFile("K0011525", "NonStationary", "Normal")
 
+        #uncomment to re-generate the instance
         #GenerateInstances()
 
         instance.ReadInstanceFromExelFile(TestIdentifier.InstanceName)

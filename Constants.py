@@ -1,3 +1,4 @@
+#This Class define a set of constant/parameters used in the rest of the code.
 from __future__ import absolute_import, division, print_function
 class Constants( object ):
     PathInstances = "./Instances/"
@@ -62,6 +63,7 @@ class Constants( object ):
     AlgorithmTimeLimit = 7200
     MIPBasedOnSymetricTree = False
     RQMCAggregate = False
+
     #SDDPparameters
     AlgorithmOptimalityTolerence = 0.01#0.0005
     SDDPIterationLimit = 500
@@ -83,15 +85,9 @@ class Constants( object ):
     SolveRelaxationFirst = True
     SDDPNrIterationRelax = 500
     SDDPGapRelax = 0.01
-
     SDDPUseValidInequalities = False
-
     SDDPGenerateCutWith2Stage = False
-
-
-
     SDDPCleanCuts = False
-
     SDDPUseEVPI = True
     SDDPNrEVPIScenario = 1
     SDDPDebugSolveAverage = False

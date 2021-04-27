@@ -8,6 +8,9 @@ from ScenarioTree import ScenarioTree
 from MIPSolver import MIPSolver
 import random
 
+#This class provide the method to implement SDDP in a single scenario tree
+#Preliminary results showed that the method does not perform well, and this
+#class is not used (Could be deleted?)
 class SDDPCallBack(LazyConstraintCallback):
 #class SDDPCallBack(UserCutCallback):
     def __call__(self):
@@ -260,19 +263,3 @@ class SDDPCallBack(LazyConstraintCallback):
         if Constants.Debug:
             print("out of solve LP with tree")
         return solution
-
-            # for stage in self.SDDPOwner.ForwardStage:
-            #     print(stage.QuantityValues[0])
-            #
-            # for stage in self.SDDPOwner.ForwardStage:
-            #     print(stage.ConsumptionValues[0])
-            #
-            # for stage in self.SDDPOwner.ForwardStage:
-            #     print(stage.ProductionValue[0])
-            #
-            # for stage in self.SDDPOwner.ForwardStage:
-            #     print(stage.InventoryValue[0])
-            #
-            # for stage in self.SDDPOwner.ForwardStage:
-            #     print(stage.BackorderValue[0])
-
