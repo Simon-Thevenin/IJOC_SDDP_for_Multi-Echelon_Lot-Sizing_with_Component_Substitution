@@ -1,4 +1,5 @@
 # This script aggregates all the csv file in the folder Test.
+# It is only used to facilitate the collection of the results in an Excel file.
 
 import openpyxl as opxl
 import pandas as pd

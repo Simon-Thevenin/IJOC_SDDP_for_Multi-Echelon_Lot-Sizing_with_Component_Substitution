@@ -1,7 +1,5 @@
-#!/usr/bin/python
-# script de lancement pour les fichiers
-#!/usr/bin/python
-# script de lancement pour les fichiers
+#This script generate the scripts to run all the instances on server grids.
+
 import sys
 import csv
 from Constants import Constants
@@ -118,7 +116,7 @@ def CreateSDDPJob(instance, nrback, nrforward, setting, model = "YFix", nrtest="
     qsub_file = open(qsub_filename, 'w')
     CreatHeader(qsub_file )
     scengen = "RQMC"
-    if setting == "MC":
+    if setting == "MC" or setting == "NoEnhancement":
         scengen = "MC"
     qsub_file.write("""
 srun python scm.py  Solve %s %s %s %s -n %s -p Re-solve -m SDDP --sddpsetting %s --nrforward %s  > /home/LS2N/thevenin-s/log/output-${SLURM_JOB_ID}.txt 
@@ -314,10 +312,21 @@ if __name__ == "__main__":
                 jobname = CreateSDDPJob(instance, nrback, nrforward, "JustYFix", model="YFix", nrtest=0)
                 filesddp.write("sbatch %s \n" % (jobname))
 
+    if sys.argv[1] == "SDDPJYF":
+        filesddpname = "runallsddp.sh"
+        filesddp = open(filesddpname, 'w')
+        filesddp.write("""
+               #!/bin/bash -l
+               #
+               """)
 
+        nrforward = 1
+        nrback = "all20"
+        for instance in InstanceSet:
+            #jobname = CreateSDDPJob(instance, nrback, nrforward, "NoEnhancement", model="YFix", nrtest=0)
+            jobname = CreateSDDPJob(instance, nrback, nrforward, "JustYFix", model="YFix", nrtest=0)
+            filesddp.write("sbatch %s \n" % (jobname))
 
-
-    if sys.argv[1] == "COMP":
 
         filecompname = "runcompselect.sh"
         filecomp = open(filecompname, 'w')

@@ -3,7 +3,9 @@ from Constants import Constants
 from random import randint
 import math
 
-
+#This class define the methods to read an instance from a file. The goal is to generate instances based
+# on files existing from the litterature. As several input format exist, the class can be specialised
+#in several children class (on for each type of input file)
 class InstanceReader(object):
 
 

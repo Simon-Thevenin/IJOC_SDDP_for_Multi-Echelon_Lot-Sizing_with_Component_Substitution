@@ -4,6 +4,9 @@ from cplex.callbacks import UserCutCallback
 import copy
 import time
 
+#This is another class to solve SDDP in a single tree.
+#preliminary results shoed the approach does not perform well
+#Could be deleted.
 class SDDPUserCutCallBack(UserCutCallback):
     def __call__(self):
         if Constants.Debug:

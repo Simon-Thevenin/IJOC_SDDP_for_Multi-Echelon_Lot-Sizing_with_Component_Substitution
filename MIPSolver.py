@@ -16,7 +16,6 @@ class MIPSolver(object):
     M = cplex.infinity
 
     # constructor
-
     def __init__(self,
                  instance,
                  model,
@@ -748,7 +747,6 @@ class MIPSolver(object):
 
 
 
-
     # This function creates the  indicator constraint to se the production variable to 1 when a positive quantity is produce
     def CreateProductionConstraints(self):
         n = self.NrQuantityVariables
@@ -1124,30 +1122,7 @@ class MIPSolver(object):
                         senses=["L"],
                         rhs=righthandside)
 
-                #Add valid inequality:
-        # for w1 in self.ScenarioSet:
-        #     for w2 in self.ScenarioSet:
-        #         for p in self.Instance.ProductSet:
-        #             for t in self.Instance.TimeBucketSet:
-        #                 #compute the demand:
-        #                 demandw1=0
-        #                 demandw2=0
-        #                 for q in self.Instance.ProductSet:
-        #                     if self.Instance.HasExternalDemand[q]:
-        #                             varsecheloninv.append(self.GetIndexBackorderVariable(q, t - 1, w))
-        #                             demandw1 += sum(self.Scenarios[w1].Demands[tau][q] for tau in range(t)) * extendedrequirement[q][p]
-        #                             demandw2 += sum(self.Scenarios[w2].Demands[tau][q] for tau in range(t)) * extendedrequirement[q][p]
-        #
-        #                 if demandw1 > demandw2:
-        #                     coeff =  [-1.0, +1.0]
-        #                     vars = [ self.GetIndexHasLeftover(p, t, w1), self.GetIndexHasLeftover(p, t, w2)  ]
-        #                     righthandside = [0.0]
-        #                     #
-        #                     # # PrintConstraint( vars, coeff, righthandside )
-        #                     self.Cplex.linear_constraints.add(
-        #                         lin_expr=[cplex.SparsePair(vars, coeff)],
-        #                         senses=["G"],
-        #                         rhs=righthandside)
+
 
     def AddLinkingConstraintsSQ(self):
 
@@ -1598,7 +1573,6 @@ class MIPSolver(object):
         objvalue = sol.get_objective_value()
         array = [self.GetIndexQuantityVariable(p, t, w) for p in self.Instance.ProductSet for t in timebucketset for w
                  in scenarioset]
-        # testarray = [ "p:%st:%sw:%s"%(p, t, w)  for p in self.Instance.ProductSet for t in self.Instance.TimeBucketSet for w in self.ScenarioSet ]
         solquantity = sol.get_values(array)
 
         solquantity = Tool.Transform3d(solquantity, self.Instance.NrProduct, len(timebucketset), len(scenarioset))
@@ -1653,9 +1627,7 @@ class MIPSolver(object):
             self.DemandScenarioTree.FillQuantityToOrder(sol)
             self.DemandScenarioTree.FillQuantityToOrderFromMRPSolution(solution)
 
-        #if self.Model == Constants.ModelYFix or self.Model == Constants.ModelHeuristicYFix:
-        #solution.ComputeAverageS()
-        #else:
+
         solution.SValue = [[-1 for p in self.Instance.ProductSet] for t in timebucketset]
 
         solution.FixedQuantity = [[-1 for p in self.Instance.ProductSet] for t in timebucketset]
@@ -1793,12 +1765,7 @@ class MIPSolver(object):
     #This function modify the MIP tosolve the scenario tree given in argument.
     #It is assumed that both the initial scenario tree and the new one have a single scenario
     def ModifyMipForScenario(self, demanduptotime, time):
-       # self.DemandScenarioTree = None #not up to date anymore
-        #self.DemandScenarioTree.Owner = self
-        #self.NrScenario = len([n for n in self.DemandScenarioTree.Nodes if len(n.Branches) == 0])
-        #self.ComputeIndices()
-        #self.Scenarios = scenariotree.GetAllScenarios(True)
-        #self.ScenarioSet = range(self.NrScenario)
+
         #Redefine the flow conservation constraint
         constrainttuples=[]
         for p in self.Instance.ProductWithExternalDemand:
@@ -1822,17 +1789,6 @@ class MIPSolver(object):
         knowndemandtuples = [(self.GetIndexKnownDemand(p), sum(demanduptotime[t][p] for t in range(time))) for p in self.Instance.ProductWithExternalDemand]
         self.Cplex.variables.set_lower_bounds(knowndemandtuples)
         self.Cplex.variables.set_upper_bounds(knowndemandtuples)
-
-
-        # for p in self.Instance.ProductSet:
-        #     for w in self.ScenarioSet:
-        #         for t in self.Instance.TimeBucketSet:
-        #             column = self.GetIndexProductionVariable(p, t, w)
-        #             coeff = self.GetBigMValue(self.Instance, self.Scenarios, p, totaldemandattime)
-        #             constrnr = self.BigMConstraintNR[w][p][t]
-        #             constrainttuples.append((constrnr, column, coeff))
-        # self.Cplex.linear_constraints.set_coefficients(constrainttuples)
-
 
 
     #This function modify the MIP to fix the quantities given in argument

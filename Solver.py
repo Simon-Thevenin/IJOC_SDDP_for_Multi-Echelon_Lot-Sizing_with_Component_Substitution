@@ -11,6 +11,8 @@ import csv
 import datetime
 #from DecentralizedMRP import DecentralizedMRP
 
+#This class is a wrapper and it calls the appropriate method depending on the solution
+#method provided by the user.
 class Solver( object ):
 
     # Constructor
@@ -85,16 +87,6 @@ class Solver( object ):
         else:
             solution.PrintToPickle(testdescription)
 
-    #def PrintTestResult( self ):
-    #    #Parameter = [UseNonAnticipativity, Model, ComputeAverageSolution, ScenarioSeed]
-    #    data = self.TestIdentifier + self.SolveInformation
-    #    d = datetime.now()
-    #    date = d.strftime('%m_%d_%Y_%H_%M_%S')
-    #    myfile = open(r'./Test/SolveInfo/TestResult_%s.csv' % (self.TestIdentifier.GetAsString()), 'wb')
-    #    wr = csv.writer(myfile, quoting=csv.QUOTE_ALL)
-    #    wr.writerow(data)
-    #    myfile.close()
-    #This function creates the CPLEX model and solves it.
 
     def MRP(self, treestructur=[1, 8, 8, 4, 2, 1, 0], averagescenario=False, recordsolveinfo=False, yfixheuristic=False, warmstart=False):
 
@@ -107,9 +99,7 @@ class Solver( object ):
                                     issymetric=(Constants.MIPBasedOnSymetricTree and scenariotreemodel == Constants.ModelYFix))
 
         scenarioset = scenariotree.GetAllScenarios(computeindex=False)
-        #for s in scenarioset:
-        #    print(s.Demands)
-        #print("######################")
+
         MIPModel = self.TestIdentifier.Model
         if self.TestIdentifier.Model == Constants.Average:
             MIPModel = Constants.ModelYQFix
@@ -136,19 +126,7 @@ class Solver( object ):
             print("Start to solve instance %s with Cplex"% self.Instance.InstanceName)
 
 
-        # scenario = mipsolver.Scenarios
-        # for s in scenario:
-        #     print s.Probability
-        # demands = [ [ [ scenario[w].Demands[t][p] for w in mipsolver.ScenarioSet ] for p in Instance.ProductSet ] for t in Instance.TimeBucketSet ]
-        # for t in Instance.TimeBucketSet:
-        #       for p in Instance.ProductWithExternalDemand:
-        #           print "The demands for product %d at time %d : %r" %(p, t, demands[t][p] )
-        #           with open('Histp%dt%d.csv'%(p, t), 'w+') as f:
-        #                 #v_hist = np.ravel(v)  # 'flatten' v
-        #                fig = PLT.figure()
-        #                ax1 = fig.add_subplot(111)
-        #                n, bins, patches = ax1.hist(demands[t][p], bins=100,  facecolor='green')
-        #                PLT.show()
+
 
         solution = mipsolver.Solve()
         #solution.Print()
@@ -187,14 +165,6 @@ class Solver( object ):
 
         return solution
 
-    #Solve the problem with rule based heurisitcs (L4L, EOQ, POQ, Silver-Meal)
-    #def SolveWithRule( self ):
-    #    start = time.time()
-    #    decentralizedmrp = DecentralizedMRP( self.Instance, Constants.IsRuleWithGrave( self.Model ) )
-    #    solution = decentralizedmrp.SolveWithSimpleRule( self.Model )
-    #    end = time.time()
-    #    solution.TotalTime = end - start
-    #    return solution
 
     # Run the method Heuristic YFix: First solve the 2-stage problem to fix the Y variables, then solve the multi-stages problem on large scenario tree.
     def SolveYFixHeuristic(self):
@@ -318,12 +288,6 @@ class Solver( object ):
 
             if Constants.SDDPSaveInExcel:
                 self.SDDPSolver.SaveSolver()
-        #self.SDDPSolver = SDDP(self.Instance, self.TestIdentifier)
-             #self.SDDPSolver.LoadCuts()
-             #SolveInformation = sddpsolver.SolveInfo
-             #evaluator = self.Evaluator(self.Instance, [], [sddpsolver], optimizationmethod=Constants.SDDP)
-             #OutOfSampleTestResult = evaluator.EvaluateYQFixSolution(self.TestIdentifier, self.EvaluatorIdentifier, self.Model,
-             #                                                         saveevaluatetab=True, filename=self.GetEvaluationFileName())
 
         end = time.time()
         solution.TotalTime = end - start
@@ -347,9 +311,7 @@ class Solver( object ):
             treestructure = [1, 1] + [1] * (nrtimebucketconsidered - 1) + [0]
             stochasticparttreestructure = [1, 1] + [1] * (nrtimebucketconsidered - 1) + [0]
 
-            #if self.TestIdentifier.PolicyGeneration == Constants.RollingHorizon:
-            #    nrtimebucketstochastic = nrtimebucketconsidered
-            #else:
+
             nrtimebucketstochastic = self.Instance.NrTimeBucket \
                                      - self.Instance.NrTimeBucketWithoutUncertaintyBefore \
                                      - self.Instance.NrTimeBucketWithoutUncertaintyAfter

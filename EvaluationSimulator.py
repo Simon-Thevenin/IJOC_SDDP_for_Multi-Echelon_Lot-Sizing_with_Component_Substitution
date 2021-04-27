@@ -1,3 +1,6 @@
+#This class provide a framework to evaluate the performance of the method through a simulation
+#over a large number of scenarios.
+
 from __future__ import absolute_import, division, print_function
 #import pandas as pd
 #from matplotlib import pyplot as PLT
@@ -81,25 +84,15 @@ class EvaluationSimulator(object):
         for n in range(self.NrSolutions):
                 sol = None
                 if not evpi and not self.Policy == Constants.RollingHorizon:
-                   # if self.TestIdentificator.Method == Constants.MIP or self.TestIdentificator.Method == Constants.ProgressiveHedging:
                    sol = self.Solutions[n]
-         #               seed = sol.ScenarioTree.Seed
-         #       else:
-         #          if evpi:
-         #               seed = self.EVPISeed
-         #           else:
-         #               seed = self.StartSeedResolve
 
                 if Constants.IsSDDPBased(self.TestIdentificator.Method):
                     sddp = self.SDDPs[n]
-
-                #          seed = sddp.StartingSeed
 
                 evaluatoinscenarios, scenariotrees = self.GetScenarioSet(Constants.EvaluationScenarioSeed, nrscenario, allscenario)
 
                 if Constants.IsSDDPBased( self.TestIdentificator.Method ) : #== Constants.SDDP:
                      self.ForwardPassOnScenarios(sddp, evaluatoinscenarios, sol)
-
 
                 firstscenario = True
                 self.IsDefineMIPResolveTime = [False for t in self.Instance.TimeBucketSet]
@@ -124,9 +117,6 @@ class EvaluationSimulator(object):
                                     print("Quantity:%r" % givenquantty[t])
                                     print("Consumption:%r" % givenconsumption[t])
                                     print("Demand:%r" % scenario.Demands[t])
-
-                       # if self.TestIdentificator.Method == Constants.SDDP:
-                       #     givensetup, givenquantty, givenconsumption = self.GetDecisionFromSDDPForScenario(sddp, indexscenario)
 
 
                     else:
@@ -316,7 +306,6 @@ class EvaluationSimulator(object):
             self.PHResolveTime[time].UpdateForQuantity(givenquantity)
             self.PHResolveTime[time].UpdateForConsumption(givenconsumption)
 
-
         #Re-set the parameters
         self.PHResolveTime[time].ReSetParameter()
 
@@ -432,7 +421,6 @@ class EvaluationSimulator(object):
                 step *= (math.pow(Evaluated[k][seed] - mean, 2))
             covariance += Probabilities[0][seed] * 1/K * step
 
-        #print "The values are: %d, %d, %d"%( mean, variancepondere, covariance )
         term = stats.norm.ppf(1 - 0.05) * math.sqrt(max(((variancepondere + (covariance * (M - 1))) / (K * M)), 0.0))
         LB = K
         UB = -1
@@ -469,6 +457,7 @@ class EvaluationSimulator(object):
         #Get the required number of scenario
         self.GetScenarioSet()
 
+    #Recover the production quantity from the last MIP resolution
     def GetQuantityByResolve(self, demanduptotimet, resolvetime, givenquantty, givenconsumption, solution, givensetup):
         error = 0
         if resolvetime <= self.Instance.NrTimeBucketWithoutUncertaintyBefore:  # return the quantity at the root of the node
@@ -495,7 +484,7 @@ class EvaluationSimulator(object):
         return result
 
 
-
+    #This function generate the scenario tree for the next planning horizon
     def GetScenarioTreeForResolve(self, resolvetime, demanduptotimet):
         treestructure = [1] \
                         + [self.ReferenceTreeStructure[
@@ -531,6 +520,7 @@ class EvaluationSimulator(object):
 
         return scenariotree, treestructure
 
+    #Run the MIP with some decisions fixed in previous iterations
     def ResolveMIP(self, quantitytofix,  givensetup, consumptiontofix, demanduptotimet, resolvetime):
             if not self.IsDefineMIPResolveTime[resolvetime]:
                 scenariotree, _ = self.GetScenarioTreeForResolve(resolvetime, demanduptotimet)

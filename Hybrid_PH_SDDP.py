@@ -38,31 +38,21 @@ class Hybrid_PH_SDDP(object):
             else:
                 self.TestIdentifier.NrScenario = "all5"
 
-        print("TO be removed::::")
         if self.Instance.NrTimeBucket > 5:
             self.TestIdentifier.NrScenario = "all2"
-        #OldNrScenar =self.TestIdentifier.NrScenario
-        #self.TestIdentifier.NrScenario = "1000"
+
         PHTreestructure = solver.GetTreeStructure()
 
-        # treestructure = [1, 200] + [1] * (self.Instance.NrTimeBucket - 1) + [0]
-        # self.TestIdentifier.Model = Constants.ModelYQFix
-        # chosengeneration = self.TestIdentifier.ScenarioSampling
-        # self.ScenarioGeneration = "RQMC"
-        # solution, mipsolver = self.Solver.MRP(treestructure, False, recordsolveinfo=True)
-        # givensetup = [[solution.Production[0][t][p] for p in self.Instance.ProductSet]
-        #                                       for t in self.Instance.TimeBucketSet]
         self.ProgressiveHedging = ProgressiveHedging(self.Instance, self.TestIdentifier, PHTreestructure)
 
         self.TestIdentifier.NrScenario = self.NrScenarioOnceYIsFix
+
+
+    #This function is the main loop of the hybrid progressive hedging/SDDP heuristic
     def Run(self):
 
         self.GetHeuristicSetup()
-
-        #solution = self.RunPH()
-
         self.ProgressiveHedging.InitTrace()
-        # self.ProgressiveHedging.Run()
         self.ProgressiveHedging.CurrentSolution = [None for w in self.ProgressiveHedging.ScenarioNrSet]
         self.PrintOnlyFirstStagePreviousValue = Constants.PrintOnlyFirstStageDecision
         if Constants.PrintOnlyFirstStageDecision:
@@ -70,7 +60,7 @@ class Hybrid_PH_SDDP(object):
 
         self.ProgressiveHedging.CurrentIteration = 0
         stop = False
-        while not stop:#self.ProgressiveHedging.CurrentIteration < 5 or not self.ProgressiveHedging.ComputeConvergenceY() <= 1.0:
+        while not stop:
             self.ProgressiveHedging.SolveScenariosIndependently()
             if self.ProgressiveHedging.CurrentIteration == -1:
                 treestructure = [1, 200] + [1] * (self.Instance.NrTimeBucket - 1) + [0]
@@ -105,18 +95,12 @@ class Hybrid_PH_SDDP(object):
                 solution = self.ProgressiveHedging.CreateImplementableSolution()
                 self.ProgressiveHedging.CurrentImplementableSolution = solution
 
-
             self.ProgressiveHedging.PreviousImplementableSolution = copy.deepcopy(self.ProgressiveHedging.CurrentImplementableSolution)
-
-
-
-
 
             self.ProgressiveHedging.CurrentIteration += 1
             if self.ProgressiveHedging.CurrentIteration == 1:
                 self.ProgressiveHedging.LagrangianMultiplier = Constants.PHMultiplier #0.0001
-            # if self.ProgressiveHedging.CurrentIteration >= 2:
-            #     self.ProgressiveHedging.UpdateMultipler()
+
             self.ProgressiveHedging.UpdateLagragianMultipliers()
 
             #Just for the printing:
@@ -132,18 +116,16 @@ class Hybrid_PH_SDDP(object):
 
         self.RunSDDP()
 
-      #  return solution
 
+    #This function runs SDDP for the current values of the setup
     def RunSDDP(self):
      #   print("RUN SDDP")
-        treestructure = []
         self.SDDPSolver = SDDP(self.Instance, self.TestIdentifier, self.TreeStructure)
 
         #Mke sure SDDP do not unter in preliminary stage (at the end of the preliminary stage, SDDP would change the setup to bynary)
         Constants.SDDPGenerateCutWith2Stage = False
         Constants.SolveRelaxationFirst = False
         Constants.SDDPRunSigleTree = False
-
 
         self.SDDPSolver.HeuristicSetupValue = self.GivenSetup
 
@@ -152,7 +134,7 @@ class Hybrid_PH_SDDP(object):
 
 
 
-
+    #This function generate the initial setup with the two-stage heuristic
     def GetHeuristicSetup(self):
         treestructure = [1, 200] + [1] * (self.Instance.NrTimeBucket - 1) + [0]
         self.TestIdentifier.Model = Constants.ModelYQFix
@@ -165,15 +147,3 @@ class Hybrid_PH_SDDP(object):
         self.TestIdentifier.Model = Constants.ModelYFix
         self.TestIdentifier.Method = Constants.Hybrid
 
-
- #   def InitTrace(self):
- #       if Constants.PrintSDDPTrace:
- #           self.TraceFile = open(self.TraceFileName, "w")
- #           self.TraceFile.write("Start the Hybrid Progressive Hedging / SDDP algorithm \n")
- #           self.TraceFile.close()
-
- #   def WriteInTraceFile(self, string):
- #       if Constants.PrintSDDPTrace:
- #           self.TraceFile = open(self.TraceFileName, "a")
- #           self.TraceFile.write(string)
- #           self.TraceFile.close()
