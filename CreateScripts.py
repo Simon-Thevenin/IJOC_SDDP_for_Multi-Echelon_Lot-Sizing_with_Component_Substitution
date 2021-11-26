@@ -202,8 +202,21 @@ if __name__ == "__main__":
                                                      mlsetting="NrIterationBeforeTabu1000", sddpsetting = "EvalOutSample")
                     filenew.write("sbatch %s \n" % (jobname))
 
+    if sys.argv[1] == "TestMultiplierPH":
+            fileheurname = "multph.sh"
+            fileheur = open(fileheurname, 'w')
+            fileheur.write("""
+#!/bin/bash -l
+#
+""")
 
-
+            for instance in InstanceSet:
+                for nrback in sddpnrbackset:
+                    for setting in ["Default"]:
+                        nrforward = 1
+                        for phsetting in ["Multiplier01", "Multiplier001", "Multiplier1"]:
+                                jobname = CreateHybridSearchJob(instance, nrback, nrforward, setting, model="YFix", phsetting = phsetting)
+                                fileheur.write("sbatch %s \n" % (jobname))
 
 
 

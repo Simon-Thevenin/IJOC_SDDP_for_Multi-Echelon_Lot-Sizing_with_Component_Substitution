@@ -609,7 +609,7 @@ class SDDPStage(object):
         if self.Instance.HasExternalDemand[p]:# and not self.IsFirstStage():
             # Demand at period t for item i
             if forwardpass:
-                righthandside = righthandside \
+                 righthandside = righthandside \
                                 + self.SDDPOwner.CurrentSetOfTrialScenarios[scenario].Demands[
                                   self.GetTimePeriodAssociatedToInventoryVariable(p, t)][p]
             else:

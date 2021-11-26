@@ -547,6 +547,7 @@ class SDDP(object):
 
         duration = time.time() - self.StartOfAlsorithm
         timalimiteached = (duration > Constants.AlgorithmTimeLimit)
+       # print("TIME LIMIT reached: %r - %r" % (duration, Constants.AlgorithmTimeLimit))
         optimalitygap = (self.CurrentExpvalueUpperBound - self.CurrentLowerBound)/self.CurrentExpvalueUpperBound
 
         if Constants.PrintSDDPTrace:
@@ -554,7 +555,7 @@ class SDDP(object):
                                   % (self.CurrentIteration, duration, self.CurrentLowerBound,
                                      self.CurrentExpvalueUpperBound,
                                      optimalitygap, self.HasFixedSetup))
-
+        #print("TIME LIMIT reached: %r"%timalimiteached)
         return timalimiteached
 
 
