@@ -167,6 +167,7 @@ if __name__ == "__main__":
     for row in data_reader:
        instancenameslist.append(row)
     InstanceSet = instancenameslist[0]
+    print(InstanceSet)
     instancetosolvename = ""
 
     scenariotreeset = ["6400b"] #["all2", "all5"]#, "allDIX", "all20"]
