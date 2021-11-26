@@ -1,3 +1,6 @@
+#This class provide methods to plan according to simple rules (EOQ, POQ, ...)
+# It also include the computation of safety stock
+# and a method to shift the production quantities in order to respect the capacity
 from __future__ import absolute_import, division, print_function
 
 from Constants import Constants
@@ -125,9 +128,6 @@ class DecentralizedMRP(object):
             result = self.Instance.ForecastedAverageDemand[t][p]
 
         return result
-
-
-
 
 
     #This function return the quantity to remove to make the plan feasible according to capacities

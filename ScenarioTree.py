@@ -11,11 +11,11 @@ import math
 
 class ScenarioTree(object):
     #Constructor
-    def __init__(self, instance=None, branchperlevel=[], seed=-1, mipsolver=None, evaluationscenario = False, averagescenariotree = False,  givenfirstperiod = [], scenariogenerationmethod="MC", generateasYQfix = False, model = "YFix", CopyscenariofromYFIX=False ):
-        self.CopyscenariofromYFIX= CopyscenariofromYFIX
+    def __init__(self, instance=None, branchperlevel=[], seed=-1, mipsolver=None, evaluationscenario = False, averagescenariotree = False,  givenfirstperiod = [], scenariogenerationmethod="MC", generateasYQfix = False, model = "YFix", CopyscenariofromYFIX=False, issymetric = False, givenscenarioset = [] ):
+        self.CopyscenariofromYFIX = CopyscenariofromYFIX
         self.Seed = seed
         if Constants.Debug:
-            print("Createa tree with seed %r structure: %r"%(seed, branchperlevel))
+            print("Create a tree with seed %r structure: %r"%(seed, branchperlevel))
         np.random.seed(seed)
         self.Nodes = []
         self.Owner = mipsolver
@@ -28,16 +28,18 @@ class ScenarioTree(object):
 
         #For some types of evaluation, the demand of the  first periods are given and the rest is stochastic
         self.GivenFirstPeriod = givenfirstperiod
-        self.FollowGivenUntil = len(self.GivenFirstPeriod )
+        self.FollowGivenUntil = len(self.GivenFirstPeriod)
 
         #In case the scenario tree has to be the same aas the two stage (YQFix) scenario tree.
         self.GenerateasYQfix = generateasYQfix
         self.Distribution = instance.Distribution
         self.DemandToFollow = []
 
+        self.IsSymetric = issymetric
+
         #Generate the demand of YFix, then replicate them in the generation of the scenario tree
         if self.GenerateasYQfix:
-            treestructure = [1,4] + [1] * (instance.NrTimeBucket-1) + [0]
+            treestructure = [1,2] + [1] * (instance.NrTimeBucket-1) + [0]
             YQFixTree = ScenarioTree(instance, treestructure, seed, scenariogenerationmethod=self.ScenarioGenerationMethod)
             YQFixSceanrios = YQFixTree.GetAllScenarios(computeindex=False)
             self.DemandToFollow = [[[YQFixSceanrios[w].Demands[t][p]
@@ -47,7 +49,7 @@ class ScenarioTree(object):
 
         self.DemandYQFixRQMC = []
         self.Model = model
-        self.GenerateRQMCForYQFix = (Constants.IsQMCMethos(self.ScenarioGenerationMethod ) and self.Model == Constants.ModelYQFix)
+        self.GenerateRQMCForYQFix = (Constants.IsQMCMethos(self.ScenarioGenerationMethod) and self.Model == Constants.ModelYQFix)
 
         firstuknown = len(self.GivenFirstPeriod)
         firststochastic = max(self.Instance.NrTimeBucketWithoutUncertaintyBefore, firstuknown)
@@ -60,6 +62,19 @@ class ScenarioTree(object):
 
         if Constants.IsQMCMethos(self.ScenarioGenerationMethod) and self.GenerateRQMCForYQFix:
             self.GenerateDemandToFollowRQMC(firststochastic, firstuknown, timebucketswithuncertainty,nrtimebucketswithuncertainty)
+
+        if self.CopyscenariofromYFIX:
+            self.GenerateDemandToFollowFromScenarioSet( givenscenarioset )
+
+        if self.IsSymetric:
+            self.SymetricDemand=[ [] for t in self.Instance.TimeBucketSet]
+            self.SymetricProba=[ [] for t in self.Instance.TimeBucketSet]
+            for t in self.Instance.TimeBucketSet:
+                    self.SymetricDemand[t], self.SymetricProba[t] = \
+                        ScenarioTreeNode.CreateDemandNormalDistributiondemand(self.Instance, t, self.TreeStructure[t+1],
+                                                                              t < self.Instance.NrTimeBucketWithoutUncertaintyBefore,
+                                                                              self.ScenarioGenerationMethod)
+
         ScenarioTreeNode.NrNode = 0
         #Create the tree:
         self.RootNode = ScenarioTreeNode(owner=self,
@@ -105,6 +120,18 @@ class ScenarioTree(object):
                 for p in self.Instance.ProductSet:
                     self.DemandYQFixRQMC[s][t][p] = self.GivenFirstPeriod[t][p]
 
+    def GenerateDemandToFollowFromScenarioSet(self, scenarioset):
+
+        nrscenario = len(scenarioset)
+
+        self.DemandToFollowMultipleSceario = [[[scenarioset[s].Demands[t][p]
+                                                if self.Instance.HasExternalDemand[p]
+                                                else 0.0
+                                                for p in self.Instance.ProductSet]
+                                               for t in self.Instance.TimeBucketSet]
+                                              for s in range(nrscenario)]
+        self.ProbabilityToFollowMultipleSceario = [scenarioset[s].Probability for s in range(nrscenario)]
+
     # Generate the demand to follow in two stage when these demand are generated with a tree with all scenario
     def GenerateDemandToFollowAll(self, firststochastic, nrtimebucketswithuncertainty):
         sizefixed = max(len(self.GivenFirstPeriod) - self.Instance.NrTimeBucketWithoutUncertaintyBefore, 0)
@@ -119,13 +146,8 @@ class ScenarioTree(object):
                                              scenariogenerationmethod=Constants.All,
                                              givenfirstperiod=self.GivenFirstPeriod)
         temporaryscenarios = temporaryscenariotree.GetAllScenarios(False)
-        self.DemandToFollowMultipleSceario = [[[temporaryscenarios[s].Demands[t][p]
-                                                if self.Instance.HasExternalDemand[p]
-                                                else 0.0
-                                                for p in self.Instance.ProductSet]
-                                               for t in self.Instance.TimeBucketSet]
-                                              for s in range(nrscenario)]
-        self.ProbabilityToFollowMultipleSceario = [temporaryscenarios[s].Probability for s in range(nrscenario)]
+
+        self.GenerateDemandToFollowFromScenarioSet( temporaryscenarios )
 
     #This function number the node from highest level to lowest.
     def Renumber(self):
@@ -150,7 +172,7 @@ class ScenarioTree(object):
         self.RootNode.Display()
 
     #This function assemble the data in the tree, and return the list of leaves, which contain the scenarios
-    def GetAllScenarios(self, computeindex=True):
+    def GetAllScenarios(self, computeindex=True,expandfirststage = False):
         #A mip solver is required to compute the index, it is not always set
         if computeindex:
             self.ComputeVariableIdicies()
@@ -172,6 +194,31 @@ class ScenarioTree(object):
             s.ScenarioId = id
             id = id + 1
 
+        if expandfirststage:
+            for s in scenarios:
+                s.ProductionVariable = [[(self.Owner.StartProductionVariable
+                                         + s.ScenarioId * self.Instance.NrProduct * len(self.Instance.TimeBucketSet) + self.Instance.NrProduct * (t) + p)
+                                        for p in self.Instance.ProductSet]
+                                        for t in self.Instance.TimeBucketSet]
+
+                s.ConsumptionVariable = [[[self.Owner.StartConsumptionVariable + \
+                                           s.ScenarioId * self.Instance.NrAlternateTotal * len(self.Instance.TimeBucketSet) \
+                                             + self.Instance.NrAlternateTotal * t \
+                                             + sum(self.Instance.NrAlternate[k] for k in range(p)) \
+                                             + sum(self.Instance.Alternates[p][k] for k in range(q))
+                                             if self.Instance.Alternates[p][q]
+                                             else -1
+
+                                           for q in self.Instance.ProductSet]
+                                          for p in self.Instance.ProductSet]
+                                          for t in self.Instance.TimeBucketSet]
+
+                s.QuanitityVariable = [[self.Owner.StartQuantityVariable +\
+                                          s.ScenarioId * self.Instance.NrProduct * len(self.Instance.TimeBucketSet)\
+                                        + (self.Instance.NrProduct * t + p) \
+                                       for p in self.Instance.ProductSet ]
+                                       for t in self.Instance.TimeBucketSet]
+
         return scenarios
 
     #Save the scenario tree in a file
@@ -189,7 +236,8 @@ class ScenarioTree(object):
         for n in self.Nodes:
             if n.Time >= 0 and n.Time < self.Instance.NrTimeBucket:
                 n.QuantityToOrder = sol.get_values([n.QuanitityVariable[p]for p in self.Instance.ProductSet])
-                n.Consumption = sol.get_values([n.ConsumptionVariable[c[1]][c[0]] for c in self.Instance.ConsumptionSet])
+                if len(self.Instance.ConsumptionSet) > 0:
+                    n.Consumption = sol.get_values([(int)(n.ConsumptionVariable[c[0]][c[1]]) for c in self.Instance.ConsumptionSet])
                 if n.Time > 0:
                     n.InventoryLevel = sol.get_values([n.InventoryVariable[p] for p in self.Instance.ProductSet])
                     n.BackOrderLevel = sol.get_values([n.BackOrderVariable[self.Instance.ProductWithExternalDemandIndex[p]]

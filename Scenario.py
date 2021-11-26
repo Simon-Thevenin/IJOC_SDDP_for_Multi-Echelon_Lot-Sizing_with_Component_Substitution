@@ -20,8 +20,10 @@ class Scenario(object):
         self.ConsumptionVariable = consumptionvariable
         Scenario.NrScenario = Scenario.NrScenario +1
         self.Nodes = nodesofscenario
-        for n in self.Nodes:
-            n.OneOfScenario = self
+        if not self.Nodes is None:
+            for n in self.Nodes:
+                n.OneOfScenario = self
+                n.Scenarios.append(self)
         self.ScenarioId = Scenario.NrScenario
 
     def DisplayScenario(self):

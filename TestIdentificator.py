@@ -4,7 +4,7 @@ from __future__ import absolute_import, division, print_function
 class TestIdentificator( object ):
 
     # Constructor
-    def __init__(self, instancename, model, method, sampling, nrscenario, scenarioseed, useevpi, mipsetting):
+    def __init__(self, instancename, model, method, sampling, nrscenario, scenarioseed, useevpi, nrscenarioforward,mipsetting, sddpsetting, hybridphsetting, mllocalsearchsetting):
         self.InstanceName = instancename
         self.Model = model
         self.Method = method
@@ -13,6 +13,10 @@ class TestIdentificator( object ):
         self.ScenarioSeed = scenarioseed
         self.EVPI = useevpi
         self.MIPSetting = mipsetting
+        self.NrScenarioForward = nrscenarioforward
+        self.SDDPSetting = sddpsetting
+        self.HybridPHSetting = hybridphsetting
+        self.MLLocalSearchSetting = mllocalsearchsetting
 
     def GetAsStringList(self):
         result = [self.InstanceName,
@@ -22,16 +26,24 @@ class TestIdentificator( object ):
                   self.NrScenario,
                   "%s"%self.ScenarioSeed,
                   "%s"%self.EVPI,
-                  self.MIPSetting]
+                  "%s"%self.NrScenarioForward,
+                  self.MIPSetting,
+                  self.SDDPSetting,
+                  self.HybridPHSetting,
+                  self.MLLocalSearchSetting]
         return result
 
     def GetAsString(self):
-        result = "_".join( [self.InstanceName,
-                            self.Model,
-                            self.Method,
-                            self.ScenarioSampling,
-                            self.NrScenario,
-                            "%s"%self.ScenarioSeed,
-                            "%s"%self.EVPI,
-                            self.MIPSetting])
+        result = "_".join([self.InstanceName,
+                           self.Model,
+                           self.Method,
+                           self.ScenarioSampling,
+                           self.NrScenario,
+                           "%s"%self.ScenarioSeed,
+                           "%s"%self.EVPI,
+                           "%s"%self.NrScenarioForward,
+                           self.MIPSetting,
+                           self.SDDPSetting,
+                           self.HybridPHSetting,
+                           self.MLLocalSearchSetting])
         return result

@@ -12,6 +12,8 @@ import numpy as np
 import pandas as pd
 #from matplotlib import pyplot as plt
 
+
+#This class define a solution to MRP
 class Solution(object):
 
     #constructor
@@ -55,19 +57,31 @@ class Solution(object):
         self.InSampleAverageLostSale = -1
 
         self.SValue = []
-        self.FixedQuantity= []
+        if not instance is None:
+            self.FixedQuantity = [[-1 for p in instance.ProductSet] for t in instance.TimeBucketSet]
+        else:
+            self.FixedQuantity = []
         # The objecie value as outputed by CPLEx,
-        self.CplexCost =-1
+        self.CplexCost = -1
         self.CplexGap = -1
         self.CplexTime = 0
         self.TotalTime = 0
         self.CplexNrConstraints = -1
         self.CplexNrVariables = -1
+        self.MLLocalSearchLB = -1
+        self.MLLocalSearchTimeBestSol = -1
+        self.PHCost = -1
+        self.PHNrIteration = -1
 
         self.SDDPLB = -1
         self.SDDPExpUB = -1
-        self.SDDPNrIteration =-1
+        self.SDDPNrIteration = -1
 
+        self.LocalSearchIteration = -1
+
+        self.SDDPTimeBackward = -1
+        self.SDDPTimeForwardNoTest = -1
+        self.SDDPTimeForwardTest = -1
 
 
     #return the path to file where excel the solution is saved
@@ -95,9 +109,14 @@ class Solution(object):
             model = "Rule"
         general = [self.Instance.InstanceName, self.Instance.Distribution, model,
                    self.CplexCost, self.CplexTime, self.TotalTime, self.CplexGap, self.CplexNrConstraints,
-                   self.CplexNrVariables, self.SDDPLB, self.SDDPExpUB, self.SDDPNrIteration, self.IsPartialSolution, self.IsSDDPSolution]
+                   self.CplexNrVariables, self.SDDPLB, self.SDDPExpUB, self.SDDPNrIteration,  self.SDDPTimeBackward,
+                   self.SDDPTimeForwardNoTest, self.SDDPTimeForwardTest, self.MLLocalSearchLB, self.MLLocalSearchTimeBestSol, self.LocalSearchIteration, self.PHCost,
+                   self.PHNrIteration, self.IsPartialSolution, self.IsSDDPSolution]
+
+        
         columnstab = ["Name", "Distribution", "Model", "CplexCost", "CplexTime", "TotalTime", "CplexGap", "CplexNrConstraints",
-                      "CplexNrVariables", "SDDP_LB", "SDDP_ExpUB", "SDDP_NrIteration", "IsPartialSolution", "ISSDDPSolution"]
+                      "CplexNrVariables", "SDDP_LB", "SDDP_ExpUB", "SDDP_NrIteration",  "SDDPTimeBackward",
+                   "SDDPTimeForwardNoTest", "SDDPTimeForwardTest", "MLLocalSearchLB", "MLLocalSearchTimeBestSol", "LocalSearchIterations", "PH_Cost", "PH_NrIteration", "IsPartialSolution", "ISSDDPSolution"]
         generaldf = pd.DataFrame(general, index=columnstab)
         return generaldf
 
@@ -109,8 +128,7 @@ class Solution(object):
             productiondf.to_pickle(self.GetSolutionPickleFileNameStart(description,  'Production'))
             inventorydf.to_pickle(self.GetSolutionPickleFileNameStart(description,  'InventoryLevel'))
             bbackorderdf.to_pickle(self.GetSolutionPickleFileNameStart(description,  'BackOrder'))
-            consumptiondf.to_pickle(self.GetSolutionPickleFileNameStart(description, 'consumption'))
-            #svaluedf.to_pickle(self.GetSolutionPickleFileNameStart(description,  'SValue'))
+            consumptiondf.to_pickle(self.GetSolutionPickleFileNameStart(description, 'Consumption'))
             fixedqvaluesdf.to_pickle(self.GetSolutionPickleFileNameStart(description,  'FixedQvalue'))
 
             generaldf = self.GetGeneralInfoDf()
@@ -131,7 +149,6 @@ class Solution(object):
         inventorydf.to_excel(writer, 'InventoryLevel')
         bbackorderdf.to_excel(writer, 'BackOrder')
         consumptiondf.to_excel(writer, 'Consumption')
-        #svaluedf.to_excel(writer, 'SValue')
         fixedqvaluesdf.to_excel(writer, 'FixedQvalue')
 
         generaldf = self.GetGeneralInfoDf()
@@ -176,17 +193,16 @@ class Solution(object):
         inventorydf = pd.read_pickle(self.GetSolutionPickleFileNameStart(description, 'InventoryLevel'))
         bbackorderdf = pd.read_pickle(self.GetSolutionPickleFileNameStart(description, 'BackOrder'))
         consumptiondf = pd.read_pickle(self.GetSolutionPickleFileNameStart(description, 'Consumption'))
-        svaluedf = pd.read_pickle(self.GetSolutionPickleFileNameStart(description, 'SValue'))
+        #svaluedf = pd.read_pickle(self.GetSolutionPickleFileNameStart(description, 'SValue'))
         fixedqvaluesdf = pd.read_pickle(self.GetSolutionPickleFileNameStart(description, 'FixedQvalue'))
         instanceinfo = pd.read_pickle(self.GetSolutionPickleFileNameStart(description, "Generic"))
         scenariotreeinfo = pd.read_pickle(self.GetSolutionPickleFileNameStart(description, "ScenarioTree"))
 
-        return prodquantitydf, productiondf, inventorydf, bbackorderdf, consumptiondf, svaluedf, fixedqvaluesdf, instanceinfo, scenariotreeinfo
+        return prodquantitydf, productiondf, inventorydf, bbackorderdf, consumptiondf, fixedqvaluesdf, instanceinfo, scenariotreeinfo
 
 
     #This function set the attributes of the solution from the excel/binary file
     def ReadFromFile(self, description):
-
         if Constants.PrintSolutionFileToExcel:
             wb2 = opxl.load_workbook(self.GetSolutionFileName(description))
             instanceinfo = Tool.ReadDataFrame(wb2, "Generic")
@@ -224,6 +240,8 @@ class Solution(object):
         self.IsSDDPSolution = instanceinfo.at['ISSDDPSolution', 0]
         self.CplexCost = instanceinfo.at['CplexCost', 0]
         self.CplexTime = instanceinfo.at['CplexTime', 0]
+        self.PHCost = instanceinfo.at['PH_Cost', 0]
+        self.PHNrIteration = instanceinfo.at['PH_NrIteration', 0]
         self.TotalTime = instanceinfo.at['TotalTime', 0]
         self.CplexGap = instanceinfo.at['CplexGap', 0]
         self.CplexNrConstraints = instanceinfo.at['CplexNrConstraints', 0]
@@ -233,6 +251,15 @@ class Solution(object):
         self.SDDPExpUB = instanceinfo.at['SDDP_ExpUB', 0]
         self.SDDPNrIteration = instanceinfo.at['SDDP_NrIteration', 0]
 
+        self.LocalSearchIteration = instanceinfo.at['LocalSearchIterations', 0]
+        self.MLLocalSearchLB = instanceinfo.at['MLLocalSearchLB', 0]
+        self.MLLocalSearchTimeBestSol = instanceinfo.at['MLLocalSearchTimeBestSol', 0]
+
+
+        self.SDDPTimeBackward = instanceinfo.at['SDDPTimeBackward', 0]
+        self.SDDPTimeForwardNoTest = instanceinfo.at['SDDPTimeForwardNoTest', 0]
+        self.SDDPTimeForwardTest = instanceinfo.at['SDDPTimeForwardTest', 0]
+        
         self.Scenarioset = self.ScenarioTree.GetAllScenarios(False)
         if self.IsPartialSolution:
             self.Scenarioset = [self.Scenarioset[0]]
@@ -274,7 +301,6 @@ class Solution(object):
             for t in timerange:
                 for p in self.Instance.ProductSet:
 
-
                     inventorycost += self.InventoryLevel[w][t][p] \
                                           * self.Instance.InventoryCosts[p] \
                                           * gammas[t] \
@@ -304,11 +330,11 @@ class Solution(object):
                                                  * self.Scenarioset[w].Probability
 
                     for q in self.Instance.ProductSet:
-                        if self.Instance.PossibleComponents[p][q] \
-                                and  self.Consumption[w][t][q][p] <> -1:
+                        if self.Instance.Alternates[p][q] \
+                                and self.Consumption[w][t][p][q] > 0:
 
-                            consumptioncost += self.Consumption[w][t][q][p] \
-                                                * self.Instance.AternateCosts[p][q]\
+                            consumptioncost += self.Consumption[w][t][p][q] \
+                                                * self.Instance.GetComsumptionCost(p,q)\
                                                 *gammas[t] \
                                                 * self.Scenarioset[w].Probability
                 totalcost = inventorycost + backordercost + setupcost + lostsalecost + variablecost + consumptioncost
@@ -361,7 +387,7 @@ class Solution(object):
         consumptiondf.index.name = "Product"
 
         #Production variables are decided at stage 1 for the complete horizon
-        iterablesproduction = [range(len(self.Instance.TimeBucketSet)) , range(len(self.Scenarioset) )]
+        iterablesproduction = [range(len(self.Instance.TimeBucketSet)), range(len(self.Scenarioset))]
         multiindexproduction = pd.MultiIndex.from_product(iterablesproduction, names=['time', 'scenario'])
         productiondf = pd.DataFrame(solproduction, index=self.Instance.ProductName, columns=multiindexproduction)
         productiondf.index.name = "Product"
@@ -379,11 +405,11 @@ class Solution(object):
         timebucketset = self.GetConsideredTimeBucket()
         self.ProductionQuantity = [[[prodquantitydf.loc[str(self.Instance.ProductName[p]),(t,s)]
                                      for p in self.Instance.ProductSet] for t in timebucketset] for s in scenarioset]
-        self.InventoryLevel = [[[inventorydf.loc[self.Instance.ProductName[p], (t,s)]
+        self.InventoryLevel = [[[inventorydf.loc[self.Instance.ProductName[p], (t, s)]
                                  for p in self.Instance.ProductSet] for t in timebucketset] for s in scenarioset ]
-        self.Production = [[[productiondf.loc[self.Instance.ProductName[p], (t,s)] for p in self.Instance.ProductSet]
+        self.Production = [[[productiondf.loc[self.Instance.ProductName[p], (t, s)] for p in self.Instance.ProductSet]
                             for t in self.Instance.TimeBucketSet] for s in scenarioset]
-        self.BackOrder = [[[bbackorderdf.loc[self.Instance.ProductName[p], (t,s)]
+        self.BackOrder = [[[bbackorderdf.loc[self.Instance.ProductName[p], (t, s)]
                             for p in self.Instance.ProductWithExternalDemand] for t in timebucketset] for s in scenarioset]
         self.Consumption = [[[bbackorderdf.loc[self.Instance.ProductName[p], (t, s)]
                             for p in self.Instance.ProductWithExternalDemand] for t in timebucketset] for s in
@@ -422,12 +448,12 @@ class Solution(object):
                            for t in timebucketset] for w in self.SenarioNrset]
 
     #This function compute some statistic on the current solution
-    def ComputeStatistics( self ):
+    def ComputeStatistics(self):
 
-        self.InSampleAverageInventory = [[sum( self.InventoryLevel[w][t][p] for w in self.SenarioNrset)
+        self.InSampleAverageInventory = [[sum(self.InventoryLevel[w][t][p] for w in self.SenarioNrset)
                                           /len(self.SenarioNrset)
-                                           for p in  self.Instance.ProductSet ]
-                                            for t in self.Instance.TimeBucketSet]
+                                           for p in self.Instance.ProductSet]
+                                           for t in self.Instance.TimeBucketSet]
 
         self.InSampleAverageBackOrder = [[sum( self.BackOrder[w][t][ self.Instance.ProductWithExternalDemandIndex[p] ]
                                                for w in self.SenarioNrset)
@@ -435,6 +461,10 @@ class Solution(object):
                                               for p in self.Instance.ProductWithExternalDemand]
                                                 for t in self.Instance.TimeBucketSet]
 
+        self.InSampleAverageConsumption = [[sum(self.Consumption[w][t][p][q] for w in self.SenarioNrset for t in self.Instance.TimeBucketSet)
+                                         / (len(self.SenarioNrset) * len(self.Instance.TimeBucketSet))
+                                         for p in self.Instance.ProductSet]
+                                         for q in self.Instance.ProductSet ]
 
         self.InSampleAverageQuantity = [[sum( self.ProductionQuantity[w][t][p] for w in self.SenarioNrset)
                                          /len(self.SenarioNrset)
@@ -449,7 +479,7 @@ class Solution(object):
         self.InSampleAverageOnTime = [[(sum(max([self.Scenarioset[s].Demands[t][p]
                                                  - self.BackOrder[s][t][self.Instance.ProductWithExternalDemandIndex[p]],0])
                                            for s in self.SenarioNrset)
-                                             / len( self.SenarioNrset))
+                                             / len(self.SenarioNrset))
                                         for p in self.Instance.ProductWithExternalDemand]
                                         for t in self.Instance.TimeBucketSet]
 
@@ -457,7 +487,7 @@ class Solution(object):
                                                    for t in self.Instance.TimeBucketSet)
                                                for s in self.Scenarioset]
 
-        totaldemand = sum( self.InSampleTotalDemandPerScenario )
+        totaldemand = sum(self.InSampleTotalDemandPerScenario)
 
         backordertime = range( self.Instance.NrTimeBucket - 1)
 
@@ -473,9 +503,9 @@ class Solution(object):
                                                   for w in  self.SenarioNrset]
 
         self.InSampleTotalLostSalePerScenario = [sum(self.BackOrder[w][self.Instance.NrTimeBucket -1][self.Instance.ProductWithExternalDemandIndex[p] ]
-                                                     for p in self.Instance.ProductWithExternalDemand) for w in  self.SenarioNrset]
+                                                     for p in self.Instance.ProductWithExternalDemand) for w in self.SenarioNrset]
 
-        nrscenario = len( self.Scenarioset )
+        nrscenario = len(self.Scenarioset)
 
         self.InSampleAverageDemand = sum(self.InSampleTotalDemandPerScenario[s] for s in self.SenarioNrset)/nrscenario
         self.InSamplePercentOnTime = 100 * (sum(self.InSampleTotalOnTimePerScenario[s] for s in self.SenarioNrset))/totaldemand
@@ -517,6 +547,13 @@ class Solution(object):
 
         avgSetupdf.to_excel(writer, "AverageSetup")
 
+        avgConsumptiondf = pd.DataFrame(self.InSampleAverageConsumption,
+                                  columns=self.Instance.ProductName,
+                                  index=self.Instance.ProductName)
+
+        avgConsumptiondf.to_excel(writer, "AverageConsumption")
+
+
         perscenariodf = pd.DataFrame([self.InSampleTotalDemandPerScenario, self.InSampleTotalBackOrderPerScenario,
                                       self.InSampleTotalLostSalePerScenario],
                                      index=["Total Demand", "Total Backorder", "Total Lost Sales"],
@@ -526,7 +563,9 @@ class Solution(object):
 
         general = testidentifier.GetAsStringList() + [self.InSampleAverageDemand, offsetseed, nrevaluation, testidentifier.ScenarioSeed, evaluationmethod]
         columnstab = ["Instance", "Model", "Method", "ScenarioGeneration", "NrScenario", "ScenarioSeed",
-                      "EVPI", "mipsetting", "Average demand", "offsetseed", "nrevaluation", "solutionseed", "evaluationmethod"]
+                      "EVPI", "NrForwardScenario", "mipsetting", "SDDPSetting", "HybridPHSetting", "MLLocalSearchSetting",
+                      "Average demand", "offsetseed", "nrevaluation", "solutionseed", "evaluationmethod"]
+
         generaldf = pd.DataFrame(general, index=columnstab)
         generaldf.to_excel(writer, "General")
         writer.save()
@@ -638,10 +677,10 @@ class Solution(object):
             backordercoststochasticperiod, \
             setupcoststochasticperiod,\
             lostsalecoststochasticperiod, \
-            variablecost, \
-            consumptioncost= self.GetCostInInterval( stochasticperiod )
+            variablecoststochasticperiod, \
+            consumptioncoststochasticperiod= self.GetCostInInterval( stochasticperiod )
         nrsetups = self.GetNrSetup()
-#        averagecoverage = self.GetAverageCoverage()
+#       averagecoverage = self.GetAverageCoverage()
 
 
         kpistat = [ self.CplexCost,
@@ -652,6 +691,14 @@ class Solution(object):
                     self.SDDPLB,
                     self.SDDPExpUB,
                     self.SDDPNrIteration,
+                    self.SDDPTimeBackward,
+                    self.SDDPTimeForwardNoTest,
+                    self.SDDPTimeForwardTest,
+                    self.MLLocalSearchLB,
+                    self.MLLocalSearchTimeBestSol,
+                    self.LocalSearchIteration,
+                    self.PHCost,
+                    self.PHNrIteration,
                     self.TotalTime,
                     self.SetupCost,
                     self.InventoryCost,
@@ -659,6 +706,7 @@ class Solution(object):
                     self.BackOrderCost,
                     self.LostsaleCost,
                     self.VariableCost,
+                    self.ConsumptionCost,
                     inventorycoststochasticperiod,
                     setupcoststochasticperiod,
                     backordercoststochasticperiod,
@@ -706,7 +754,7 @@ class Solution(object):
 
         # sum of quantity and initial inventory minus demands
         projinventory = [(self.Instance.StartingInventories[p]
-                                  + sum(prevquanity[t][p] for t in range(max(time - self.Instance.Leadtimes[p] + 1 , 0)))
+                                  + sum(prevquanity[t][p] for t in range(max(time - self.Instance.LeadTimes[p] + 1 , 0)))
                                   - sum(prevquanity[t][q] * self.Instance.Requirements[q][p] for t in range(time +1) for q in self.Instance.ProductSet)
                                   - sum(prevdemand[t][p] for t in range(time +1)))
                                     for p in self.Instance.ProductSet]
@@ -718,7 +766,7 @@ class Solution(object):
                                     for p in self.Instance.ProductSet]
 
         currentinventory = [(self.Instance.StartingInventories[p]
-                             + sum(prevquanity[t][p] for t in range( max( time - self.Instance.Leadtimes[p] + 1, 0)))
+                             + sum(prevquanity[t][p] for t in range(max(time - self.Instance.LeadTimes[p] + 1, 0)))
                              - sum(prevquanity[t][q] * self.Instance.Requirements[q][p] for t in range(time) for q in self.Instance.ProductSet)
                              - sum(prevdemand[t][p] for t in range(time)))
                             for p in self.Instance.ProductSet]
@@ -726,6 +774,8 @@ class Solution(object):
              if projinventory[p] > - 0.0001: projectedinventory[p] = projinventory[p]
              else:
                  if not self.Instance.HasExternalDemand[p] and not self.NotCompleteSolution and projinventorymusbepositive:
+                     print("time: %r " % (time))
+                     print("prevquanity: %r " % (prevquanity))
                      print("inventory: %r " % (projinventory))
                      raise NameError(" A product without external demand cannot have backorder")
                      projectedbackorder[ self.Instance.ProductWithExternalDemandIndex[p] ] = -projinventory[p]
@@ -943,3 +993,31 @@ class Solution(object):
 
         result.FixedQuantity= [[0 for p in instance.ProductSet] for t in instance.TimeBucketSet]
         return result
+
+    def ComputeInventory(self):
+        for w in self.SenarioNrset:
+            for t in self.Instance.TimeBucketSet:
+                prevdemand = [[self.Scenarioset[w].Demands[tau][q] for q in self.Instance.ProductSet] for tau in range(t+1)]
+                prevquanty = [[self.ProductionQuantity[w][tau][q] for q in self.Instance.ProductSet] for tau in range(t+1)]
+                currentinventory = [(self.Instance.StartingInventories[p]
+                                         + sum(prevquanty[t][p] for t in range(max(t - self.Instance.LeadTimes[p] + 1, 0)))
+                                         - sum(self.Consumption[w][t][c[0]][c[1]] for t in range(t+1) for c in self.Instance.ConsumptionSet if c[0]==p)
+                                         - sum(prevdemand[t][p] for t in range(t+1)))
+                                        for p in self.Instance.ProductSet]
+
+                for p in self.Instance.ProductSet:
+
+                    if currentinventory[p] >= -0.0001:
+                        self.InventoryLevel[w][t][p] = currentinventory[p]
+                        if self.Instance.HasExternalDemand[p]:
+                            indexp = self.Instance.ProductWithExternalDemandIndex[p]
+                            self.BackOrder[w][t][indexp] = 0.0
+                    else:
+                        if self.Instance.HasExternalDemand[p]:
+                            indexp = self.Instance.ProductWithExternalDemandIndex[p]
+                            self.BackOrder[w][t][indexp] = -currentinventory[p]
+                            self.InventoryLevel[w][t][p] = 0.0
+                        else:
+                            self.InventoryLevel[w][t][p] = currentinventory[p]
+                            if Constants.Debug:
+                                print("THE SOlution is not feasible!!!!!!")

@@ -3,7 +3,9 @@ from Constants import Constants
 from random import randint
 import math
 
-
+#This class define the methods to read an instance from a file. The goal is to generate instances based
+# on files existing from the litterature. As several input format exist, the class can be specialised
+#in several children class (on for each type of input file)
 class InstanceReader(object):
 
 
@@ -22,19 +24,20 @@ class InstanceReader(object):
     # b and lostsale are the cost structure (backlog cost are b*instentory costs, lost sale costs are lostsale*instentory costs
     # is the echelon inventory cost (n: normal, l: large increase at each echelon)
     # forecasterror and rateknown are parameter used to build the NonStationary distribution
-    def ReadFromFile(self, instancename, distribution="NonStationary", longtimehoizon=False, alternatetype = "Normal"):
+    def ReadFromFile(self, instancename, distribution="NonStationary", longtimehoizon=False, largetimehorizonperiod = 10, additionaltimehorizon = 0, nralternate=0, costalternate=0):
             backlogcostmultiplier = 2
             forcasterror = 25
-            e = "n"
-            rateknown = 50
+            e = "l"
+            rateknown = 25
             leadtimestructure = 0
             lostsalecostmultiplier = 20
             capacityfactor = 2
 
-            self.Instance.InstanceName = "%s_%s_b%s_fe%s_e%s_rk%s_ll%s_l%s_H%s_c%s" % (
+            self.Instance.InstanceName = "%s_%s_b%s_fe%s_e%s_rk%s_ll%s_l%s_H%s%s_c%s_A%s_a%s" % (
                                                     instancename, distribution, backlogcostmultiplier, forcasterror,
                                                     e, rateknown, leadtimestructure, lostsalecostmultiplier,
-                                                    longtimehoizon, capacityfactor)
+                                                    additionaltimehorizon, largetimehorizonperiod, capacityfactor,
+                                                    nralternate, costalternate)
             self.Instance.Distribution = distribution
             self.Filename = instancename
             # Open the file, and read the product, requirement, and resources
@@ -43,13 +46,12 @@ class InstanceReader(object):
             self.ReadInstanceStructure()
             self.ReadNrResource()
             self.CreateRequirement()
-
-            self.GenerateTransportCost(alternatetype)
+            self.GenerateTransportCost(nralternate, costalternate)
             self.Instance.ComputeLevel()
             self.CreateLeadTime(leadtimestructure)
             self.GenerateHoldingCostCost(e)
             self.Instance.ComputeMaxLeadTime()
-            self.GenerateTimeHorizon(longtimehoizon)
+            self.GenerateTimeHorizon(longtimehoizon, largetimehorizonperiod=largetimehorizonperiod, additionaltimehorizon= additionaltimehorizon)
             self.GenerateDistribution(float(forcasterror / 100.0), float(rateknown / 100.0),
                                       longtimehorizon=longtimehoizon)
             self.ComputeAverageDependentDemand()
@@ -58,7 +60,7 @@ class InstanceReader(object):
             self.GenerateCapacity(capacityfactor)
             self.GenerateCostParameters(backlogcostmultiplier, lostsalecostmultiplier)
             self.GenerateVariableCost()
-            self.Instance.SaveCompleteInstanceInExelFile()
+            #self.Instance.SaveCompleteInstanceInExelFile()
             self.Instance.ComputeInstanceData()
 
     # This function reads the number of products, resources, ...

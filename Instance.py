@@ -7,10 +7,9 @@ from InstanceReaderGrave import InstanceReaderGrave
 from InstanceReaderTemplemeier import InstanceReaderTemplemeier
 from InstanceReaderJDA import InstanceReaderJDA
 from Constants import Constants
-import networkx as nx
-
-
-import matplotlib.pyplot as plt
+#uncomment to create a plot of the supply chain (might create some interference with CPLEX)
+#import networkx as nx
+#import matplotlib.pyplot as plt
 
 class Instance(object):
 
@@ -169,9 +168,9 @@ class Instance(object):
         self.Distribution = Constants.NonStationary
         self.ProductName = ["P1", "P2a", "P2b"]
         self.NrProduct = 3
-        self.NrTimeBucket = 5
+        self.NrTimeBucket = 4
         self.NrTimeBucketWithoutUncertaintyAfter = 0
-        self.NrTimeBucketWithoutUncertaintyBefore = 0
+        self.NrTimeBucketWithoutUncertaintyBefore = 2
         self.NrResource = 3
         self.Gamma = 1
         self.Requirements = [[0, 1, 0],
@@ -198,14 +197,14 @@ class Instance(object):
                                         [10, 0, 0],
                                         [10, 0, 0]
                                         ]
-        self.ForecastError = [0.5, 0, 0]
+        self.ForecastError = [0.25, 0, 0]
         self.RateOfKnownDemand = 0.0
-        self.YearlyStandardDevDemands = [5, 0, 0]
-        self.ForcastedStandardDeviation = [[5, 0, 0],
-                                           [5, 0, 0],
-                                           [5, 0, 0],
-                                           [5, 0, 0],
-                                           [5, 0, 0]]
+        self.YearlyStandardDevDemands = [2, 0, 0]
+        self.ForcastedStandardDeviation = [[2, 0, 0],
+                                           [2, 0, 0],
+                                           [2, 0, 0],
+                                           [2, 0, 0],
+                                           [2, 0, 0]]
 
         self.StartingInventories = [10.0, 5.0, 5.0]
         self.InventoryCosts = [5.0, 2.0, 2.0]
@@ -215,8 +214,100 @@ class Instance(object):
         self.LostSaleCost = [100.0, 0.0, 0.0]
         self.ComputeInstanceData()
 
+        # This function defines a very small instance, this is useful for debugging.
+    def DefineAsTwoItemIntance(self):
+            self.InstanceName = "TwoItemIntance"
+            self.Distribution = Constants.NonStationary
+            self.ProductName = ["P1", "P2"]
+            self.NrProduct = 2
+            self.NrTimeBucket = 2
+            self.NrTimeBucketWithoutUncertaintyAfter = 0
+            self.NrTimeBucketWithoutUncertaintyBefore = 0
+            self.NrResource = 2
+            self.Gamma = 1
+            self.Requirements = [[0, 1],
+                                 [0, 0]]
+            self.MasterProduct = [0, 1]
+            # Alternates[p][p2] 1 if p2 can be used as alternate for p
+            self.Alternates = [[0, 0],
+                               [0, 0]]
+            # AternateCosts[p][c] the cost (per unit) of using component c for product p
+            self.AternateCosts = [[0, 0],
+                                  [0, 0]]
+            self.Capacity = [50, 50]
+            self.LeadTimes = [0, 0]
+            self.ProcessingTime = [[1, 0],
+                                   [0, 1]]
+            self.YearlyAverageDemand = [10, 0]
+            self.ForecastedAverageDemand = [[10, 0],
+                                            [10, 0],
+                                            [10, 0],
+                                            [10, 0],
+                                            [10, 0]
+                                            ]
+            self.ForecastError = [0.25, 0]
+            self.RateOfKnownDemand = 0.0
+            self.YearlyStandardDevDemands = [2, 0]
+            self.ForcastedStandardDeviation = [[2, 0],
+                                               [2, 0],
+                                               [2, 0],
+                                               [2, 0],
+                                               [2, 0]]
+
+            self.StartingInventories = [10.0, 5.0]
+            self.InventoryCosts = [5.0, 2.0]
+            self.VariableCost = [5.0, 0.0]
+            self.SetupCosts = [5.0, 5.0]
+            self.BackorderCosts = [10.0, 0.0]  # for now assume no external demand for components
+            self.LostSaleCost = [100.0, 0.0]
+            self.ComputeInstanceData()
+
+        # This function defines a very small instance, this is useful for debugging.
+    def DefineAsOneItemIntance(self):
+            self.InstanceName = "OneItemIntance"
+            self.Distribution = Constants.NonStationary
+            self.ProductName = ["P1"]
+            self.NrProduct = 1
+            self.NrTimeBucket = 5
+            self.NrTimeBucketWithoutUncertaintyAfter = 0
+            self.NrTimeBucketWithoutUncertaintyBefore = 0
+            self.NrResource = 1
+            self.Gamma = 1
+            self.Requirements = [[0]]
+            self.MasterProduct = [0]
+            # Alternates[p][p2] 1 if p2 can be used as alternate for p
+            self.Alternates = [[0]]
+            # AternateCosts[p][c] the cost (per unit) of using component c for product p
+            self.AternateCosts = [[0]]
+            self.Capacity = [50]
+            self.LeadTimes = [1]
+            self.ProcessingTime = [[1]]
+            self.YearlyAverageDemand = [10]
+            self.ForecastedAverageDemand = [[10],
+                                            [10],
+                                            [10],
+                                            [10],
+                                            [10]
+                                            ]
+            self.ForecastError = [0.25]
+            self.RateOfKnownDemand = 0.0
+            self.YearlyStandardDevDemands = [2]
+            self.ForcastedStandardDeviation = [[2],
+                                               [2],
+                                               [2],
+                                               [2],
+                                               [2]]
+
+            self.StartingInventories = [10.0]
+            self.InventoryCosts = [5.0]
+            self.VariableCost = [5.0]
+            self.SetupCosts = [5.0]
+            self.BackorderCosts = [10.0]  # for now assume no external demand for components
+            self.LostSaleCost = [100.0]
+            self.ComputeInstanceData()
+
     def IsMaterProduct(self, prod):
-        return sum(self.Alternates[p][prod] for p in self.ProductSet) == 0
+        return sum(self.Requirements[p][prod] for p in self.ProductSet) > 0.0#sum(self.Alternates[prod][p] for p in self.ProductSet) == 0
 
     def GetMasterProduct(self, prod):
             if sum(self.Requirements[p][prod] for p in self.ProductSet) > 0.0:
@@ -226,51 +317,53 @@ class Instance(object):
                     if self.Alternates[p][prod]:
                         return p
 
-    def DrawSupplyChain(self):
-        G = nx.DiGraph()
-        labels = {}
-        for p in self.ProductSet:
-            G.add_node(p)
-            labels[p] = self.ProductName[p]
-            # node.append( G.add_nodes_from(p) )
-
-        for p in self.ProductSet:
-            for q in self.ProductSet:
-                if self.Requirements[q][p]:
-                    G.add_edge(p, q, color='b')
-
-                    for i in self.ProductSet:
-                        if self.Alternates[p][i] and p != i:
-                            G.add_edge(i, q, color='g')
-
-        pos = nx.spring_layout(G)
-
-        print(pos)
-        maxl = max(self.Level)
-        for p in self.ProductSet:
-            pos[p] += (10 * (maxl - self.Level[p]), 0)
-            # node.append(G.add_nodes_from(p))
-
-        levels = set(self.Level)
-        for l in levels:
-            prodinlevel = [q for q in self.ProductSet if self.Level[q] == l]
-            prodname = [self.ProductName[q] for q in prodinlevel]
-            prodname = sorted(prodname)
-
-            for k in range(len(prodinlevel)):
-                ind = self.ProductName.index(prodname[k])
-                pos[ind] += (0, 100 * k / len(prodinlevel))
-        edges = G.edges()
-        colors = [G[u][v]['color'] for u, v in edges]
-        nx.draw(G, pos, edge_color=colors, node_shape='s',
-                node_color='b', node_size=500, node_height=300,
-                width=2,
-                alpha=0.4)
-
-        nx.draw_networkx_labels(G, pos, labels, font_size=12)
-
-        plt.axis('off')
-        return plt
+    #uncomment to create a plot of the supply chain (might create some interferance with CPLEX)
+    # def DrawSupplyChain(self):
+    #      plt.clf()
+    #      G = nx.DiGraph()
+    #      labels = {}
+    #      for p in self.ProductSet:
+    #          G.add_node(p)
+    #          labels[p] = self.ProductName[p]
+    #          # node.append( G.add_nodes_from(p) )
+    #
+    #      for p in self.ProductSet:
+    #          for q in self.ProductSet:
+    #              if self.Requirements[q][p]:
+    #                  G.add_edge(p, q, color='b')
+    #
+    #          for i in self.ProductSet:
+    #                if self.Alternates[i][p] and p != i:
+    #                          G.add_edge(i, p, color='g')
+    #
+    #      pos = nx.spring_layout(G)
+    #
+    #      print(pos)
+    #      maxl = max(self.Level)
+    #      for p in self.ProductSet:
+    #          pos[p] += (10 * (maxl - self.Level[p]), 0)
+    #          # node.append(G.add_nodes_from(p))
+    #
+    #      levels = set(self.Level)
+    #      for l in levels:
+    #          prodinlevel = [q for q in self.ProductSet if self.Level[q] == l]
+    #          prodname = [self.ProductName[q] for q in prodinlevel]
+    #          prodname = sorted(prodname)
+    #
+    #          for k in range(len(prodinlevel)):
+    #              ind = self.ProductName.index(prodname[k])
+    #              pos[ind] += (0, 100 * k / len(prodinlevel))
+    #      edges = G.edges()
+    #      colors = [G[u][v]['color'] for u, v in edges]
+    #      nx.draw(G, pos, edge_color=colors, node_shape='s',
+    #              node_color='b', node_size=500, node_height=300,
+    #              width=2,
+    #              alpha=0.4)
+    #
+    #      nx.draw_networkx_labels(G, pos, labels, font_size=12)
+    #
+    #      plt.axis('off')
+    #      return plt
 
     # This function compute the additional data used in the modes
     # ( indices of the variable,  level in the supply chain, .... )
@@ -290,26 +383,30 @@ class Instance(object):
     #Compute the possible component for each product (inluding alternative)
     def ComputePossibleComponent(self):
 
-        self.ConsumptionSet = []
-        self.PossibleComponents=[[0 for q in self.ProductSet] for p in self.ProductSet]
-        for p in self.ProductSet:
-            for q in self.ProductSet:
-                if self.Requirements[p][q] > 0.0:
-                    self.PossibleComponents[p][q] = 1
-                    self.ConsumptionSet.append(self.GetConsumptiontuple(q, p))
-                elif sum(self.Alternates[c][q] for c in self.ProductSet if self.Requirements[p][c]) >= 1:
-                    self.PossibleComponents[p][q] = 1
-                    self.ConsumptionSet.append( self.GetConsumptiontuple(q, p))
+         self.ConsumptionSet = []
+         for p in self.ProductWithoutExternalDemand:
+             if self.IsMaterProduct(p):
+                    self.Alternates[p][p] = 1
+
+         for p in self.ProductSet:
+             for q in self.ProductSet:
+                 if self.Alternates[p][q] > 0.0:
+                     self.ConsumptionSet.append(self.GetConsumptiontuple(p, q))
 
 
-        self.NrComponent = [sum(1 for q in self.ProductSet
-                                if self.PossibleComponents[p][q] > 0.0)
-                            for p in self.ProductSet]
+         self.NrAlternate = [sum(1 for q in self.ProductSet
+                                 if self.Alternates[p][q] > 0.0)
+                             for p in self.ProductSet]
 
-        self.NrComponentTotal = sum(self.NrComponent[p] for p in self.ProductSet)
+         self.NrAlternateTotal = sum(self.NrAlternate[p] for p in self.ProductSet)
+
+    def GetComsumptionCost(self, p, q ):
+        return self.AternateCosts[p][q]
+
 
     def GetConsumptiontuple(self, p, q ):
-        return (p, q, "%s -> %s" % (p, q))
+        return (p, q, "%s -> %s" % (p, q), self.GetComsumptionCost(p,q))#p,q))
+
     # Compute the lead time from a product to its component with the largest sum of lead time
     def ComputeMaxLeadTime(self):
         self.MaxLeadTimeProduct = [0 for p in self.ProductSet]
@@ -465,14 +562,12 @@ class Instance(object):
     #       print "file %r not found" %(filepath)
 
     # This function read the instance from the file in folder ./Instances/
-    def ReadFromFile(self, instancename, distribution,  alternatestructure="Normal", longtimehoizon=False):
-        if instancename[0] == "0":
+    def ReadFromFile(self, instancename, distribution,   longtimehoizon=False, longtimehorizonperiod = 10, additionaltimehorizon = 0, nralternate=0,costalternate=0):
+        if instancename[0] == "0" or instancename == 'l0"':
             reader = InstanceReaderGrave(self)
-        elif instancename[0] == "l":
-            reader = InstanceReaderJDA(self)
         else:
             reader = InstanceReaderTemplemeier(self)
-        reader.ReadFromFile(instancename, distribution, longtimehoizon, alternatestructure)
+        reader.ReadFromFile(instancename, distribution, longtimehoizon, largetimehorizonperiod=longtimehorizonperiod, additionaltimehorizon= additionaltimehorizon, nralternate=nralternate, costalternate=costalternate)
 
 
     # Save the scenario tree in a file
@@ -579,7 +674,8 @@ class Instance(object):
         # Add a tab with an array giving the requirements:
         # TransportCostdf = Tool.ReadDataFrame(wb2, "TransportCost")
         # self.TransportCost = [[TransportCostdf.at[q, p] for p in self.ProductName] for q in self.ProductName]
-        self.AternateCosts = [[0 for p in self.ProductName] for q in self.ProductName]
+        AlternateCostdf = Tool.ReadDataFrame(wb2, "AternateCosts")
+        self.AternateCosts = [[AlternateCostdf.at[q, p] for p in self.ProductName] for q in self.ProductName]
 
         Capacitydf = Tool.ReadDataFrame(wb2, "Capacity")
         self.Capacity = [Capacitydf.at[k, 0] for k in self.ResourceSet]
