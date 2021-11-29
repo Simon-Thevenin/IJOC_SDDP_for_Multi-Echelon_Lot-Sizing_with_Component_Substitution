@@ -30,6 +30,8 @@ class Hybrid_PH_SDDP(object):
             Constants.PHMultiplier = 0.001
         if self.TestIdentifier.HybridPHSetting == "Multiplier00001":
             Constants.PHMultiplier = 0.0001
+        if self.TestIdentifier.HybridPHSetting == "Multiplier0":
+             Constants.PHMultiplier = 0.0
 
  #       self.TraceFileName = "./Temp/SDDPPHtrace_%s.txt" % (self.TestIdentifier.GetAsString())
 #
