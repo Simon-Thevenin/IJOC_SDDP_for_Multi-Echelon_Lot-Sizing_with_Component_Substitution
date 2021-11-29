@@ -235,7 +235,7 @@ if __name__ == '__main__':
         #GenerateInstances()
 
         instance.ReadInstanceFromExelFile(TestIdentifier.InstanceName)
-        Constants.AlgorithmTimeLimit = 900 *(instance.NrTimeBucket-instance.NrTimeBucketWithoutUncertaintyBefore)
+        Constants.AlgorithmTimeLimit = 30#900 *(instance.NrTimeBucket-instance.NrTimeBucketWithoutUncertaintyBefore)
         #instance.DrawSupplyChain()
     except KeyError:
         print(KeyError.message)

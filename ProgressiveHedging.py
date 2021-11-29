@@ -225,6 +225,7 @@ class ProgressiveHedging(object):
             #compute the cost for the penalty update strategy
             self.CurrentSolution[m].ComputeCost()
 
+            #FOR DEBUG PURPOSE ONLY:
             if False and Constants.Debug and self.CurrentIteration > 1:
 
                 qp = sum(math.pow((self.CurrentSolution[m].ProductionQuantity[0][t][p]
