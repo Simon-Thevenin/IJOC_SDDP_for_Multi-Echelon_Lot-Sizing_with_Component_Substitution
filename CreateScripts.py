@@ -216,7 +216,6 @@ if __name__ == "__main__":
                     for setting in ["Default"]:
                         nrforward = 1
                         for phsetting in ["Multiplier100"]:
-
                       #  for phsetting in ["Multiplier00001", "Multiplier0001","Multiplier01", "Multiplier001", "Multiplier1", "Multiplier10"]:
                                 jobname = CreateHybridSearchJob(instance, nrback, nrforward, setting, model="YFix", phsetting = phsetting)
                                 fileheur.write("sbatch %s \n" % (jobname))
