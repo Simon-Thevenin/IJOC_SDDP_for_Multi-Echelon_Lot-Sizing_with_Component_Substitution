@@ -17,14 +17,22 @@ class Hybrid_PH_SDDP(object):
         self.Instance = instance
         self.TestIdentifier = testidentifier
         self.TreeStructure = treestructure
-
-
+        if self.TestIdentifier.HybridPHSetting == "Multiplier100":
+            Constants.PHMultiplier = 100.0
+        if self.TestIdentifier.HybridPHSetting == "Multiplier10":
+            Constants.PHMultiplier = 10.0
+        if self.TestIdentifier.HybridPHSetting == "Multiplier1":
+            Constants.PHMultiplier = 1.0
         if self.TestIdentifier.HybridPHSetting == "Multiplier01":
             Constants.PHMultiplier = 0.1
+        if self.TestIdentifier.HybridPHSetting == "Multiplier001":
+            Constants.PHMultiplier = 0.01
+        if self.TestIdentifier.HybridPHSetting == "Multiplier0001":
+            Constants.PHMultiplier = 0.001
         if self.TestIdentifier.HybridPHSetting == "Multiplier00001":
             Constants.PHMultiplier = 0.0001
-        if self.TestIdentifier.HybridPHSetting == "Multiplier000001":
-            Constants.PHMultiplier = 0.000001
+        if self.TestIdentifier.HybridPHSetting == "Multiplier0":
+             Constants.PHMultiplier = 0.0
 
  #       self.TraceFileName = "./Temp/SDDPPHtrace_%s.txt" % (self.TestIdentifier.GetAsString())
 #
@@ -51,7 +59,7 @@ class Hybrid_PH_SDDP(object):
     #This function is the main loop of the hybrid progressive hedging/SDDP heuristic
     def Run(self):
 
-        self.GetHeuristicSetup()
+        #self.GetHeuristicSetup()
         self.ProgressiveHedging.InitTrace()
         self.ProgressiveHedging.CurrentSolution = [None for w in self.ProgressiveHedging.ScenarioNrSet]
         self.PrintOnlyFirstStagePreviousValue = Constants.PrintOnlyFirstStageDecision
@@ -62,7 +70,7 @@ class Hybrid_PH_SDDP(object):
         stop = False
         while not stop:
             self.ProgressiveHedging.SolveScenariosIndependently()
-            if self.ProgressiveHedging.CurrentIteration == -1:
+            if False and self.ProgressiveHedging.CurrentIteration == -1:
                 treestructure = [1, 200] + [1] * (self.Instance.NrTimeBucket - 1) + [0]
                 self.TestIdentifier.Model = Constants.ModelYQFix
                 chosengeneration = self.TestIdentifier.ScenarioSampling

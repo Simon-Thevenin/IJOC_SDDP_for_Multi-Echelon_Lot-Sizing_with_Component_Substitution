@@ -50,7 +50,7 @@ def parseArguments():
     parser.add_argument("-c", "--mipsetting", help="test a specific mip solver parameter",  default="")
     parser.add_argument("-t", "--timehorizon", help="the time horizon used in shiting window.", type=int, default=1)
     parser.add_argument("-a", "--allscenario", help="generate all possible scenario.", type=int, default=0)
-    parser.add_argument("-w", "--nrforward", help="number of scenario in the forward pass of sddp.", type=int, default=0)
+    parser.add_argument("-w", "--nrforward", help="number of scenario in the forward pass of sddp.", type=int, default=1)
     parser.add_argument("-d", "--sddpsetting", help="test a specific sddp parameter", default="")
     parser.add_argument("-y", "--hybridphsetting", help="test a specific hybridph parameter", default="")
     parser.add_argument("-z", "--mllocalsearchsetting", help="test a specific mllocalsearch parameter", default="")
@@ -235,7 +235,7 @@ if __name__ == '__main__':
         #GenerateInstances()
 
         instance.ReadInstanceFromExelFile(TestIdentifier.InstanceName)
-        Constants.AlgorithmTimeLimit = 900 *(instance.NrTimeBucket-instance.NrTimeBucketWithoutUncertaintyBefore)
+        Constants.AlgorithmTimeLimit = 30#900 *(instance.NrTimeBucket-instance.NrTimeBucketWithoutUncertaintyBefore)
         #instance.DrawSupplyChain()
     except KeyError:
         print(KeyError.message)

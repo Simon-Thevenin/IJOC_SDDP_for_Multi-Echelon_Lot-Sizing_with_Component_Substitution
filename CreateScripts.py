@@ -167,6 +167,7 @@ if __name__ == "__main__":
     for row in data_reader:
        instancenameslist.append(row)
     InstanceSet = instancenameslist[0]
+    print(InstanceSet)
     instancetosolvename = ""
 
     scenariotreeset = ["6400b"] #["all2", "all5"]#, "allDIX", "all20"]
@@ -202,8 +203,22 @@ if __name__ == "__main__":
                                                      mlsetting="NrIterationBeforeTabu1000", sddpsetting = "EvalOutSample")
                     filenew.write("sbatch %s \n" % (jobname))
 
+    if sys.argv[1] == "TestMultiplierPH":
+            fileheurname = "multph.sh"
+            fileheur = open(fileheurname, 'w')
+            fileheur.write("""
+#!/bin/bash -l
+#
+""")
 
-
+            for instance in InstanceSet:
+                for nrback in sddpnrbackset:
+                    for setting in ["Default"]:
+                        nrforward = 1
+                        for phsetting in ["Multiplier100"]:
+                      #  for phsetting in ["Multiplier00001", "Multiplier0001","Multiplier01", "Multiplier001", "Multiplier1", "Multiplier10"]:
+                                jobname = CreateHybridSearchJob(instance, nrback, nrforward, setting, model="YFix", phsetting = phsetting)
+                                fileheur.write("sbatch %s \n" % (jobname))
 
 
 
