@@ -16,14 +16,15 @@ As a results some files (such as DecentralizedMRP.Py or RollingHorizonSolver.py 
 <em>Thevenin et al (2021): Thevenin, S., Adulyasak, Y., & Cordeau, J. F. (2021). Material requirements planning under demand uncertainty using stochastic optimization. Production and Operations Management, 30(2), 475-493.</em>
 
 
-<h1> Prerequisits </h1>
+<h1> To run the software </h1>
+
+The file scm.py is the main entrance point to the program. 
 
 
-scm.py is the main entrance point of the program. Solving a program may be done as follows: 
+Python 
+The file scm.py is the main entrance point to the program. 
 
-
-To run the software: 
-Python scm.py  Solve instance_name model nrscenario scenariosampling -n 5000 -p Re-solve -m Hybrid --mipsetting Default  --hybridphsetting Multiplier1
+Solve instance_name model nrscenario scenariosampling -n 5000 -p Re-solve -m Hybrid --mipsetting Default  --hybridphsetting Multiplier1
 Instance_name refers to the name of the instance to solve. The instance must be provided as a file in the right format (see the examples) in the folder Instance.  
 Model provide the type of stochastic model to consider for the instance. 
 -	YFix refers to the static-dynamic model where the setup are decided in period 0 and fixed for the entire horizon, wwheras the production quantity are decided dynamically when new information on the demand is available.
