@@ -1,4 +1,4 @@
-#This class contains the code to implement SDDP in a single search tree.
+#This class contains the code to implement SDDP in a single search tree. The results were negative (it did not improve the performance), and they are not included in the paper.
 import cplex
 from Constants import Constants
 from cplex.callbacks import LazyConstraintCallback
@@ -71,31 +71,6 @@ class CallBackML(LazyConstraintCallback):
                          sense="G",
                          rhs=righthandside)
 
-                #stage.IndexCutConstraint.append(stage.LastAddedConstraintIndex)
-                #stage.IndexCutConstraintPerScenario[w].append(stage.LastAddedConstraintIndex)
 
-                #if forward:
-                #    self.IndexForward.append(stage.LastAddedConstraintIndex)
-                #else:
-                #    self.IndexBackward.append(stage.LastAddedConstraintIndex)
-
-
-
-
-            #vars = FirstStageCutForModel.GetCutVariablesAtStage(self.Model, 0)
-            #vars = vars[0:-1]
-            #coeff = FirstStageCutForModel.GetCutVariablesCoefficientAtStage()
-            #coeff = [1.0] + coeff[0:-1]
-            #righthandside = [FirstStageCutForModel.ComputeCurrentRightHandSide()]
-
-            #if Constants.Debug:
-            #        print("Add the constraint with var: (%r) %r" %(len(vars), vars) )
-            #        print(" coeff:  (%r) %r" %(len(coeff), coeff) )
-            #        print("rhs: %r" % righthandside)
-
-            #self.add(constraint=cplex.SparsePair(vars, coeff),
-                         # cut=cplex.SparsePair(vars, coeff),
-            #             sense="G",
-            #             rhs=righthandside[0])
             if Constants.Debug:
-                self.Model.Cplex.write("./Temp/yyoyoyo.lp")
+                self.Model.Cplex.write("./Temp/ModelCreatedByCallBackML.lp")

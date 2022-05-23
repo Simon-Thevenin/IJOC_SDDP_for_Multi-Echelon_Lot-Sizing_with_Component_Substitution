@@ -7,9 +7,7 @@ from __future__ import absolute_import, division, print_function
 from MIPSolver import MIPSolver
 from ScenarioTree import ScenarioTree
 from Constants import Constants
-from DecentralizedMRP import DecentralizedMRP
 from ProgressiveHedging import ProgressiveHedging
-#from RollingHorizonSolver import RollingHorizonSolver
 import time
 import math
 from datetime import datetime
@@ -18,11 +16,8 @@ from scipy import stats
 import numpy as np
 import copy
 import itertools
-#from MRPSolution import MRPSolution
-#from decimal import Decimal, ROUND_HALF_DOWN
 import pickle
 import RollingHorizonSolver
-#from matplotlib import pyplot as PLT
 
 class EvaluationSimulator(object):
 
@@ -60,12 +55,6 @@ class EvaluationSimulator(object):
         self.UseSafetyStockGrave = (self.TestIdentificator.Model == Constants.AverageSSGrave)
 
         self.YeuristicYfix = self.TestIdentificator.Model == Constants.ModelHeuristicYFix
-        if self.Policy == Constants.RollingHorizon:
-            self.RollingHorizonSolver = RollingHorizonSolver(self.Instance,  model , self.ReferenceTreeStructure,
-                                                             self.StartSeedResolve, self.ScenarioGenerationResolvePolicy,
-                                                             self.EvaluatorIdentificator.TimeHorizon, self.UseSafetyStock, self)
-
-        self.DecentralizedMRP = DecentralizedMRP(self.Instance, Constants.IsRuleWithGrave(self.Model))
 
     #This function evaluate the performance of a set of solutions obtain with the same method (different solutions due to randomness in the method)
     def EvaluateYQFixSolution(self, saveevaluatetab=False, filename="", evpi=False):

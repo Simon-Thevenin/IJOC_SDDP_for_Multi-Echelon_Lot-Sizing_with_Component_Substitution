@@ -102,7 +102,7 @@ class Constants( object ):
     PHConvergenceTolerence = 0.0001
     PHMultiplier= 0.1
 
-    MLLSNrIterationBeforeTabu = 50
+    MLLSNrIterationBeforeTabu = 9999999
     MLLSTabuList = 5
     MLLSNrIterationTabu = 50
     MLLSPercentFilter  = 50

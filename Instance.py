@@ -1,3 +1,6 @@
+# Instance.py is an object that describes a specific instance of the capacitated multi-echelon lot sizing problem with
+# component substitution under demand uncertainty.
+
 from __future__ import absolute_import, division, print_function
 import pandas as pd
 from Tool import Tool
@@ -5,7 +8,7 @@ import openpyxl as opxl
 import cPickle as pickle
 from InstanceReaderGrave import InstanceReaderGrave
 from InstanceReaderTemplemeier import InstanceReaderTemplemeier
-from InstanceReaderJDA import InstanceReaderJDA
+
 from Constants import Constants
 #uncomment to create a plot of the supply chain (might create some interference with CPLEX)
 #import networkx as nx

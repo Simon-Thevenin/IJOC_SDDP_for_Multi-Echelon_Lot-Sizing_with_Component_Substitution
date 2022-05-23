@@ -9,7 +9,9 @@ from SDDPCut import SDDPCut
 from ScenarioTree import ScenarioTree
 import itertools
 
-# This class contains the attributes and methodss allowing to define one stage of the SDDP algorithm.
+# SDDPStage.py is an object that contains the CPLEX model for a specific decision stage in SDDP. The cuts that build
+# the approximation of the cost-to-go are stored in the object SDDPCut. As the last stage cut requires a special
+# handling, it is stored in an object SDDPLastStageCut.
 class SDDPStage(object):
 
     def __init__(self, owner=None, previousstage=None, nextstage=None, decisionstage=-1, fixedccenarioset=[],

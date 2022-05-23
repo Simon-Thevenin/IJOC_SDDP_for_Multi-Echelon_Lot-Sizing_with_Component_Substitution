@@ -1,4 +1,12 @@
-#This script generate the scripts to run all the instances on server grids.
+#This file generates the scripts to run all the instances on server grids.
+#The script are specific for each computer grid.
+#The file InstancesToSolve.csv must be filled with the instance on which the code will be run.
+# The file takes as input a parameter to describe the type of test to run. Use:
+#   - H for a comparison of the different heuritic to solve the multi stage problem
+#   -SDDP to test the performance of SDDP when some improvement are removed.
+#   -SDDPScenario to test SDDP with various number of scenario
+#   - TestMultiplierPH to tune the value of the lagrangian multiplier in PH
+#   - N to compare the performance of a large MIP based on a scenario tree and SDDP
 
 import sys
 import csv
@@ -175,8 +183,7 @@ if __name__ == "__main__":
     sddpnrbackset = ["DependOnH"]
 
     if sys.argv[1] == "N":
-        # sddpnrbackset = ["allDIX", "all20", "50-50-10", "all50" ]#,10,20] #[2, 5], 10, 20]
-        sddpnrbackset = ["all2", "all5", "all10"]#, "all20"]
+        sddpnrbackset = ["all2", "all5", "all10", "all20"]
         filenewname = "runallnewtest.sh"
         filenew = open(filenewname, 'w')
         filenew.write("""
@@ -215,8 +222,7 @@ if __name__ == "__main__":
                 for nrback in sddpnrbackset:
                     for setting in ["Default"]:
                         nrforward = 1
-                        for phsetting in ["Multiplier100"]:
-                      #  for phsetting in ["Multiplier00001", "Multiplier0001","Multiplier01", "Multiplier001", "Multiplier1", "Multiplier10"]:
+                        for phsetting in ["Multiplier00001", "Multiplier0001","Multiplier01", "Multiplier001", "Multiplier1", "Multiplier10"]:
                                 jobname = CreateHybridSearchJob(instance, nrback, nrforward, setting, model="YFix", phsetting = phsetting)
                                 fileheur.write("sbatch %s \n" % (jobname))
 
@@ -252,43 +258,6 @@ if __name__ == "__main__":
                         fileheur.write("sbatch %s \n" % (jobname))
 
 
-
-                        #    fileheur.write("sbatch %s \n" % (jobname))
-                        #for mlsetting in ["NrIterationBeforeTabu10", "NrIterationBeforeTabu50", "NrIterationBeforeTabu100", "NrIterationBeforeTabu1000"]:
-                        #    jobname = CreateMLLocalSearchJob(instance, nrback, nrforward, setting, model="YFix", mlsetting =  mlsetting)
-                        #    fileheur.write("sbatch %s \n" % (jobname))
-
-                        #for mlsetting in ["TabuList0", "TabuList2", "TabuList5", "TabuList10", "TabuList50"]:
-                        #    jobname = CreateMLLocalSearchJob(instance, nrback, nrforward, setting, model="YFix", mlsetting =  mlsetting)
-                        #    fileheur.write("sbatch %s \n" % (jobname))
-
-                        #for mlsetting in ["IterationTabu10", "IterationTabu100", "IterationTabu1000"]:
-                        #    jobname = CreateMLLocalSearchJob(instance, nrback, nrforward, setting, model="YFix", mlsetting =  mlsetting)
-                        #    fileheur.write("sbatch %s \n" % (jobname))
-
-                        # for mlsetting in ["PercentFilter1", "PercentFilter5", "PercentFilter10", "PercentFilter25"]:
-                        #     jobname = CreateMLLocalSearchJob(instance, nrback, nrforward, setting, model="YFix",
-                        #                                      mlsetting=mlsetting)
-                        #     fileheur.write("sbatch %s \n" % (jobname))
-
-
-                        #for phsetting in ["Multiplier01", "Multiplier00001", "Multiplier000001"]:
-                        #    jobname = CreateHybridSearchJob(instance, nrback, nrforward, setting, model="YFix", phsetting = phsetting)
-                        #    fileheur.write("sbatch %s \n" % (jobname))
-
-
-
-
-
-            #jobname = CreateMIPJob(instance, 100, model="YQFix")
-            #fileheur.write("sbatch %s \n" % (jobname))
-
-            # for scenariotree in scenariotreeset:
-            #          jobname = CreateMIPJob(instance, scenariotree, model="HeuristicYFix")
-            #          fileheur.write("sbatch %s \n" % (jobname))
-
-                #    jobname = CreatePHJob(instance, scenariotree, model = "HeuristicYFix")
-            #    fileheur.write("sbatch %s \n" % (jobname))
 
     if sys.argv[1] == "SDDPScenario":
         filesddpname = "runallsddp.sh"
@@ -354,31 +323,3 @@ if __name__ == "__main__":
             filecomp.write("sbatch %s \n" % (jobname))
             jobname = CreateMIPJob(instance, 1, model="Average", evaluationpolicy="Fix")
             filecomp.write("sbatch %s \n" % (jobname))
-
-    if sys.argv[1] == "MIP":
-       # Create the sh file for resolution
-        filemipname = "runallmip.sh"
-        filemip = open(filemipname, 'w')
-        filemip.write("""
-#!/bin/bash -l
-#
-""")
-
-        for instance in InstanceSet:
-            for scenariotree in scenariotreeset:
-                jobname = CreateMIPJob(instance, scenariotree)
-                filemip.write("qsub %s \n" % (jobname) )
-
-    if sys.argv[1] == "PH":
-       # Create the sh file for resolution
-        filemipname = "runallph.sh"
-        filemip = open(filemipname, 'w')
-        filemip.write("""
-#!/bin/bash -l
-#
-""")
-
-        for instance in InstanceSet:
-            for scenariotree in scenariotreeset:
-                jobname = CreatePHJob(instance, scenariotree)
-                filemip.write("sbatch %s \n" % (jobname) )

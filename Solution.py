@@ -1,3 +1,6 @@
+#The object Solution.py describes a solution (a production plan), and it provides methods to save and read solutions
+# from files.
+
 from __future__ import absolute_import, division, print_function
 from datetime import datetime
 import math

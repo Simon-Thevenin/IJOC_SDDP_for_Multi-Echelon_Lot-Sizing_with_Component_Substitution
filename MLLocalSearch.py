@@ -1,4 +1,6 @@
-# This class contains the attributes and methods allowing to define the progressive hedging algorithm.
+# The class MLLocalSearch contains the attributes and methods allowing to define an heuristic SDDP approach.
+# In each iteration, the stage 2 to T are solved to optimality, and the first stage is solve to improve the setup
+# decisions..
 from ScenarioTree import ScenarioTree
 from Constants import Constants
 from MIPSolver import MIPSolver
@@ -28,50 +30,6 @@ class MLLocalSearch(object):
         self.Instance = instance
         self.TestIdentifier = testidentifier
 
-
-
-        if self.TestIdentifier.MLLocalSearchSetting == "NrIterationBeforeTabu10":
-            Constants.MLLSNrIterationBeforeTabu = 10
-        if self.TestIdentifier.MLLocalSearchSetting == "NrIterationBeforeTabu50":
-            Constants.MLLSNrIterationBeforeTabu = 50
-        if self.TestIdentifier.MLLocalSearchSetting == "NrIterationBeforeTabu100":
-            Constants.MLLSNrIterationBeforeTabu = 100
-        if self.TestIdentifier.MLLocalSearchSetting == "NrIterationBeforeTabu1000":
-            Constants.MLLSNrIterationBeforeTabu = 9999999
-        if self.TestIdentifier.MLLocalSearchSetting == "TabuList0":
-            Constants.MLLSTabuList = 0
-        if self.TestIdentifier.MLLocalSearchSetting == "TabuList2":
-            Constants.MLLSTabuList = 2
-        if self.TestIdentifier.MLLocalSearchSetting == "TabuList5":
-            Constants.MLLSTabuList = 5
-        if self.TestIdentifier.MLLocalSearchSetting == "TabuList10":
-            Constants.MLLSTabuList = 10
-        if self.TestIdentifier.MLLocalSearchSetting == "TabuList50":
-            Constants.MLLSTabuList = 50
-
-        if self.TestIdentifier.MLLocalSearchSetting == "IterationTabu10":
-            Constants.MLLSNrIterationTabu = 10
-
-        if self.TestIdentifier.MLLocalSearchSetting == "IterationTabu100":
-            Constants.MLLSNrIterationTabu = 100
-
-        if self.TestIdentifier.MLLocalSearchSetting == "IterationTabu1000":
-            Constants.MLLSNrIterationTabu = 1000
-
-
-        if self.TestIdentifier.MLLocalSearchSetting == "PercentFilter1":
-            Constants.MLLSPercentFilter = 1
-
-        if self.TestIdentifier.MLLocalSearchSetting == "PercentFilter5":
-            Constants.MLLSPercentFilter = 5
-
-        if self.TestIdentifier.MLLocalSearchSetting == "PercentFilter10":
-            Constants.MLLSPercentFilter = 10
-
-        if self.TestIdentifier.MLLocalSearchSetting == "PercentFilter25":
-            Constants.MLLSPercentFilter = 25
-
-
         self.TreeStructure = treestructure
 
         self.TraceFileName = "./Temp/MLLocalSearch%s.txt" % (self.TestIdentifier.GetAsString())
@@ -94,12 +52,12 @@ class MLLocalSearch(object):
         self.SDDPSolver = SDDP(self.Instance, self.TestIdentifier, MLTreestructure)
         self.SDDPSolver.HasFixedSetup = True
         self.SDDPSolver.IsIterationWithConvergenceTest = False
-        # self.SDDPSolver.Run()
+
         self.SDDPSolver.GenerateSAAScenarios2()
 
         # Mke sure SDDP do not unter in preliminary stage (at the end of the preliminary stage, SDDP would change the setup to bynary)
         Constants.SDDPGenerateCutWith2Stage = False
-        #Constants.SolveRelaxationFirst = False
+
         Constants.SDDPRunSigleTree = False
 
         treestructure = [1, 10] + [1] * (self.Instance.NrTimeBucket - 1) + [0]
@@ -126,20 +84,9 @@ class MLLocalSearch(object):
             self.MLLocalSearchTimeBestSol = time.time() - self.Start
 
     def trainML(self):
-        #self.Regr = linear_model.LinearRegression()
-        #self.Regr.fit(self.TestedSetup, self.CostToGoOfTestedSetup)
-        #self.poly = PolynomialFeatures(degree=2)
-        #X_poly = self.poly.fit_transform(self.TestedSetup)
-
-        # poly.fit(X_poly, self.CostToGoOfTestedSetup)
-        #self.lin2 = LinearRegression()
-        #self.lin2.fit(X_poly, self.CostToGoOfTestedSetup)
 
         self.clf = MLPRegressor(solver='lbfgs', alpha=1e-5, hidden_layer_sizes=(15))
         self.clf.fit(self.TestedSetup, self.CostToGoOfTestedSetup)
-
-        #self.reg = linear_model.Ridge(alpha=.5)
-        #self.reg.fit(self.TestedSetup, self.CostToGoOfTestedSetup)
 
     def GenerateOutSample(self):
         self.outofsampletest = []
@@ -266,13 +213,7 @@ class MLLocalSearch(object):
 
         self.Start = time.time()
         duration = 0
-        #Initialization
-        # for i in range(1,2):
-        #     self.GivenSetup1D, self.GivenSetup2D = self.GetRandomSetups()
-        #     self.RunSDDPAndAddToTraining()
-        #
-        # self.trainML()
-        #self.GenerateOutSample()
+
 
         self.CurrentTolerance = Constants.AlgorithmOptimalityTolerence
        # self.SDDPSolver.CurrentToleranceForSameLB = 0.01
@@ -282,8 +223,7 @@ class MLLocalSearch(object):
 
         curentsolution = copy.deepcopy(self.BestSolution)
         self.RunSDDP(relaxsetup=True)
-        #self.GivenSetup2D = self.GetHeuristicSetup()
-        #self.RunSDDP()
+
         self.RunSDDP(runwithbinary=True)
         #self.SingleTreeSolver()
 
@@ -312,52 +252,16 @@ class MLLocalSearch(object):
 
 
 
-            # print("-------------------------Linear Regression-----------------------------")
-            # insampleprediction = self.Regr.predict(self.TestedSetup)
-            # outsampleprediction = self.Regr.predict(self.outofsampletest)
-            # print("self.TestedSetup : %r "%self.TestedSetup)
-            # print("self.CostToGoOfTestedSetup : %r "%self.CostToGoOfTestedSetup)
-            # print("insampleprediction : %r " % insampleprediction)
-            # print("insample absolute error %r"% mean_absolute_error(self.CostToGoOfTestedSetup, insampleprediction) )
-            # print("outsampleprediction : %r " % outsampleprediction)
-            # print("outsample absolute error %r" % mean_absolute_error(self.outofsamplecost, outsampleprediction))
-            #
-            # print("-------------------------Polynomial Regression-----------------------------")
-            # X_poly = self.poly.fit_transform(self.TestedSetup)
-            # insamplepredictionpoly = self.lin2.predict(X_poly)
-            # X_poly = self.poly.fit_transform(self.outofsampletest)
-            # outsamplepredictionpoly = self.lin2.predict(X_poly)
-            # print("insamplepredictionpoly : %r " % insamplepredictionpoly)
-            # print("insample absolute error predictionpoly %r" % mean_absolute_error(self.CostToGoOfTestedSetup, insamplepredictionpoly))
-            # print("outsamplepredictionpoly : %r " % insamplepredictionpoly)
-            # print("outsample absolute error predictionpoly %r" % mean_absolute_error(self.outofsamplecost,
-            #                                                                          outsamplepredictionpoly))
-            #
-            # print("------------------------- Ridge -----------------------------")
-            # insamplepredictionRidge = self.reg.predict(self.TestedSetup)
-            # outsamplepredictionRidge = self.reg.predict(self.outofsampletest)
-            # print("self.TestedSetup : %r " % self.TestedSetup)
-            # print("self.CostToGoOfTestedSetup : %r " % self.CostToGoOfTestedSetup)
-            # print("insampleprediction : %r " % insamplepredictionRidge)
-            # print("insample absolute error %r" % mean_absolute_error(self.CostToGoOfTestedSetup,
-            #                                                          insamplepredictionRidge))
-            # print("outsampleprediction : %r " % outsamplepredictionRidge)
-            # print("outsample absolute error %r" % mean_absolute_error(self.outofsamplecost, outsamplepredictionRidge))
 
 
             insamplepredictionNN = self.clf.predict(self.TestedSetup)
-#            outsamplepredictionNN = self.clf.predict(self.outofsampletest)
+
             if Constants.Debug:
                 print("-------------------------Neural net-----------------------------")
                 print("self.TestedSetup : %r " % self.TestedSetup)
                 print("self.CostToGoOfTestedSetup : %r " % self.CostToGoOfTestedSetup)
                 print("insampleprediction : %r " % insamplepredictionNN)
                 print("insample absolute error %r" % mean_absolute_error(self.CostToGoOfTestedSetup, insamplepredictionNN))
- #               print("outsampleprediction : %r " % outsamplepredictionNN)
-#                print("outsample absolute error %r" % mean_absolute_error(self.outofsamplecost, outsamplepredictionNN))
-
-#            self.WriteInTraceFile( "outsample absolute error %r" % mean_absolute_error(self.outofsamplecost, outsamplepredictionNN) )
-
 
 
             self.Iteration += 1
@@ -417,8 +321,6 @@ class MLLocalSearch(object):
         self.TabuBestSolLB = Constants.Infinity
         self.TabuBestSolPredictedUB = Constants.Infinity
         self.TabuBestSol = None
-       # currentsolution.Production[0] = [[random.randint(0, 1) for p in self.Instance.ProductSet] for t in
-       #                                      self.Instance.TimeBucketSet]
 
         iterationtabu = [[0 for p in self.Instance.ProductSet] for t in self.Instance.TimeBucketSet]
         curentiterationLS = 0
@@ -492,12 +394,7 @@ class MLLocalSearch(object):
 
 
     def UpdateDescentRecord(self, move, t, p, cost, setups):
-      #  if cost < self.DescentBestCost and self.GetCurrentLowerBound(setups) < self.BestSolutionSafeUperBound:
-      #      self.DescentBestCost = cost
-      #      self.DescentBestMove = ( move, t, p )
-           # print("Evaluate %r %r %r "%(move, t, p) )
 
-       # if  self.UseTabu :
             lb = self.GetCurrentLowerBound(setups)
             newrecord = False
 
@@ -645,7 +542,6 @@ class MLLocalSearch(object):
         return solution
 
     def GetHeuristicSetup(self):
-      #  print("Get Heuristic Setups")
         treestructure = [1, 200] + [1] * (self.Instance.NrTimeBucket - 1) + [0]
         self.TestIdentifier.Model = Constants.ModelYQFix
         chosengeneration = self.TestIdentifier.ScenarioSampling
@@ -706,7 +602,7 @@ class MLLocalSearch(object):
                            self.Instance.TimeBucketSet]
         self.GivenSetup2D = [[solution.Production[0][t][p] for p in self.Instance.ProductSet] for t in
                              self.Instance.TimeBucketSet]
-        # solution.Production[0][t][p]
+
         return self.GivenSetup1D, self.GivenSetup2D
 
 
@@ -741,27 +637,16 @@ class MLLocalSearch(object):
         self.SDDPSolver.CurrentLowerBound, self.SDDPSolver.CurrentExpvalueUpperBound, self.SDDPSolver.CurrentSafeUpperBound, self.SDDPSolver.VarianceForwardPass, convergencecriterion, delta, self.SDDPSolver.CurrentForwardSampleSize, self.SDDPSolver.NrIterationWithoutLBImprovment))
 
 
-       # if(convergencecriterion <= 1 and delta > self.CurrentTolerance and  self.SDDPSolver.NrIterationWithoutLBImprovment>5):
-
-
-        #     self.SDDPSolver.CurrentForwardSampleSize = self.SDDPNrScenarioTest + (self.SDDPSolver.NrIterationWithoutLBImprovment - 5) *200
-        #else:
-        #    self.SDDPSolver.CurrentForwardSampleSize = self.TestIdentifier.NrScenarioForward
-
-
-        #return (convergencecriterion <= 1 and delta > self.CurrentTolerance and  self.SDDPSolver.NrIterationWithoutLBImprovment>5)
         return self.SDDPSolver.NrIterationWithoutLBImprovment > 10 \
                or (self.SDDPSolver.CurrentLowerBound > self.BestSolutionSafeUperBound and self.SDDPSolver.NrIterationWithoutLBImprovment > 2)
 
-    #self.SDDPSolver.CurrentLowerBound > self.BestSolutionSafeUperBound \
-            #    or (convergencecriterion <= 1 and delta <= self.CurrentTolerance)#
 
     def GetCurrentLowerBound(self, setups2D):
         self.SDDPSolver.HeuristicSetupValue = setups2D
         self.SDDPSolver.ForwardStage[0].ChangeSetupToValueOfTwoStage()
         self.SDDPSolver.ForwardStage[0].RunForwardPassMIP()
-      #  print("tested setup: %r"%setups2D )
+
 
         self.SDDPSolver.ForwardStage[0].ComputePassCost()
-      #  print("cost of solution %r"%self.SDDPSolver.ForwardStage[0].PassCostWithAproxCosttoGo)
+
         return self.SDDPSolver.ForwardStage[0].PassCostWithAproxCosttoGo

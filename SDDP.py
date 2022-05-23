@@ -19,7 +19,9 @@ import random
 import copy
 import cplex
 
-# This class contains the attributes and methods allowing to define the SDDP algorithm.
+#  SDDP.py contains the code to create an object SDDP.  The object SDDP contains methods to run the algorithm, such as
+#  methods for the Forward and backward pass. The object SDDP has a link toward several object SDDPStage that contains
+#  the CPLEX model of each decision stage.
 class SDDP(object):
 
     #return the object stage associated with the decision stage given in paramter

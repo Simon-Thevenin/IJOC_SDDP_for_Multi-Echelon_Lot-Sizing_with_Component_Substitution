@@ -1,3 +1,10 @@
+#MIPSolver.py contains the code that creates an object MIPSolver with the attributes and methods to create a big MILP
+# based on a scenario tree to solve the Multi echelon Lot Sizing problem under Demand uncertainty. Depending on the shape
+# of the scenario tree, MIPSolver.py can also solve a deterministic or a two-stage model. The class ScenarioTree,
+# ScenarioTreeNode, and Scenario define the structure of the scenario tree required to build a multi-stage stochastic
+# program.
+
+
 from __future__ import absolute_import, division, print_function
 import cplex
 import pandas as pd
