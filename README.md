@@ -73,13 +73,15 @@ The git repository also includes the code of some negative results that are not 
 The git repository also includes the code to evaluate the approach with a simulation. The class <em>EvaluationSimulator.py</em> provides a framework to evaluate the performance of the methods through a simulation over a large number of scenarios. The class <em>Evaluator.py</em> contains the method to call the simulator and run the evaluation. The object <em>EvaluatorIdentificator.py</em> contains all the information to identify the evaluator, and this information is recorded in the results. Such objects are used to record the specific experimental design used during a test (the number of simulation scenarios, the time horizon, and the policy used to update decisions when new information is available.).
 
 <h2> Instances </h2>
-Instance.py is an object that describes a specific instance of the capacitated multi-echelon lot sizing problem with component substitution under demand uncertainty. The object Solution.py describes a solution (a production plan)
+<em>Instance.py</em> is an object that describes a specific instance of the capacitated multi-echelon lot sizing problem with component substitution under demand uncertainty. The object <em>Solution.py</em>  describes a solution (a production plan), and it provides methods to save and read solutions from files.
+
+
+
+<em>InstanceReader.py</em>  defines the methods to read an instance from a file. The goal is to generate instances based on files existing from the literature. As several input formats exist, the class can be specialized in several children classes (one for each type of input file): <em>InstanceReaderGrave.py</em> and <em>InstanceReaderTemplemeyer.py</em>.
 
 
 <h2> Other files </h2>
-InstanceReader.py define the methods to read an instance from a file. The goal is to generate instances based  on files existing from the literature. As several input format exists, the class can be specialized in several children class (on for each type of input file): InstanceReaderGrave.py, InstanceReaderTemplemeyer.py, and InstanceReaderJDA.py
-	
-Constant.py contains many constants variable used in the code.
+<em>Constant.py</em> contains many constants variable used in the code.
 
 Note that the code was built upon the code associated with the paper from Thevenin et al (2021) . 
 As a results some files (such as DecentralizedMRP.Py or RollingHorizonSolver.py) are not used in the results of the paper.
@@ -88,7 +90,4 @@ As a results some files (such as DecentralizedMRP.Py or RollingHorizonSolver.py)
 
 <em>Thevenin et al (2021): Thevenin, S., Adulyasak, Y., & Cordeau, J. F. (2021). <a href="[http://www.google.com](https://onlinelibrary.wiley.com/doi/10.1111/poms.13277)" title="Material requirements planning under demand uncertainty using stochastic optimization. Production and Operations Management">Material requirements planning under demand uncertainty using stochastic optimization. Production and Operations Management</a>. Production and Operations Management, 30(2), 475-493.</em>
 
-TO BE DELETED: 
--	MIPSolverMultiStage
--	MIPSolverTwoStage
 
