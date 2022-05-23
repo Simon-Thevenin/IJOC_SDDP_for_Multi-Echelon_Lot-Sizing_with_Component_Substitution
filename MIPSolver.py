@@ -38,7 +38,7 @@ class MIPSolver(object):
                  logfile="",
                  givenSGrave=[]):
 
-        # Define some attributes and functions which help to et the index of the variable.
+        # Define some attributes and functions which help to set the index of the variable.
         # the attributs nrquantiyvariables, nrinventoryvariable, nrproductionvariable, and nrbackordervariable gives the number
         # of variable of each type
         self.NrQuantityVariables = 0

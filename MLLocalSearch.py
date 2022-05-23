@@ -394,13 +394,7 @@ class MLLocalSearch(object):
         self.SDDPSolver.SDDPNrScenarioTest = 1000
         #random.seed = 9876
         self.SDDPSolver.ComputeUpperBound()
-        #for s in range(len(self.SDDPSolver.SetOfSAAScenario)):
-        #    print(s)
-        #    sol = self.SDDPSolver.CreateSolutionOfScenario(s)
-        #    sol.Print()
-        #    print("WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW")
-        #    sol.ComputeCost()
-        #    print(sol.TotalCost)
+
         self.TestIdentifier.Model = Constants.ModelYFix
         return self.BestSolution
 
@@ -456,7 +450,6 @@ class MLLocalSearch(object):
                 p = self.DescentBestMove[2]
 
                 tabulistsize = Constants.MLLSTabuList
-              #  print("Move: %r %r %r"%(self.DescentBestMove[0], t, p))
                 if self.DescentBestMove[0] == "E":
                     currentsolution.Production[0][t][p] = 0
                     currentsolution.Production[0][t - 1][p] = 1
@@ -477,20 +470,15 @@ class MLLocalSearch(object):
                 cost = self.PredictForSetups(currentsolution.Production[0])
                 lb = self.GetCurrentLowerBound(currentsolution.Production[0])
                 newrecord = False
-              #  print(cost)
-               # print(self.GetCurrentLowerBound(currentsolution.Production[0]))
 
                 if self.TabuBestSolLB < self.BestSolutionSafeUperBound:
                     if lb < self.BestSolutionSafeUperBound and cost < self.TabuBestCost:
                         newrecord = True
-                       # print("a")
                 else:
                     if( lb <   self.TabuBestSolLB ):
                         newrecord = True
-                      #  print("b")
 
                 if newrecord:
-                     #   print("New record!!!")
                         self.TabuBestCost = cost
                         self.TabuBestSolLB = lb
                         self.TabuBestSol = copy.deepcopy(currentsolution)
@@ -581,7 +569,6 @@ class MLLocalSearch(object):
 
 
     def RunSDDP(self, relaxsetup = False, runwithbinary = False):
-       ## print("RUN SDDP")
 
         self.SDDPSolver.WriteInTraceFile("__________________New run of SDDP ______________best ub: %r______ MLLocalSearchLB: %r \n"%(self.BestSolutionSafeUperBound, self.MLLocalSearchLB))
 
