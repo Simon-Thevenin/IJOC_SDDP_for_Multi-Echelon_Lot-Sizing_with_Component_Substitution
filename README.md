@@ -5,7 +5,7 @@ by <em>Simon Thevenin, Yossiri Adulyasak, and Jean-François Cordeau</em>.
 <br/>
 This code is provided to facilitate the reproducibility of the results and to share the datasets. 
 
-<h1> Prerequisits </h1>
+<h1> Prerequisites </h1>
 
 The code must be run with Python 2, with all the required libraries (see the import section at the beginning of each python file) installed. The softwares <em>Cplex</em> and <em>LatexBuilder</em> must be installed.
 
