@@ -7,7 +7,7 @@ This code is provided to facilitate the reproducibility of the results and to sh
 
 <h1> Prerequisits </h1>
 
-The code must be run with Python 2, with all the libraries (se the import at the beginning of each file) installed. The softwares <em>Cplex</em> and <em>LatexBuilder</em> must be installed.
+The code must be run with Python 2, with all the required libraries (see the import section at the beginning of each python file) installed. The softwares <em>Cplex</em> and <em>LatexBuilder</em> must be installed.
 
 
 
@@ -39,7 +39,7 @@ For example, the following command solves the instance SuperSmallIntance.xlsx fo
 Once the instance is solved, a summary of the results is available in the folder Test. To have a detailed description of the solution in the folder <em>Solution.py</em>, turn the parameter <em>PrintSolutionFileToExcel</em> in the file  <em>Constant.py</em> to True.
 
 
-The option “-m” allow selecting the <strong>optimization approach</strong> , and this parameter may take value: 
+The option “-m” allows selecting the <strong>optimization approach</strong> , and this parameter may take the values: 
 -	SDDP for the Stochastic Dual Dynamic Programming approach
 -	PH for the Progressive Hedging Method
 -	Hybrid For the Hybrid of PH and SDDP
@@ -52,6 +52,8 @@ After solving the instance, the program performs a <strong>simulation </strong>t
 Other options are available, and they are described in the function <em>parseArguments</em> of the file <em>scm.py</em>
 
 <h1> Short description of the class structure </h1>
+
+This section provide a brief overview of the class structur that model each optimization method provided in the paper.
 
 <h2> Large MILP based on a scenario tree  </h2>
 
@@ -81,10 +83,10 @@ The git repository also includes the code to evaluate the approach with a simula
 
 
 <h2> Other files </h2>
-<em>Constant.py</em> contains many constants variable used in the code.
+<em>Constant.py</em> list some parameters of the methods (the time limit of the algorithm, tolerance, ...), as well as various constants used througout the code (e.g., the name of the methods).
 
 Note that the code was built upon the code associated with the paper from Thevenin et al (2021) . 
-As a results some files (such as DecentralizedMRP.Py or RollingHorizonSolver.py) are not used in the results of the paper.
+As a results some files (such as DecentralizedMRP.Py or RollingHorizonSolver.py) are not used in the results presented in the paper.
 <br/>
 <br/>
 
