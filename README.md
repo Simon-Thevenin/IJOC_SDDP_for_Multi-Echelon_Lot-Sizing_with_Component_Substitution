@@ -20,7 +20,7 @@ The file scm.py is the main entry point to the program.  The program can be run 
 
 The parameter <strong>instance_name</strong> refers to the name of the instance to solve. The instance must be provided as a file in the correct format (see the examples) in the folder Instance.  
 
-The parameter <strong>model</strong> provides the type of stochastic model to consider for the instance. 
+The parameter <strong>model</strong> provides the type of stochastic model. 
 -	YFix refers to the static-dynamic model where the setups are decided in period 0 and fixed for the entire horizon, whereas the production quantities are decided dynamically when new information on the demand is available.
 -	YQFix refers to the static model where the setups and the production quantities are decided in period 0 and frozen for the entire horizon.
 -	Average refers to the deterministic model where the demand takes its expected value. 
@@ -47,13 +47,13 @@ The option “-m” allows selecting the <strong>optimization approach</strong> 
 
 The paper provides a description of each these methods. 
 
-After solving the instance, the program performs a <strong>simulation </strong>to evaluate the performance of the approach in a stochastic environment. The number of scenarios used in the evaluation can be tunned with the parameter “-n” (e.g., “-n 5000”).
+After solving the instance, the program performs a <strong>simulation</strong> to evaluate the performance of the approach in a stochastic environment. The number of scenarios used in the evaluation can be set with the parameter “-n” (e.g., “-n 5000”).
 
 Other options are available, and they are described in the function <em>parseArguments</em> of the file <em>scm.py</em>
 
 <h1> Short description of the class structure </h1>
 
-This section provide a brief overview of the class structur that model each optimization method provided in the paper.
+This section provides a brief overview of the class structures that model each optimization method provided in the paper.
 
 <h2> Large MILP based on a scenario tree  </h2>
 
