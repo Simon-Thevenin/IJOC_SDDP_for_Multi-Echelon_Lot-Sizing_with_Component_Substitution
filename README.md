@@ -51,7 +51,7 @@ After solving the instance, the program performs a <strong>simulation</strong> t
 
 Other options are available, and they are described in the function <em>parseArguments</em> of the file <em>scm.py</em>
 
-<h1> Short description of the class structure </h1>
+<h1> Short description of the class structures </h1>
 
 This section provides a brief overview of the class structures that model each optimization method provided in the paper.
 
